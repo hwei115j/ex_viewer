@@ -1,0 +1,7 @@
+**/setting/*
+!**/setting/chinese.json
+!**/setting/setting.json
+!**/setting/local
+node_modules
+dist
+*.7z

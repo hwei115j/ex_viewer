@@ -1,0 +1,26 @@
+{
+	"name": "ex_view",
+	"version": "2.31.0",
+	"main": "src/main.js",
+	"dependencies": {
+		"dialogs": "^2.0.1",
+		"fast-levenshtein": "^2.0.6",
+		"jshint": "^2.12.0",
+		"jszip-sync": "^3.2.1-sync",
+		"sqlite3": "^5.0.2",
+		"viewerjs": "^1.9.0"
+	},
+	"devDependencies": {
+		"electron": "^12.0.8"
+	},
+	"scripts": {
+		"dist": "electron-builder --x64 --win zip"
+	},
+	"build": {
+		"files": [
+			"**/*",
+			"!setting",
+			"!dist"
+		]
+	}
+}
