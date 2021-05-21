@@ -60,9 +60,9 @@ function createWindow() {
             } catch (err) {
                 fs.writeFileSync(
                     dir_path,
-                    JSON.stringify(JSON.parse('{"dir":[]}'))
+                    JSON.stringify(JSON.parse('{"dir":[], "layers":[]}'))
                 );
-                return JSON.parse('{"dir":[]}');
+                return JSON.parse('{"dir":[], "layers":[]}');
             }
         })(),
         mainWindow: mainWindow

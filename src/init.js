@@ -247,12 +247,6 @@ function create_init_html(document) {
         <p></p>
         <button id="start" style="display:none">開始處理</button>
         <p></p>
-        <select id="layers" style="display:none">
-        <option value="1">選擇要深入的層數，預設是1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        </select>
-        <p></p>
         <div id='path'></div>
         <p></p>
         <div id='count'></div>
@@ -260,7 +254,14 @@ function create_init_html(document) {
     }
 
     function create_book_list(path, layers) {
-        let files = fs.readdirSync(path);
+        let files;
+        console.log(path, layers);
+        try {
+            files = fs.readdirSync(path);
+        } catch(e) {
+            //console.log(e);
+            return ;
+        }
         for (let i in files) {
             let title = files[i];
             let p = join(path, title);
@@ -274,27 +275,45 @@ function create_init_html(document) {
     }
 
     function insert() {
-        let selectDirBtn = document.getElementById("select-directory");
         let start = document.getElementById("start");
+        let selectDirBtn = document.getElementById("select-directory");
         let path = document.getElementById("path");
-        document.getElementById("layers").style = "";
 
         start.style = selectDirBtn.style = "";
         for (let n in path_list) {
-            path.innerHTML += `<h1>${path_list[n]}</h1>`;
+            path.innerHTML += `
+                <div class="layers">
+                <h1>${path_list[n]}</h1>
+                <select>
+                <option value="1">選擇要深入的層數，預設是1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                </select></div>`;
+        }
+        let layers = document.getElementsByClassName("layers");
+        for(let i = 0; i < layers.length; i++) {
+            layers[i].getElementsByTagName("select")[0].value = global.dir.layers[i];
         }
 
         start.addEventListener("click", event => {
+            let layers = document.getElementsByClassName("layers");
+            let layers_list = [];
             start.style = selectDirBtn.style = "display:none";
+
+            for (let i = 0; i < layers.length; i++) {
+                layers_list.push(parseInt(layers[i].getElementsByTagName("select")[0].value));
+            }
+            global.dir.layers = layers_list;
             fs.writeFileSync(dir_path, JSON.stringify(global.dir));
             db = new sqlite3.Database(local_db_path);
             console.log("path_list = " + path_list);
-            let layers = document.getElementById("layers").value;
             for (let i in path_list) {
-                create_book_list(path_list[i], layers);
+                create_book_list(path_list[i], layers_list[i]);
             }
+
+            book_list = [...new Set(book_list)]; //消除重複
             console.log(book_list);
-            sql_where();
+            //sql_where();
         });
 
         selectDirBtn.addEventListener("click", event => {
@@ -304,9 +323,19 @@ function create_init_html(document) {
         ipcRenderer.on("selected-directory", (event, dir) => {
             console.log(dir);
             path_list.push(dir[0]);
-            path_list = [...new Set(path_list)];
+            path_list = [...new Set(path_list)]; //消除重複
             global.dir.dir = path_list;
-            path.innerHTML += `<h1>${dir[0]}</h1>`;
+            path.innerHTML = "";
+            for(let i in path_list) {
+                path.innerHTML += `
+                <div class="layers">
+                <h1>${path_list[i]}</h1>
+                <select>
+                <option value="1">選擇要深入的層數，預設是1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                </select></div>`;
+            }
         });
     }
 
