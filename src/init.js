@@ -14,6 +14,7 @@ let db;
 function create_init_html(document) {
     //至少他能動......
     let path_list = [...new Set(global.dir.dir)];
+    let layers_list = global.dir.layers;
     let book_count = 0;
     let book_list = [];
 
@@ -66,7 +67,7 @@ function create_init_html(document) {
         return reg;
     }
 
-    var start;
+    var t_start;
     //搜尋原始資料庫，建立local資料庫
     function sql_where() {
         function fullwidth(str) {
@@ -110,7 +111,6 @@ function create_init_html(document) {
                 ");"
         );
         db.run("BEGIN TRANSACTION;");
-        start = new Date().getTime();
 
         for (let book of book_list) {
             //console.log(book[1]);
@@ -125,8 +125,8 @@ function create_init_html(document) {
             meta_db.serialize(() => {
                 meta_db.all(sql, [], (err, rows) => {
                     if (err) {
-                        //console.log(err);
-                        book_count++;
+                        console.log(err);
+                        push_local_db(null, book[0], book[2]);
                         return;
                         throw err;
                     }
@@ -158,7 +158,7 @@ function create_init_html(document) {
                 progressBar();
                 if (book_count == book_list.length) {
                     let end = new Date().getTime();
-                    console.log((end - start) / 1000 + "sec");
+                    console.log((end - t_start) / 1000 + "sec");
                     //全部push進local.db結束時執行
                     db.run("COMMIT");
                     module.exports.to_home();
@@ -170,6 +170,9 @@ function create_init_html(document) {
     function update_db() {
         book_list = [];
 
+        t_start = new Date().getTime();
+
+        //刪除不在電腦上，但卻在資料庫的條目
         function deltable(del) {
             if (del.length == 0) return;
             let sql = "DELETE FROM data WHERE ";
@@ -201,20 +204,16 @@ function create_init_html(document) {
                 }
                 let old_local_path = [];
                 let new_local_path = [];
-
-                for (let i in rows) old_local_path.push(rows[i].local_path);
-                for (let path in path_list) {
-                    let files = fs.readdirSync(path_list[path]);
-                    for (let i in files) {
-                        let p = join(path_list[path], files[i]);
-                        new_local_path.push(p);
-                        /*
-                        if (image.isbook(p)) {
-                            new_local_path.push(p);
-                        }
-                        */
+                for (let i in rows) {
+                    old_local_path.push(rows[i].local_path);
+                }
+                for (let i in path_list) {
+                    let book =  create_book_list(path_list[i], layers_list[i]);
+                    for(let j in book) {
+                        new_local_path.push(join(book[j][2], book[j][0]));
                     }
                 }
+                new_local_path = [...new Set(new_local_path)];
 
                 let del = old_local_path.filter(
                     x => !new_local_path.includes(x)
@@ -222,7 +221,6 @@ function create_init_html(document) {
                 let add = new_local_path
                     .filter(x => !old_local_path.includes(x))
                     .filter(x => image.isbook(x));
-
                 book_list = add.map(x => {
                     let path = x.match(/.*\\/g)[0];
                     let name = x.match(/([^\\]+)$/)[0];
@@ -255,23 +253,27 @@ function create_init_html(document) {
 
     function create_book_list(path, layers) {
         let files;
+        let list = [];
+
         console.log(path, layers);
         try {
             files = fs.readdirSync(path);
-        } catch(e) {
-            //console.log(e);
-            return ;
+        } catch (e) {
+            console.log(e);
+            return list;
         }
         for (let i in files) {
             let title = files[i];
             let p = join(path, title);
             if (layers == 1) {
                 if (image.isbook(p))
-                    book_list.push([title, max_string(files[i]), path]);
+                    list.push([title, max_string(files[i]), path]);
             } else {
-                create_book_list(p, layers - 1);
+                list = list.concat(create_book_list(p, layers - 1));
             }
         }
+
+        return list;
     }
 
     function insert() {
@@ -291,29 +293,34 @@ function create_init_html(document) {
                 </select></div>`;
         }
         let layers = document.getElementsByClassName("layers");
-        for(let i = 0; i < layers.length; i++) {
-            layers[i].getElementsByTagName("select")[0].value = global.dir.layers[i];
+        for (let i = 0; i < layers.length; i++) {
+            layers[i].getElementsByTagName("select")[0].value =
+                global.dir.layers[i];
         }
 
         start.addEventListener("click", event => {
+            t_start = new Date().getTime();
             let layers = document.getElementsByClassName("layers");
-            let layers_list = [];
+            layers_list = [];
             start.style = selectDirBtn.style = "display:none";
 
             for (let i = 0; i < layers.length; i++) {
-                layers_list.push(parseInt(layers[i].getElementsByTagName("select")[0].value));
+                layers_list.push(
+                    parseInt(layers[i].getElementsByTagName("select")[0].value)
+                );
             }
             global.dir.layers = layers_list;
             fs.writeFileSync(dir_path, JSON.stringify(global.dir));
             db = new sqlite3.Database(local_db_path);
             console.log("path_list = " + path_list);
+            console.log(layers_list);
             for (let i in path_list) {
-                create_book_list(path_list[i], layers_list[i]);
+                book_list = book_list.concat(create_book_list(path_list[i], layers_list[i]));
             }
 
             book_list = [...new Set(book_list)]; //消除重複
             console.log(book_list);
-            //sql_where();
+            sql_where();
         });
 
         selectDirBtn.addEventListener("click", event => {
@@ -326,7 +333,7 @@ function create_init_html(document) {
             path_list = [...new Set(path_list)]; //消除重複
             global.dir.dir = path_list;
             path.innerHTML = "";
-            for(let i in path_list) {
+            for (let i in path_list) {
                 path.innerHTML += `
                 <div class="layers">
                 <h1>${path_list[i]}</h1>
@@ -349,7 +356,9 @@ function create_init_html(document) {
                 "<h1>請稍待，等待時間取決於需要搜尋的資料夾大小</h1>" +
                 body.innerHTML;
             setTimeout(() => update_db(), 2000);
-        } else module.exports.to_home();
+        } else {
+            module.exports.to_home();
+        }
     } else {
         let body = document.getElementById("body");
         body.innerHTML =
