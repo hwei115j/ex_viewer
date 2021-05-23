@@ -51,7 +51,7 @@ function create_init_html(document) {
         }
         let min = 6553500;
         let reg = null;
-        rows.forEach(row => {
+        rows.forEach((row) => {
             let title = levenshtein.get(row.title, str);
             let title_jpn = levenshtein.get(row.title_jpn, str);
 
@@ -193,6 +193,35 @@ function create_init_html(document) {
                 });
             });
         }
+
+        function upexdb(callback) {
+            let sql = `SELECT * FROM data WHERE gid IS NULL`;
+            let nullPath = [];
+            db.serialize(() => {
+                db.all(sql, [], (err, rows) => {
+                    if (err) {
+                        console.log(err);
+                        return;
+                    }
+                    for (let i in rows) {
+                        nullPath.push(rows[i].local_path);
+                    }
+                    book_list = nullPath.map((x) => {
+                        let path = x.match(/.*\\/g)[0];
+                        let name = x.match(/([^\\]+)$/)[0];
+                        return [
+                            name,
+                            max_string(name),
+                            path.substr(0, path.length - 1),
+                        ];
+                    });
+                    sql_where();
+                    if (!book_list.length) {
+                        callback();
+                    }
+                });
+            });
+        }
         let isbook_list = [];
 
         let sql = `SELECT * FROM data`;
@@ -208,32 +237,32 @@ function create_init_html(document) {
                     old_local_path.push(rows[i].local_path);
                 }
                 for (let i in path_list) {
-                    let book =  create_book_list(path_list[i], layers_list[i]);
-                    for(let j in book) {
+                    let book = create_book_list(path_list[i], layers_list[i]);
+                    for (let j in book) {
                         new_local_path.push(join(book[j][2], book[j][0]));
                     }
                 }
                 new_local_path = [...new Set(new_local_path)];
 
                 let del = old_local_path.filter(
-                    x => !new_local_path.includes(x)
+                    (x) => !new_local_path.includes(x)
                 );
                 let add = new_local_path
-                    .filter(x => !old_local_path.includes(x))
-                    .filter(x => image.isbook(x));
-                book_list = add.map(x => {
+                    .filter((x) => !old_local_path.includes(x))
+                    .filter((x) => image.isbook(x));
+                book_list = add.map((x) => {
                     let path = x.match(/.*\\/g)[0];
                     let name = x.match(/([^\\]+)$/)[0];
                     return [
                         name,
                         max_string(name),
-                        path.substr(0, path.length - 1)
+                        path.substr(0, path.length - 1),
                     ];
                 });
                 sql_where();
                 deltable(del);
                 if (!book_list.length) {
-                    module.exports.to_home();
+                    upexdb(module.exports.to_home);
                 }
             });
         });
@@ -298,7 +327,7 @@ function create_init_html(document) {
                 global.dir.layers[i];
         }
 
-        start.addEventListener("click", event => {
+        start.addEventListener("click", (event) => {
             t_start = new Date().getTime();
             let layers = document.getElementsByClassName("layers");
             layers_list = [];
@@ -315,7 +344,9 @@ function create_init_html(document) {
             console.log("path_list = " + path_list);
             console.log(layers_list);
             for (let i in path_list) {
-                book_list = book_list.concat(create_book_list(path_list[i], layers_list[i]));
+                book_list = book_list.concat(
+                    create_book_list(path_list[i], layers_list[i])
+                );
             }
 
             book_list = [...new Set(book_list)]; //消除重複
@@ -323,7 +354,7 @@ function create_init_html(document) {
             sql_where();
         });
 
-        selectDirBtn.addEventListener("click", event => {
+        selectDirBtn.addEventListener("click", (event) => {
             ipcRenderer.send("open-file-dialog");
         });
 
@@ -371,5 +402,5 @@ function create_init_html(document) {
 
 module.exports = {
     create_init_html: create_init_html,
-    to_home: null
+    to_home: null,
 };
