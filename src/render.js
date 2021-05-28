@@ -11,7 +11,7 @@ const remote = require("electron").remote;
 var search_str = [];
 
 function to_home() {
-    document.title = "ex_view";
+    document.title = "ex_viewer";
     home.create_home_html(document);
     document.oncontextmenu = null;
     global.book_scrollTop = 0;

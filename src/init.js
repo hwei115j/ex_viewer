@@ -93,19 +93,19 @@ function create_init_html(document) {
                 "local_path nvarchar," +
                 "gid    int," +
                 "token  nvarchar," +
-                "archiver_key nvarchar," +
+//                "archiver_key nvarchar," +
                 "title  nvarchar," +
                 "title_jpn  nvarchar," +
                 "category nvarchar," +
-                "thumb  nvarchar," +
-                "uploader nvarchar," +
+//                "thumb  nvarchar," +
+//                "uploader nvarchar," +
                 "posted nvarchar," +
                 "filecount nvarchar," +
-                "filesize  int," +
-                "expunged   bool," +
-                "rating    nvarchar," +
-                "torrentcount   nvarchar," +
-                "torrents   nvarchar," +
+//                "filesize  int," +
+//                "expunged   bool," +
+//                "rating    nvarchar," +
+//                "torrentcount   nvarchar," +
+//                "torrents   nvarchar," +
                 "tags   nvarchar," +
                 "error   nvarchar" +
                 ");"
@@ -262,7 +262,9 @@ function create_init_html(document) {
                 sql_where();
                 deltable(del);
                 if (!book_list.length) {
-                    upexdb(module.exports.to_home);
+                    //upexdb(module.exports.to_home);
+                    //當ex.db更新時校正回歸本機資料庫，暫時先不用，每次更新後重新匹配
+                    module.exports.to_home();
                 }
             });
         });

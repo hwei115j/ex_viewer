@@ -370,7 +370,32 @@ function create_home() {
         let f_search = document.getElementById("f_search");
         let from_onsubmit = document.getElementById("from_onsubmit");
         let reg;
+        let menuEvent = obj => {
+            return e => {
+                const menu = new Menu();
 
+                menu.append(
+                    new MenuItem({
+                        label: "複製名稱",
+                        click: function() {
+                            clipboard.writeText(obj.title);
+                        }
+                    })
+                );
+                e.stopPropagation();
+                menu.popup({ window: remote.getCurrentWindow() });
+            };
+        };
+
+        f_search.oncontextmenu = e => {
+            const menu = new Menu();
+            menu.append(new MenuItem({
+                label:'貼上',
+                role:'paste'
+            }));
+            e.stopPropagation();
+            menu.popup({ window: remote.getCurrentWindow() });
+        };
         from_onsubmit.onsubmit = () => {
             search(f_search.value);
             return false;
@@ -383,6 +408,7 @@ function create_home() {
         f_search.onblur = () => {
             window.onkeydown = reg;
         };
+        f_search;
     }
 
     function insert_page() {
@@ -391,7 +417,7 @@ function create_home() {
                 tag: "div",
                 data: {
                     className: "gl1t",
-                    oncontextmenu: menuEvent({ "path": src, "title": title })
+                    oncontextmenu: menuEvent({ path: src, title: title })
                 },
                 child: []
             };

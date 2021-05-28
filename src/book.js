@@ -46,7 +46,7 @@ function goto_page(str) {
 function create() {
     page = Math.floor(global.img_id / page_max);
     document.documentElement.scrollTop = 0;
-    document.title = "ex_view - " + global.group[global.book_id].local_name;
+    document.title = "ex_viewer - " + global.group[global.book_id].local_name;
 
     function dom(obj) {
         let r = document.createElement(obj.tag);

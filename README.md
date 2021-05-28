@@ -54,9 +54,9 @@
 ## 下載＆安裝  
   
 ### win執行檔  
-從[這裡](https://mega.nz/folder/CCwm3DYS#LshpqDeULnf12kqzIJdP8g)下載，其中`ex_view.7z`是主程式，`setting.7z`是設定和資料庫  
-首先先將兩個壓縮檔分別解壓縮，會得到`ex_view`和`setting`兩個資料夾，再把`setting`資料夾放到`ex_view`資料夾中  
-最後按下`ex_view.exe`就能開始程式了  
+從[這裡](https://mega.nz/folder/CCwm3DYS#LshpqDeULnf12kqzIJdP8g)下載，其中`ex_viewer.7z`是主程式，`setting.7z`是設定和資料庫  
+首先先將兩個壓縮檔分別解壓縮，會得到`ex_viewer`和`setting`兩個資料夾，再把`setting`資料夾放到`ex_viewer`資料夾中  
+最後按下`ex_viewer.exe`就能開始程式了  
   
 ### 原始碼編譯安裝  
 首先先安裝[node.js](https://nodejs.org/)  

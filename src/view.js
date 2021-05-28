@@ -51,8 +51,8 @@ function image_view() {
         viewer.show(true);
         let naturalHeight = viewer.imageData.naturalHeight;
         let naturalWidth = viewer.imageData.naturalWidth;
-        let clientHeight = document.documentElement.clientHeight;
-        let clientWidth = document.documentElement.clientWidth;
+        let clientHeight = document.documentElement.clientHeight-3;
+        let clientWidth = document.documentElement.clientWidth-3;
 
         if (sizeWidth) {
             viewer.zoomTo(sizeWidth / naturalWidth);
@@ -137,6 +137,11 @@ function key_word(e) {
         window.onresize = null;
         viewer.zoom(-0.1, true);
         sizeWidth = viewer.imageData.width;
+    } else if (is_key("zoom")) {
+        window.onresize = image_view;
+        setTimeout(() => image_view(), 50);
+        sizeWidth = 0;
+        console.log("zoom");
     } else if (is_key("next_book")) {
         //路徑清單的下一個路徑
         global.book_id =
@@ -237,7 +242,7 @@ function create_html_view(document) {
     window.onwheel = mouse;
     //window.addEventListener("resize", image_view);
     window.onresize = image_view;
-    document.title = "ex_view - " + global.group[global.book_id].local_name;
+    document.title = "ex_viewer - " + global.group[global.book_id].local_name;
     let body = document.getElementsByTagName("body");
     //body[0].style = "overflow:hidden";
     body[0].innerHTML =
