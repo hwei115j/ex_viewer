@@ -10,6 +10,12 @@ const global = require("electron").remote.getGlobal("sharedObject");
 const remote = require("electron").remote;
 var search_str = [];
 
+function replace(name, text) {
+    if (text) {
+        return global.ui[name] ? global.ui[name] : text;
+    }
+    return global.ui[name] ? global.ui[name] : name;
+}
 function to_home() {
     document.title = "ex_viewer";
     home.create_home_html(document);

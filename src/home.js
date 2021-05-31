@@ -27,7 +27,12 @@ let category = [
     "Asian Porn",
     "Misc"
 ];
-
+function replace(name, text) {
+    if (text) {
+        return global.ui[name] ? global.ui[name] : text;
+    }
+    return global.ui[name] ? global.ui[name] : name;
+}
 function goto_page(str) {
     let p = parseInt(str);
     let len = Math.floor(global.group.length / page_max) + 1;
@@ -294,64 +299,67 @@ function create_home() {
 							<tr>
 								<td>
 									<div id="cat_2" class="cs ct2">
-										同人誌
+										${replace("Doujinshi")}
 									</div>
 								</td>
 								<td>
 									<div id="cat_4" class="cs ct3">
-										漫畫
+										${replace("Manga")}
 									</div>
 								</td>
 								<td>
 									<div id="cat_8"  class="cs ct4">
-										畫師CG
+										${replace("Artist CG")}
 									</div>
 								</td>
 								<td>
 									<div id="cat_16" class="cs ct5">
-										遊戲CG
+										${replace("Game CG")}
 									</div>
 								</td>
 								<td>
 									<div id="cat_512" class="cs cta">
-										西方
+										${replace("Western")}
 									</div>
 								</td>
 							</tr>
 							<tr>
 								<td>
 									<div id="cat_256" class="cs ct9" >
-										無H
+										${replace("Non-H")}
 									</div>
 								</td>
 								<td>
 									<d iv="" id="cat_32" class="cs ct6">
-										圖集
-
+										${replace("Image Set")}
 									</d>
 								</td>
 								<td>
 									<div id="cat_64" class="cs ct7">
-										Cosplay
+										${replace("Cosplay")}
 									</div>
 								</td>
 								<td>
 									<div id="cat_128" class="cs ct8">
-										亞洲色情
+										${replace("Asian Porn")}
 									</div>
 								</td>
 								<td>
 									<div id="cat_1" class="cs ct1">
-										雜項
+										${replace("Misc")}
 									</div>
 								</td>
 							</tr>
 						</tbody>
 					</table>
 					<p class="nopm">
-						<input type="text" id="f_search" name="f_search" placeholder="搜尋關鍵字" size="50" maxlength="200" autocomplete="off">
-						<input type="submit" value="應用篩選">
-						<input type="button" value="清理篩選" onclick="document.getElementById('f_search').value = ''">
+						<input type="text" id="f_search" name="f_search" placeholder=${replace(
+                            "search text"
+                        )} size="50" maxlength="200" autocomplete="off">
+						<input type="submit" value=${replace("search")}>
+						<input type="button" value=${replace(
+                            "clear"
+                        )} onclick="document.getElementById('f_search').value = ''">
 					</p>
 					<div id="advdiv" style="display: none;"></div>
 				</form>
@@ -376,7 +384,7 @@ function create_home() {
 
                 menu.append(
                     new MenuItem({
-                        label: "複製名稱",
+                        label: replace("copy"),
                         click: function() {
                             clipboard.writeText(obj.title);
                         }
@@ -389,10 +397,12 @@ function create_home() {
 
         f_search.oncontextmenu = e => {
             const menu = new Menu();
-            menu.append(new MenuItem({
-                label:'貼上',
-                role:'paste'
-            }));
+            menu.append(
+                new MenuItem({
+                    label: replace("paste"),
+                    role: "paste"
+                })
+            );
             e.stopPropagation();
             menu.popup({ window: remote.getCurrentWindow() });
         };
@@ -408,7 +418,6 @@ function create_home() {
         f_search.onblur = () => {
             window.onkeydown = reg;
         };
-        f_search;
     }
 
     function insert_page() {
@@ -526,17 +535,17 @@ function create_home() {
         }
 
         let cat = {
-            Doujinshi: ["cs ct2", "同人誌"],
-            Manga: ["cs ct3", "漫畫"],
-            "Artist CG": ["cs ct4", "畫師CG"],
-            "Game CG": ["cs ct5", "遊戲CG"],
-            Western: ["cs cta", "西方"],
-            "Non-H": ["cs ct9", "無H"],
-            "Image Set": ["cs ct6", "圖集"],
-            Cosplay: ["cs ct7", "Cosplay"],
-            "Asian Porn": ["cs ct8", "亞洲色情"],
-            Misc: ["cs ct1", "雜項"],
-            null: ["cs ct1", "null"]
+            Doujinshi: ["cs ct2", replace("Doujinshi")],
+            Manga: ["cs ct3", replace("Manga")],
+            "Artist CG": ["cs ct4", replace("Artist CG")],
+            "Game CG": ["cs ct5", replace("Game CG")],
+            Western: ["cs cta", replace("Western")],
+            "Non-H": ["cs ct9", replace("Non-H")],
+            "Image Set": ["cs ct6", replace("Image Set")],
+            Cosplay: ["cs ct7", replace("Cosplay")],
+            "Asian Porn": ["cs ct8", replace("Asian Porn")],
+            Misc: ["cs ct1", replace("Misc")],
+            null: ["cs ct1", replace("null")]
         };
 
         let root = dom({
@@ -552,7 +561,7 @@ function create_home() {
                 const menu = new Menu();
                 menu.append(
                     new MenuItem({
-                        label: "打開資料夾",
+                        label: replace("open"),
                         click: function() {
                             shell.openPath(obj.path);
                         }
@@ -560,7 +569,7 @@ function create_home() {
                 );
                 menu.append(
                     new MenuItem({
-                        label: "複製名稱",
+                        label: replace("copy"),
                         click: function() {
                             clipboard.writeText(obj.title);
                         }

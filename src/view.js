@@ -10,7 +10,12 @@ let img;
 let viewer = null;
 let element = null;
 let sizeWidth = 0;
-
+function replace(name, text) {
+    if (text) {
+        return global.ui[name] ? global.ui[name] : text;
+    }
+    return global.ui[name] ? global.ui[name] : name;
+}
 function image_view() {
     if (viewer) viewer.destroy();
     if (element) element.onload = null;
@@ -20,7 +25,7 @@ function image_view() {
         let ttt = document.getElementById("ttt");
         ttt.style =
             "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "第一頁";
+        ttt.value = replace("first page");
         setTimeout(() => {
             ttt.style =
                 "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";

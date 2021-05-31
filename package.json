@@ -1,6 +1,6 @@
 {
 	"name": "ex_viewer",
-	"version": "2.31.0",
+	"version": "0.9.1",
 	"main": "src/main.js",
 	"dependencies": {
 		"dialogs": "^2.0.1",
@@ -21,7 +21,9 @@
 		"files": [
 			"**/*",
 			"!setting",
-			"!dist"
+			"!dist",
+			".git/*",
+			".vscode/*"
 		]
 	}
 }

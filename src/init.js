@@ -11,6 +11,13 @@ const ex_db_path = join(".", "setting", "ex.db");
 const dir_path = join(".", "setting", "local", "dir.json");
 let db;
 
+function replace(name, text) {
+    if (text) {
+        return global.ui[name] ? global.ui[name] : text;
+    }
+    return global.ui[name] ? global.ui[name] : name;
+}
+
 function create_init_html(document) {
     //至少他能動......
     let path_list = [...new Set(global.dir.dir)];
@@ -51,7 +58,7 @@ function create_init_html(document) {
         }
         let min = 6553500;
         let reg = null;
-        rows.forEach((row) => {
+        rows.forEach(row => {
             let title = levenshtein.get(row.title, str);
             let title_jpn = levenshtein.get(row.title_jpn, str);
 
@@ -93,19 +100,19 @@ function create_init_html(document) {
                 "local_path nvarchar," +
                 "gid    int," +
                 "token  nvarchar," +
-//                "archiver_key nvarchar," +
+                //                "archiver_key nvarchar," +
                 "title  nvarchar," +
                 "title_jpn  nvarchar," +
                 "category nvarchar," +
-//                "thumb  nvarchar," +
-//                "uploader nvarchar," +
+                //                "thumb  nvarchar," +
+                //                "uploader nvarchar," +
                 "posted nvarchar," +
                 "filecount nvarchar," +
-//                "filesize  int," +
-//                "expunged   bool," +
-//                "rating    nvarchar," +
-//                "torrentcount   nvarchar," +
-//                "torrents   nvarchar," +
+                //                "filesize  int," +
+                //                "expunged   bool," +
+                //                "rating    nvarchar," +
+                //                "torrentcount   nvarchar," +
+                //                "torrents   nvarchar," +
                 "tags   nvarchar," +
                 "error   nvarchar" +
                 ");"
@@ -206,13 +213,13 @@ function create_init_html(document) {
                     for (let i in rows) {
                         nullPath.push(rows[i].local_path);
                     }
-                    book_list = nullPath.map((x) => {
+                    book_list = nullPath.map(x => {
                         let path = x.match(/.*\\/g)[0];
                         let name = x.match(/([^\\]+)$/)[0];
                         return [
                             name,
                             max_string(name),
-                            path.substr(0, path.length - 1),
+                            path.substr(0, path.length - 1)
                         ];
                     });
                     sql_where();
@@ -245,18 +252,18 @@ function create_init_html(document) {
                 new_local_path = [...new Set(new_local_path)];
 
                 let del = old_local_path.filter(
-                    (x) => !new_local_path.includes(x)
+                    x => !new_local_path.includes(x)
                 );
                 let add = new_local_path
-                    .filter((x) => !old_local_path.includes(x))
-                    .filter((x) => image.isbook(x));
-                book_list = add.map((x) => {
+                    .filter(x => !old_local_path.includes(x))
+                    .filter(x => image.isbook(x));
+                book_list = add.map(x => {
                     let path = x.match(/.*\\/g)[0];
                     let name = x.match(/([^\\]+)$/)[0];
                     return [
                         name,
                         max_string(name),
-                        path.substr(0, path.length - 1),
+                        path.substr(0, path.length - 1)
                     ];
                 });
                 sql_where();
@@ -272,9 +279,10 @@ function create_init_html(document) {
 
     function template() {
         document.getElementById("body").innerHTML = `
-        <button id="select-directory" style="display:none">選擇目錄</button></select>
+        <button id="select-directory" style="display:none">
+        ${replace("select_directory")}</button></select>
         <p></p>
-        <button id="start" style="display:none">開始處理</button>
+        <button id="start" style="display:none">${replace("start")}</button>
         <p></p>
         <div id='path'></div>
         <p></p>
@@ -286,20 +294,18 @@ function create_init_html(document) {
         let files;
         let list = [];
 
-        console.log(path, layers);
         try {
             files = fs.readdirSync(path);
         } catch (e) {
-            console.log(e);
             return list;
         }
         for (let i in files) {
             let title = files[i];
             let p = join(path, title);
-            if (layers == 1) {
-                if (image.isbook(p))
-                    list.push([title, max_string(files[i]), path]);
-            } else {
+            if (image.isbook(p)) {
+                list.push([title, max_string(files[i]), path]);
+            }
+            if (layers != 1) {
                 list = list.concat(create_book_list(p, layers - 1));
             }
         }
@@ -318,7 +324,7 @@ function create_init_html(document) {
                 <div class="layers">
                 <h1>${path_list[n]}</h1>
                 <select>
-                <option value="1">選擇要深入的層數，預設是1</option>
+                <option value="1">${replace("init_text2", "1")}</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
                 </select></div>`;
@@ -329,7 +335,7 @@ function create_init_html(document) {
                 global.dir.layers[i];
         }
 
-        start.addEventListener("click", (event) => {
+        start.addEventListener("click", event => {
             t_start = new Date().getTime();
             let layers = document.getElementsByClassName("layers");
             layers_list = [];
@@ -356,7 +362,7 @@ function create_init_html(document) {
             sql_where();
         });
 
-        selectDirBtn.addEventListener("click", (event) => {
+        selectDirBtn.addEventListener("click", event => {
             ipcRenderer.send("open-file-dialog");
         });
 
@@ -371,7 +377,7 @@ function create_init_html(document) {
                 <div class="layers">
                 <h1>${path_list[i]}</h1>
                 <select>
-                <option value="1">選擇要深入的層數，預設是1</option>
+                <option value="1">${replace("init_text2", "1")}</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
                 </select></div>`;
@@ -386,23 +392,19 @@ function create_init_html(document) {
         if (global.setting.update && path_list.length) {
             let body = document.getElementById("body");
             body.innerHTML =
-                "<h1>請稍待，等待時間取決於需要搜尋的資料夾大小</h1>" +
-                body.innerHTML;
+                replace("update_text") + body.innerHTML;
             setTimeout(() => update_db(), 2000);
         } else {
             module.exports.to_home();
         }
     } else {
         let body = document.getElementById("body");
-        body.innerHTML =
-            "<h1>請按「選擇目錄」選擇存放本子的資料夾，選擇的資料夾會在下方列出</h1>" +
-            "<h1>當選擇完成後按「開始處理」便會開始將本子歸檔</h1>" +
-            body.innerHTML;
+        body.innerHTML = replace("init_text1") + body.innerHTML;
         insert();
     }
 }
 
 module.exports = {
     create_init_html: create_init_html,
-    to_home: null,
+    to_home: null
 };

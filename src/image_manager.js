@@ -107,9 +107,9 @@ function init(path) {
             let input = [];
 
             r.then(x => {
-                x.forEach(file => {
-                    input.push(file);
-                });
+                for(let i in x.files) {
+                    if(!x.files[i].dir) input.push(x.files[i].name);
+                }
             });
             for (let i in input) {
                 img_list.push(
@@ -159,9 +159,9 @@ function isbook(path) {
                 let r = zip.loadAsync(dir);
                 let input = [];
                 r.then(x => {
-                    x.forEach(file => {
-                        input.push(file);
-                    });
+                    for(let i in x.files) {
+                        if(!x.files[i].dir) input.push(x.files[i].name);
+                    }
                 });
                 for (let i in input) {
                     if (exten.test(input[i])) {

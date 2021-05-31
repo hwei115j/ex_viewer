@@ -13,6 +13,12 @@ let page = 0;
 let img;
 let document;
 
+function replace(name, text) {
+    if (text) {
+        return global.ui[name] ? global.ui[name] : text;
+    }
+    return global.ui[name] ? global.ui[name] : name;
+}
 function goto_page(str) {
     let p = parseInt(str);
     let len = Math.floor(img.length / page_max) + 1;
@@ -84,7 +90,7 @@ function create() {
                         <div id="taglist">
                         </div>
                         <div id="tagmenu_act" style="display:none">
-                            <a href="#" style="font-size:medium" onclick="goto_search()">搜尋</a>
+                            <a href="#" style="font-size:medium" onclick="goto_search()">${replace("book search", "search")}</a>
                         </div>
 
                     </div>
@@ -156,17 +162,17 @@ function create() {
 
     function insert_gd3() {
         let cat = {
-            Doujinshi: ["cs ct2", "同人誌"],
-            Manga: ["cs ct3", "漫畫"],
-            "Artist CG": ["cs ct4", "畫師CG"],
-            "Game CG": ["cs ct5", "遊戲CG"],
-            Western: ["cs cta", "西方"],
-            "Non-H": ["cs ct9", "無H"],
-            "Image Set": ["cs ct6", "圖集"],
-            Cosplay: ["cs ct7", "Cosplay"],
-            "Asian Porn": ["cs ct8", "亞洲色情"],
-            Misc: ["cs ct1", "雜項"],
-            null: ["cs ct1", "null"]
+            Doujinshi: ["cs ct2", replace("Doujinshi")],
+            Manga: ["cs ct3", replace("Manga")],
+            "Artist CG": ["cs ct4", replace("Artist CG")],
+            "Game CG": ["cs ct5", replace("Game CG")],
+            Western: ["cs cta", replace("Western")],
+            "Non-H": ["cs ct9", replace("Non-H")],
+            "Image Set": ["cs ct6", replace("Image Set")],
+            Cosplay: ["cs ct7", replace("Cosplay")],
+            "Asian Porn": ["cs ct8", replace("Asian Porn")],
+            Misc: ["cs ct1", replace("Misc")],
+            null: ["cs ct1", replace("null")]
         };
         let root = {
             tag: "div",
@@ -216,6 +222,9 @@ function create() {
 
             //取得中文標籤
             function get_chinese_name(tabs, name, tag) {
+                if(Object.keys(trans).length == 0) {
+                    return tabs[name][tag];
+                }
                 if (
                     trans["data"][list[name]]["data"][tabs[name][tag]] !=
                     undefined
@@ -229,6 +238,9 @@ function create() {
 
             //取得中文解釋
             function get_chinese_intro(tabs, name, tag) {
+                if(Object.keys(trans).length == 0) {
+                    return "";
+                }
                 if (
                     trans["data"][list[name]]["data"][tabs[name][tag]] !=
                     undefined
@@ -258,7 +270,7 @@ function create() {
                 female: 8,
                 misc: 9
             };
-            let trans = global.chinese_db;
+            let trans = global.definition_db;
             let root = {
                 tag: "table",
                 child: [
@@ -273,7 +285,7 @@ function create() {
                     const menu = new Menu();
                     menu.append(
                         new MenuItem({
-                            label: "複製tag",
+                            label: replace("copy tag"),
                             click: function() {
                                 console.log(tag_name);
                                 clipboard.writeText(tag_name);
@@ -633,7 +645,7 @@ function create_book_html(docu) {
     const menu = new Menu();
     menu.append(
         new MenuItem({
-            label: "上一頁",
+            label: replace("previous page"),
             click: function() {
                 module.exports.back();
             }
