@@ -1,5 +1,5 @@
 **/setting/*
-!**/setting/chinese.json
+!**/setting/language
 !**/setting/setting.json
 !**/setting/local
 node_modules
