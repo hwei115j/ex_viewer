@@ -169,7 +169,6 @@ function key_word(e) {
         window.onresize = image_view;
         setTimeout(() => image_view(), 50);
         sizeWidth = 0;
-        console.log("zoom");
     } else if (is_key("next_book")) {
         //路徑清單的下一個路徑
         global.book_id =
