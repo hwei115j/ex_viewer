@@ -48,6 +48,7 @@ function create_viewer() {
 }
 
 function image_view() {
+    document.title = "ex_viewer - " + global.group[global.book_id].local_name;
     if (viewer) viewer.destroy();
     if (element) element.onload = null;
     viewer = element = null;

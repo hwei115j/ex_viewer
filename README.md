@@ -33,7 +33,7 @@
 Windows使用者可以使用我編譯好的執行檔安裝即可，其他作業系統使用者可以使用原始碼編譯安裝，我的程式「理論上」是跨平台的  
   
 ### Windows執行檔安裝  
-從[這裡](https://github.com/hwei115j/ex_viewer/releases/tag/0.91)下載，其中`ex_viewer.zip`是主程式，`setting.7z`是設定和資料庫  
+從[這裡](https://github.com/hwei115j/ex_viewer/releases/tag/0.91)下載，其中`ex_viewer.zip`是主程式，`setting.zip`是設定和資料庫  
 首先先將兩個壓縮檔分別解壓縮，會得到`ex_viewer`和`setting`兩個資料夾，再把`setting`資料夾放到`ex_viewer`資料夾中  
 最後按下`ex_view.exe`就能開始程式了  
   
@@ -46,7 +46,7 @@ npm install
 npm run dist  
 ```  
   
-產生可執行檔案，再從[這裡](https://github.com/hwei115j/ex_viewer/releases/tag/0.91)下載`setting.7z`解壓縮，再把`setting`資料夾放到`ex_viewer`資料夾中  
+產生可執行檔案，再從[這裡](https://github.com/hwei115j/ex_viewer/releases/tag/0.91)下載`setting.zip`解壓縮，再把`setting`資料夾放到`ex_viewer`資料夾中  
 經測試可以在ubuntu上正常運作  
   
 ## 使用說明  
