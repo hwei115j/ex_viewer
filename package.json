@@ -16,7 +16,7 @@
 		"electron-builder": "^22.10.5"
 	},
 	"scripts": {
-		"dist": "electron-builder --x64 --win zip"
+		"dist": "electron-builder --x64"
 	},
 	"build": {
 		"files": [

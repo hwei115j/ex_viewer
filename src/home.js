@@ -48,7 +48,7 @@ function goto_page(str) {
                 if (p > len) return;
                 if (p < 1) return;
                 global.book_id = (p - 1) * page_max;
-                create_home();
+                create_home().then();
             });
             return;
         }
@@ -59,7 +59,7 @@ function goto_page(str) {
         } else if (p >= 0) {
             global.book_id = (p - 1) * page_max;
         }
-        create_home();
+        create_home().then();
     };
 }
 
@@ -255,10 +255,11 @@ function search(input) {
                 global.group.sort((a, b) =>
                     a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
                 );
-                create_home();
-                search_str = input;
-                document.getElementById("f_search").value = search_str;
-                document.getElementById("f_search").focus();
+                create_home().then(() => {
+                    search_str = input;
+                    document.getElementById("f_search").value = search_str;
+                    document.getElementById("f_search").focus();
+                });
             });
         });
     } catch (err) {
@@ -270,7 +271,7 @@ function search(input) {
     }
 }
 
-function create_home() {
+async function create_home() {
     page = Math.floor(global.book_id / page_max);
     document.documentElement.scrollTop = 0;
 
@@ -760,7 +761,7 @@ function create_home() {
 
     template();
     insert_form();
-    insert_page();
+    await insert_page();
     insert_ptt();
     insert_key();
     insert_cat();

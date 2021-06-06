@@ -65,16 +65,20 @@ async function getheadAsync(path) {
     let name;
 
     if (path.indexOf(".zip") == -1 && path.indexOf(".ZIP") == -1) {
-        let dir = fs.readdirSync(path);
-        for (let i in dir) {
-            if (exten.test(dir[i])) {
-                img = url.pathToFileURL(join(path, dir[i])).href;
-                name = dir[i];
-                break;
+        let dir;
+        try {
+            dir = fs.readdirSync(path);
+            for (let i in dir) {
+                if (exten.test(dir[i])) {
+                    img = url.pathToFileURL(join(path, dir[i])).href;
+                    name = dir[i];
+                    break;
+                }
             }
+            return img;
+        } catch(e) {
+            return null;
         }
-
-        return img;
     } else {
         const zip = new StreamZip.async({ file: path });
         zip_path = path;
@@ -233,7 +237,11 @@ function isbook(path) {
     } catch (err) {
         // 這是一個同步的函式
         // 使用Jszip會有效能問題，使用node-stream-zip則只有非同步的API，所以暫時擱置
-        return true;
+        if (comp.test(path)) {
+            return true;
+        } else {
+            return false;
+        }
         if (comp.test(path)) {
             let dir = fs.readFileSync(path);
             let zip = new JSZip();
