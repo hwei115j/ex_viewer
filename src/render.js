@@ -2,10 +2,8 @@
 const home = require("../home.js");
 const book = require("../book.js");
 const view = require("../view.js");
-const init = require('../init.js');
-const {
-    webFrame
-} = require("electron");
+const init = require("../init.js");
+const { webFrame } = require("electron");
 const global = require("electron").remote.getGlobal("sharedObject");
 const remote = require("electron").remote;
 var search_str = [];
@@ -16,7 +14,14 @@ function replace(name, text) {
     }
     return global.ui[name] ? global.ui[name] : name;
 }
+function free() {
+    let img = document.getElementsByTagName('img');
+    for(let i in img) {
+        URL.revokeObjectURL(img[i].src);
+    }
+}
 function to_home() {
+    free();
     document.title = "ex_viewer";
     home.create_home_html(document);
     document.oncontextmenu = null;
@@ -26,6 +31,7 @@ function to_home() {
 }
 
 function to_book() {
+    free();
     search_str = [];
     document.oncontextmenu = null;
     book.create_book_html(document);
@@ -34,11 +40,20 @@ function to_book() {
 }
 
 function to_view(gid) {
+    free();
     global.img_id = gid;
     view.create_html_view(document);
 }
 
 document.addEventListener("DOMContentLoaded", event => {
+    /*
+    const zip = new StreamZip({ file: "(C94) [おほしさま堂 (GEKO)] コミケのあとはオフパコフェイトちゃん (魔法少女リリカルなのは).zip" });
+    zip.on("ready", () => {
+        let data = zip.entryDataSync("01.jpg");
+        console.log(data);
+    });
+    */
+    //const data = zip.entryDataSync(name_list[0]);
     fu = to_view;
     init.to_home = book.back = to_home;
     view.back = to_book;
@@ -76,7 +91,9 @@ function add(id) {
         }
     }
 
-    document.getElementById("tagmenu_act").style = search_str.length ? "" : "display: none";
+    document.getElementById("tagmenu_act").style = search_str.length
+        ? ""
+        : "display: none";
     console.log(search_str);
     return n.style.color == "blue";
 }

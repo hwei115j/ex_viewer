@@ -1,4 +1,4 @@
-/*jshint esversion: 6 */
+/*jshint esversion: 8 */
 const { remote, ipcRenderer, shell, clipboard } = require("electron");
 const global = remote.getGlobal("sharedObject");
 const { Menu, MenuItem } = remote;
@@ -420,8 +420,8 @@ function create_home() {
         };
     }
 
-    function insert_page() {
-        function node(onclick, title, src, category, date, filecount) {
+    async function insert_page() {
+        async function node(onclick, title, src, category, date, filecount) {
             let root = {
                 tag: "div",
                 data: {
@@ -467,7 +467,7 @@ function create_home() {
                                     loading: "auto",
                                     title: title,
                                     alt: title,
-                                    src: image.init(src).gethead()
+                                    src: await image.getheadAsync(src)
                                 }
                             }
                         ]
@@ -586,7 +586,7 @@ function create_home() {
         ) {
             if (image.isbook(global.group[i].local_path)) {
                 root.appendChild(
-                    node(
+                    await node(
                         (function(gid) {
                             return () => {
                                 global.book_id = gid;

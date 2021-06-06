@@ -5,21 +5,53 @@ const { Menu, MenuItem } = remote;
 const cache = require("./cache.js");
 const image = require("./image_manager");
 const Viewer = require("viewerjs");
-let get_element;
+let getElement;
 let img;
+let cacheObj;
 let viewer = null;
 let element = null;
 let sizeWidth = 0;
+
+function eventEnable() {
+    window.onkeydown = key_word;
+    window.onwheel = mouse;
+    window.onresize = image_view;
+}
+
+function eventDisable() {
+    window.onkeydown = null;
+    window.onwheel = null;
+    window.onresize = null;
+}
 function replace(name, text) {
+    //語言替換、如果沒有找到name，就用text代替，沒有text的情況下用name代替
     if (text) {
         return global.ui[name] ? global.ui[name] : text;
     }
     return global.ui[name] ? global.ui[name] : name;
 }
+function create_viewer() {
+    viewer.show(true);
+    let naturalHeight = viewer.imageData.naturalHeight;
+    let naturalWidth = viewer.imageData.naturalWidth;
+    let clientHeight = document.documentElement.clientHeight - 3;
+    let clientWidth = document.documentElement.clientWidth - 3;
+
+    if (sizeWidth) {
+        viewer.zoomTo(sizeWidth / naturalWidth);
+    } else if (clientHeight / clientWidth >= naturalHeight / naturalWidth) {
+        viewer.zoomTo(clientWidth / naturalWidth);
+    } else {
+        viewer.zoomTo(clientHeight / naturalHeight);
+    }
+    viewer.moveTo(viewer.imageData.x, 0);
+}
+
 function image_view() {
     if (viewer) viewer.destroy();
     if (element) element.onload = null;
-    element = get_element(global.img_id);
+    viewer = element = null;
+    element = getElement(global.img_id);
 
     if (global.img_id == 0) {
         let ttt = document.getElementById("ttt");
@@ -35,6 +67,7 @@ function image_view() {
         ttt.style =
             "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
     }
+
     viewer = new Viewer(element, {
         backdrop: false,
         navbar: false,
@@ -52,22 +85,6 @@ function image_view() {
             document.removeEventListener("pointermove", viewer.onPointerMove);
         }
     });
-    function create_viewer() {
-        viewer.show(true);
-        let naturalHeight = viewer.imageData.naturalHeight;
-        let naturalWidth = viewer.imageData.naturalWidth;
-        let clientHeight = document.documentElement.clientHeight-3;
-        let clientWidth = document.documentElement.clientWidth-3;
-
-        if (sizeWidth) {
-            viewer.zoomTo(sizeWidth / naturalWidth);
-        } else if (clientHeight / clientWidth >= naturalHeight / naturalWidth) {
-            viewer.zoomTo(clientWidth / naturalWidth);
-        } else {
-            viewer.zoomTo(clientHeight / naturalHeight);
-        }
-        viewer.moveTo(viewer.imageData.x, 0);
-    }
 
     if (element.complete) {
         create_viewer();
@@ -113,10 +130,16 @@ function key_word(e) {
 
         for (let i in arr) {
             if (typeof arr[i] == "number" && !e.ctrlKey) {
-                if (key == arr[i]) return true;
+                if (key == arr[i]) {
+                    return true;
+                }
             } else {
-                if (arr[i].length == 1 && key == arr[i][0]) return true;
-                if (key == arr[i][1] && e[arr[i][0]]) return true;
+                if (arr[i].length == 1 && key == arr[i][0]) {
+                    return true;
+                }
+                if (key == arr[i][1] && e[arr[i][0]]) {
+                    return true;
+                }
             }
         }
         return false;
@@ -154,9 +177,13 @@ function key_word(e) {
         global.group[global.book_id] = global.group[global.book_id];
         global.img_id = 0;
         global.book_scrollTop = 0;
-        img = image.init(global.group[global.book_id].local_path);
-        get_element = cache.init(img, global.img_id);
-        image_view();
+        image.init(global.group[global.book_id].local_path).then(e => {
+            img = e;
+            cacheObj.free();
+            cacheObj = cache.init(img, global.img_id);
+            getElement = cacheObj.getElement;
+            image_view();
+        });
     } else if (is_key("prev_book")) {
         //路徑清單的上一個路徑
         global.book_id =
@@ -166,9 +193,13 @@ function key_word(e) {
         global.group[global.book_id] = global.group[global.book_id];
         global.img_id = 0;
         global.book_scrollTop = 0;
-        img = image.init(global.group[global.book_id].local_path);
-        get_element = cache.init(img, global.img_id);
-        image_view();
+        image.init(global.group[global.book_id].local_path).then(e => {
+            img = e;
+            cacheObj.free();
+            cacheObj = cache.init(img, global.img_id);
+            getElement = cacheObj.getElement;
+            image_view();
+        });
     } else if (is_key("prev")) {
         //上一頁
         global.img_id = global.img_id < 1 ? img.length - 1 : global.img_id - 1;
@@ -195,6 +226,7 @@ function key_word(e) {
     } else if (is_key("back")) {
         //back
         if (viewer) viewer.destroy();
+        eventDisable();
         module.exports.back();
     } else if (is_key("sort")) {
         //切換排序
@@ -238,15 +270,9 @@ function mouse(e) {
     }
 }
 
-function event(window) {
-    window.onresize = image_view;
-}
-
 function create_html_view(document) {
-    window.onkeydown = key_word;
-    window.onwheel = mouse;
-    //window.addEventListener("resize", image_view);
-    window.onresize = image_view;
+    eventEnable();
+    //window.onresize = create_viewer;
     document.title = "ex_viewer - " + global.group[global.book_id].local_name;
     let body = document.getElementsByTagName("body");
     //body[0].style = "overflow:hidden";
@@ -255,28 +281,29 @@ function create_html_view(document) {
         `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
         <input  type="button" id="ttt" style="display:none" value="第一頁" ></div>`;
     html = document.getElementById("im");
-    img = image.init(global.group[global.book_id].local_path);
-    get_element = cache.init(img, global.img_id);
-    const menu = new Menu();
-    menu.append(
-        new MenuItem({
-            label: "上一頁",
-            click: function() {
-                if (viewer) viewer.destroy();
-                module.exports.back();
-            }
-        })
-    );
-    document.oncontextmenu = e => {
-        e.stopPropagation();
-        menu.popup({ window: remote.getCurrentWindow() });
-    };
-    image_view();
+    image.init(global.group[global.book_id].local_path).then(e => {
+        img = e;
+        cacheObj = cache.init(img, global.img_id);
+        getElement = cacheObj.getElement;
+        const menu = new Menu();
+        menu.append(
+            new MenuItem({
+                label: "上一頁",
+                click: function() {
+                    if (viewer) viewer.destroy();
+                    module.exports.back();
+                }
+            })
+        );
+        document.oncontextmenu = e => {
+            e.stopPropagation();
+            menu.popup({ window: remote.getCurrentWindow() });
+        };
+        image_view();
+    });
 }
 
 module.exports = {
     create_html_view: create_html_view,
-    //create_html_view: test,
-    event: event,
     back: null
 };

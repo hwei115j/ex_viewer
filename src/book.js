@@ -1,4 +1,4 @@
-/*jshint esversion: 6 */
+/*jshint esversion: 8 */
 const fs = require("fs");
 const join = require("path").join;
 const url = require("url");
@@ -49,7 +49,7 @@ function goto_page(str) {
     };
 }
 
-function create() {
+async function create() {
     page = Math.floor(global.img_id / page_max);
     document.documentElement.scrollTop = 0;
     document.title = "ex_viewer - " + global.group[global.book_id].local_name;
@@ -109,13 +109,13 @@ function create() {
                 </div></body>`;
     }
 
-    function insert_headimg() {
+    async function insert_headimg() {
         let root = {
             tag: "div",
             data: {
                 style:
                     "width:250px; height:351px; background:transparent url('" +
-                    img.gethead() +
+                    await img.gethead_async() +
                     "') 0 0 no-repeat;background-size:contain"
             }
         };
@@ -483,8 +483,8 @@ function create() {
         ptt[1].appendChild(create_dom());
     }
 
-    function insert_form() {
-        function gdtl(count) {
+    async function insert_form() {
+        async function gdtl(count) {
             return {
                 tag: "div",
                 data: {
@@ -513,7 +513,7 @@ function create() {
                                     title: `Page ${count}: ${img.getname(
                                         count
                                     )}`,
-                                    src: img.getimg(count)
+                                    src: await img.getimg_async(count)
                                 }
                             }
                         ]
@@ -543,7 +543,7 @@ function create() {
             i < img.length && i < page * page_max + page_max;
             i++
         ) {
-            root.child.push(gdtl(i));
+            root.child.push(await gdtl(i));
         }
         root.child.push({
             tag: "div",
@@ -638,25 +638,27 @@ function create() {
 }
 
 function create_book_html(docu) {
-    img = image.init(global.group[global.book_id].local_path);
-    document = docu;
-    window.onwheel = null;
-    page = Math.floor(global.img_id / page_max);
-    const menu = new Menu();
-    menu.append(
-        new MenuItem({
-            label: replace("previous page"),
-            click: function() {
-                module.exports.back();
-            }
-        })
-    );
-    document.oncontextmenu = e => {
-        e.stopPropagation();
-        //e.preventDefault();
-        menu.popup({ window: remote.getCurrentWindow()});
-    };
-    create();
+    image.init(global.group[global.book_id].local_path).then(e => {
+        img = e;
+        document = docu;
+        window.onwheel = null;
+        page = Math.floor(global.img_id / page_max);
+        const menu = new Menu();
+        menu.append(
+            new MenuItem({
+                label: replace("previous page"),
+                click: function() {
+                    module.exports.back();
+                }
+            })
+        );
+        document.oncontextmenu = e => {
+            e.stopPropagation();
+            //e.preventDefault();
+            menu.popup({ window: remote.getCurrentWindow()});
+        };
+        create();
+    });
 }
 
 module.exports = {

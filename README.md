@@ -1,77 +1,35 @@
-# README  
-  
+# ex_viewer  
 這是一個本本管理軟體，其想法類似[Hentai Ark](https://www.ptt.cc/bbs/AC_In/M.1569436760.A.261.html)  
 會利用從EX上獲取的metadata來**自動**將本機上的本本做整理，並提供類似exhentai界面的方式來使用  
 與Hentai Ark不同的地方在於，我的程式更加注重瀏覽，可以在看本時利用快捷鍵快速切換上下本  
 瀏覽方式類似[HoneyView](https://tw.bandisoft.com/honeyview/)，並增加了隨機排序的方式，防止在本本資料庫中都是看到那幾本  
   
+**本程式有版權疑慮，主要是UI、示例圖片，未來可能因此設為私人**  
 ## 目錄  
-  - [畫面介紹](#畫面介紹])  
-  - [下載＆安裝](#下載＆安裝)  
-     * [win執行檔](#win執行檔)  
-     * [原始碼編譯安裝](#原始碼編譯安裝)  
-  - [使用方法](#使用方法)  
-    * [匹配畫面](#匹配畫面)  
-    * [主畫面](#主畫面)  
-    * [本子畫面](#本子畫面)  
-    * [瀏覽畫面](#瀏覽畫面)  
-- [特性與設定](#特性與設定)  
-    * [快取](#快取)  
-    * [本子隨機、順序切換](#本子隨機、順序切換)  
-    * [本機資料庫與路徑](#本機資料庫與路徑)  
-    * [壓縮檔](#壓縮檔)  
-    * [JSON設定](#JSON設定)  
--  [未來計畫（包含我想做但還沒做，和我想做但沒能力做的）](#未來計畫（包含我想做但還沒做，和我想做但沒能力做的）)  
-- [免責聲明](#免責聲明)  
-- [Thanks](#Thanks)  
-- [許可證](#許可證)  
   
 ## 畫面介紹  
-  
-主畫面  
-有在matadata內且被匹配到的本本會顯示相應的分類，但未在matadata內或沒被匹配到的本本會顯示null  
-![1](https://imgur.com/i14fykI.png)  
-  
-本子畫面  
-在本子畫面有中文翻譯的tag(移到上面會顯示原文)，並有中文解釋  
-![2](https://imgur.com/0VNB9pu.png)  
-  
-如果按壓tag，便會顯示中文解釋和搜尋  
-中文翻譯及解釋來自[這裡](https://github.com/EhTagTranslation/EhSyringe)，只做簡單的簡轉繁  
-按下搜尋便會搜尋你按下的tag  
-![3](https://imgur.com/exBZDst.png)  
-  
-可以藉由搜尋來限制本子範圍，例如我這裡使用「shizuka rin」作為關鍵字（島喜凜？）  
-這樣瀏覽切換上下本時也會都會是有「shizuka rin」的tags的本本  
-![4](https://imgur.com/FHGApvl.png)  
-  
-例如本來在看這本  
-![5](https://imgur.com/NX7og2d.png)  
-  
-按下「切換下一本」時，便會顯示下一本，不須回到主畫面  
-![6](https://imgur.com/IJDYfGp.png)  
-  
+![3](_v_images/20210606231404519_21639.gif)  
 ## 下載＆安裝  
+Windows使用者可以使用我編譯好的執行檔安裝即可，其他作業系統使用者可以使用原始碼編譯安裝，我的程式「理論上」是跨平台的  
   
-### win執行檔  
-從[這裡](https://mega.nz/folder/CCwm3DYS#LshpqDeULnf12kqzIJdP8g)下載，其中`ex_viewer.7z`是主程式，`setting.7z`是設定和資料庫  
+### Windows執行檔安裝  
+從[這裡](https://github.com/hwei115j/ex_viewer/releases/tag/0.91)下載，其中`ex_viewer.zip`是主程式，`setting.7z`是設定和資料庫  
 首先先將兩個壓縮檔分別解壓縮，會得到`ex_viewer`和`setting`兩個資料夾，再把`setting`資料夾放到`ex_viewer`資料夾中  
-最後按下`ex_viewer.exe`就能開始程式了  
+最後按下`ex_view.exe`就能開始程式了  
   
 ### 原始碼編譯安裝  
-首先先安裝[node.js](https://nodejs.org/)  
-從[這裡](https://mega.nz/folder/CCwm3DYS#LshpqDeULnf12kqzIJdP8g)下載，解壓縮`source.7z`後，進入目錄，輸入  
+首先先安裝[node.js](https://nodejs.org/)，輸入以下指令開始編譯  
+  
 ```bash  
+git clone https://github.com/hwei115j/ex_viewer  
 npm install  
-```  
-等待依賴模組安裝完成，之後再輸入  
-```bash  
 npm run dist  
 ```  
-產生可執行檔案  
+  
+產生可執行檔案，再從[這裡](https://github.com/hwei115j/ex_viewer/releases/tag/0.91)下載`setting.7z`解壓縮，再把`setting`資料夾放到`ex_viewer`資料夾中  
 經測試可以在ubuntu上正常運作  
   
-## 使用方法  
+## 使用說明  
 程式分為：  
 - 匹配畫面  
 - 主畫面  
@@ -81,19 +39,16 @@ npm run dist
   
 ### 匹配畫面  
 當第一次打開程式時，會進入匹配畫面，選擇存放本本的資料夾，它會自動搜尋底下所有的本本  
-![a](https://imgur.com/PN0pQBF.png)  
+本本的定義為：裡面沒有其他資料夾且裡面有圖片的資料夾，以及裡面有圖片的zip檔案  
   
-本本分為兩種，資料夾及zip檔案  
 資料夾本本格式  
-  
 ```  
 + 資料夾（本子名）  
     + 圖片1  
     + 圖片2  
-    + .........  
+    + .........   
 ```  
 zip格式則是只要zip裡有圖片（忽略資料夾），就算是本本  
-  
 ```  
 + zip（本子名）  
     + 圖片1  
@@ -101,12 +56,13 @@ zip格式則是只要zip裡有圖片（忽略資料夾），就算是本本
     + .........  
 ```  
   
-匹配速度有點慢，每一個本本要花約一秒來完成，請耐心等候  
+按下選擇目錄，可以選擇要匹配的根目錄，選擇成功後路徑會在下面會列出，有一個選單可以選擇要深入的層數  
+一層代表資料夾→本本，二層則是資料夾→資料夾→本本，依此類推  
   
+![2](_v_images/20210606180641094_32323.gif)  
 ### 主畫面  
 主畫面為  
-![1](https://imgur.com/i14fykI.png)  
-  
+![i14fykI](_v_images/20210606233644139_14693.png)  
 其中有匹配到的本本，在圖片的下方會顯示對應的分類、日期（ex上傳日期）、圖片頁數（ex圖片頁數），未匹配到的本本則會全部顯示null  
 而按下圖片則會進入本子畫面  
   
@@ -121,11 +77,10 @@ zip格式則是只要zip裡有圖片（忽略資料夾），就算是本本
   
 ### 本子畫面  
 本子畫面為  
-![2](https://imgur.com/0VNB9pu.png)  
+![0VNB9pu](_v_images/20210606233657945_10139.png)  
   
 如果未匹配到則會是  
-![阿喵喵很可愛對八？](https://imgur.com/O8SHpgb.png)  
-  
+ ![O8SHpgb](_v_images/20210606233937522_9356.png)  
 標題第一欄是本機本子名，第二欄是ex上的原文名稱，第三欄則是ex上的羅馬字名稱  
 中間是tag，按下則會顯示藍色，並在側邊顯示tag的解釋（如果有的話），按下下方的`搜尋`，則會跳回主畫面並搜尋所有選擇（藍色）的tag  
 需要注意的是，解釋只會顯示最後按下的tag，如果有想要看解釋的藍色tag，那要先把取消藍色，再按一次就能看解釋了（按兩次就對了）  
@@ -140,47 +95,64 @@ zip格式則是只要zip裡有圖片（忽略資料夾），就算是本本
 - `ctrl + ->`、`]`: 下一本  
 - `0`: 排序（可以在隨機排序與照本子名排序中切換）  
   
+  
 ### 瀏覽畫面  
 瀏覽畫面為  
-![哭哭阿喵喵](https://imgur.com/5GUBETs.png)  
+![5GUBETs](_v_images/20210606233709498_12934.png)  
 使用滾輪可以切換上下頁，當在第一頁時，左上角會短暫顯示「第一頁」  
-沒有放大、縮小，因為我不會寫  
   
 鍵盤功能：  
 - `esc`: 關閉程式  
 - `enter`: 全螢幕  
 - `backspace`: 退回本子畫面  
+- `+`：放大  
+- `-`：縮小  
+- `/`：回復預設大小  
+- `home`：第一頁  
+- `end`：最尾頁  
 - `<-`、`pageup`: 上一頁  
 - `->`、`pagedown`: 下一頁  
 - `ctrl + <-`、`[`: 上一本  
 - `ctrl + ->`、`]`: 下一本  
 - `0`: 排序（可以在隨機排序與照本子名排序中切換）  
   
+### 設定  
+這個軟體的所有設定都使用JSON設定，設定檔放在`setting/setting.json`  
+其中`"//"`開頭的文字是註解，用來解釋對應的功能，要修改設定可以自行參考註解去做修改  
+  
 ## 特性與設定  
   
 ### 快取  
 由於使用技術的限制，圖片的載入速度稍慢，所以設計了快取機制，同時載入多張圖片，以降低快速切換圖片造成的延遲（但解析度太大的圖片還是愛莫能助）  
-預設是50張圖片，也就是在看一張圖片的時候，會同時載入前面25張圖與後面25張圖  
-可以根據需求在設定中調整  
+預設是20張圖片，也就是在看一張圖片的時候，會同時載入前面10張圖與後面10張圖  
+可以根據需求在設定中調整，但要注意效能瓶頸在於硬碟讀取速度，隨意加大反而會讓效能降低  
   
 ### 本子隨機、順序切換  
-  
 類似音樂的隨機播放功能，在看本子的時候，防止固定順序造成審美疲勞  
 在「本子畫面」或「瀏覽畫面」中按下「數字鍵0」便會切換成隨機或是按照名稱排序  
 如果是在「瀏覽畫面」中切換成隨機，左上角會短暫出現「Random」提示  
+![5](_v_images/20210606232338747_23457.gif)  
+  
+### UI語言分離  
+中文UI和中文解釋放在`setting/language`裡、可以自行修改UI語言  
+~~我也不知道做這個幹嘛~~  
   
 ### 本機資料庫與路徑  
 ```  
 setting/  
-├── chinese.json  
-├── ex.db  
+├── language  
+    ├── ui.json  
+    ├── LICENSE.md  
+    └── definition.json  
 ├── local  
 │   ├── dir.json  
 │   └── local.db  
+├── ex.db  
 └── setting.json  
 ```  
   
-- `chinese.json`: ex中文翻譯  
+- `definition.json`: ex中文翻譯  
+- `ui.json`: ui中文翻譯  
 - `ex.db`: ex metadata  
 - `local`: 存放使用者資料  
 - `dir.json`: 存放需要update的路徑  
@@ -188,72 +160,11 @@ setting/
 - `setting.json`: 存放使用者設定  
   
 ### 壓縮檔  
-  
-目前支援zip格式的本本，但效能一言難盡，一部份是我程式能力太差，另一部份是JSzip本身效能的問題  
-如果有推薦的壓縮檔讀取套件可以和我說，雖然因為我不用壓縮檔來存本本，所以可能不會更新  
+目前支援zip格式的本本，但實際使用中會有小bug  
   
 ### 本機資料庫更新  
-  
-由於更新本機資料庫會讓開啟速度大幅變慢（實測7000本約3分鐘），所以預設是關閉本機資料庫更新  
+由於更新本機資料庫會讓開啟速度變慢，所以預設是關閉本機資料庫更新  
 如果電腦上的本本有增加或減少，請去設定裡面把`update`設為`true`  
-  
-### JSON設定  
-這個軟體的所有設定都使用JSON設定  
-JSON是一種輕量級的資料交換語言，該語言以**易於讓人閱讀**的文字為基礎  
-其中`"//"`開頭的文字是註解，用來解釋對應的功能，要修改設定可以參考註解去做修改  
-  
-```json  
-{  
-    "//": "這是用來設定的JSON檔案",  
-	"//": "然後因為技術力不足加上JSON的格式蠻嚴格的，容易寫錯，如果修改設定後程式當掉，可以從壓縮檔中恢復setting.json",  
-    "//": "鍵盤設定",  
-    "//": "鍵盤定義可以從這個網站上得知https://keycode.info/",  
-    "keyboard": {  
-        "//": "上一頁，預設值是方向鍵←，與pageup（除了veiw頁面外無法使用）",  
-        "prev": [37, 33],  
-        "//": "下一頁，預設值是方向鍵→，與pagedown（除了veiw頁面外無法使用）",  
-        "next": [39, 34],  
-        "//": "全螢幕, 預設值是Enter",  
-        "full_screen": [13],  
-        "//": "回到book，預設值是Backspace",  
-        "back": [8],  
-        "//": "跳到第一頁，預設值是home（除了veiw頁面外無法使用）",  
-        "home": [36],  
-        "//": "跳到最尾頁，預設值是end（除了veiw頁面外無法使用）",  
-        "end": [35],  
-        "//": "跳到上一本，預設值是ctrl + 方向鍵←和[",  
-        "prev_book": [["ctrlKey", 37], 219],  
-        "//": "跳到下一本，預設值是ctrl + 方向鍵→和]",  
-        "next_book": [["ctrlKey", 39], 221],  
-		"//": "排序切換開關，可以切換順序排序和隨機排序",  
-        "sort": [96],  
-        "//": "關閉程式",  
-        "exit": [27]  
-    },  
-	"//": "是 = true、否 = false",  
-    "//": "是否每次開啟時都更新資料庫（建議不要，速度很慢，當目標資料夾有新增或刪除本本的時候再開）",  
-    "update": false,  
-    "//": "是否開啟「開發人員工具」",  
-    "debug": false,  
-    "//": "頁面放大倍率，預設是110%（測試中）",  
-    "zoom": 1.10,  
-    "//": "首頁最多顯示圖片數量",  
-    "home_max" : 50,  
-    "//": "本子頁最多顯示圖片數量",  
-    "page_max" : 20,  
-    "//": "快取圖片數量",  
-    "cache" : 50  
-}  
-```  
-  
-## 未來計畫（包含我想做但還沒做，和我想做但沒能力做的）  
-- 增加tag的「我的最愛」  
-- 在主畫面上顯示縮圖，而不是原圖，增加效率  
-- 右鍵功能需要有複製、貼上、開啟檔案位置  
-- zip本本效能最佳化  
-- rar支援  
-- 由ex上抓到的爬蟲資料不完整，需要更新，根據新資料的不同，部份程式需要改寫  
-- 在網路上取得的ex matedata部份有誤，需要重新製作，tags格式部份不完整  
   
 ## 免責聲明  
 我的程式能力並不出色，此程式只在我的電腦測試過，並不可靠，從無法開啟到世界末日都有可能  
@@ -262,23 +173,14 @@ JSON是一種輕量級的資料交換語言，該語言以**易於讓人閱讀**
 ## Thanks  
 這個程式使用`nodejs`+`eletron`開發、`electron-builder`完成分發  
 照抄`exhentai.org`的HTML與CSS  
-中文翻譯是使用[EhTagTranslation](https://github.com/EhTagTranslation/Database)的成果做繁簡轉換而成  
+中文翻譯是使用[EhTagTranslation](https://github.com/EhTagTranslation/Database)的成果做繁簡轉換而成，其 LICENSE 為`setting/language/LICENSE.md`  
   
 使用了以下套件  
 - [dialogs](https://github.com/jameskyburz/dialogs)  
 - [fast-levenshtein](https://github.com/hiddentao/fast-levenshtein)  
 - [jszip-sync](https://github.com/ericvergnaud/jszip)  
 - [sqlite3](https://github.com/mapbox/node-sqlite3)  
-  
-感謝[Sachia Lanlus](https://forums.e-hentai.org/index.php?showuser=2351915)提供了[metadata](https://mega.nz/#F!oh1U0SIA!WBUcf3PaOvrfIF238fnbTg)  
-## License  
-  
-「萬神殿授權條款」  
-<wei115@ptt.cc>寫了這個程式，任何人都可以用此程式做任何事。  
-如果哪天看到我發[請神]文，並且你認為這個程式有價值，可以幫我神神看。  
-不過要是我們在路上相遇了，而且你認出我來，請溫柔的裝作不認識我。  wei115  
-  
-「komica授權條款」  
-<ntGee7VA@komica.org>寫了這個程式，任何人都可以用此程式做任何事。  
-如果哪天看到我在「詳細希望」，並且你認為這個程式有價值，可以幫我神神看。  
-不過要是我們在路上相遇了，而且你認出我來，請溫柔的裝作不認識我。  ntGee7VA  
+- [node-stream-zip](https://github.com/antelle/node-stream-zip)  
+- [viewerjs](https://github.com/fengyuanchen/viewerjs)  
+- [electron](https://github.com/electron/electron)  
+- [electron-builder](https://github.com/electron-userland/electron-builder)

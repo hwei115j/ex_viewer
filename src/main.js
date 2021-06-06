@@ -25,7 +25,7 @@ function createWindow() {
     setting = JSON.parse(fs.readFileSync(setting_json).toString());
     // 創建一個瀏覽器窗口對象，並指定窗口的大小
     mainWindow = new BrowserWindow({
-        width: 800,
+        width: 1200,
         height: 800,
         webPreferences: {
             nodeIntegration: true,

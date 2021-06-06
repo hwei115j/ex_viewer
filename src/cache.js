@@ -1,24 +1,28 @@
-/*jshint esversion: 6 */
+/*jshint esversion: 8 */
 const global = require("electron").remote.getGlobal("sharedObject");
 const MAX = global.setting.cache;
 
 function init(img, id) {
-    let buffer = {};
+    let buffer = [];
     let first = dom(id);
 
     function dom(gid) {
         let r = new Image();
-        img.getimg_async(gid ,(i)=> {
-            r.src = i;
+        r.src = "?";
+        r.complete = false;
+        img.getimg_async(gid).then((url) => {
+            r.src = url;
+            r.complete = true;
         });
         r.id = "pic";
         return r;
     }
 
-    return (pivot) => {
+    function getElement(pivot) {
         let reg = [];
 
-        if(pivot == id) return first;
+        if(pivot == id) 
+            return first;
         if (img.length < MAX) {
             if (Object.keys(buffer).length === 0) {
                 for (let i = 0; i < img.length; i++) {
@@ -39,11 +43,31 @@ function init(img, id) {
             }
         }
 
-        buffer = [];
-        for (let i in reg) {
-            buffer[i] = reg[i];
+        let difference = buffer.filter(x => !reg.includes(x));
+        for(let i in difference) {
+            if(difference[i]) {
+                URL.revokeObjectURL(difference[i].src);
+            }
         }
+        buffer = [];
+        buffer = [...reg];
+
         return buffer[pivot];
+    }
+
+    function free() {
+        for(let i in buffer) {
+            if(buffer[i]) {
+                URL.revokeObjectURL(buffer[i].src);
+            }
+        }
+        URL.revokeObjectURL(first.src);
+        first = null;
+        buffer = {};
+    }
+    return {
+        getElement: getElement,
+        free: free
     };
 
 }
