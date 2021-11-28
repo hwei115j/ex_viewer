@@ -31,6 +31,9 @@ function create_init_html(document) {
         str = str.replace(/\[[^\]]*\]/g, "%");
         str = str.replace(/\([^)]*\)/g, "%");
         str = str.replace(/\{[^}]*\}/g, "%");
+        
+        str = str.replace(/\【[^}]*\】/g, "%");
+        str = str.replace(/\（[^)]*\）/g, "%");
 
         let arr = str.split("%");
         let max = 0,
@@ -139,11 +142,17 @@ function create_init_html(document) {
                     }
                     //把候選檔名和原始檔名做比對
                     let r = levens(rows, book[0]);
+                    if(!r) {
+                        debug.push(sql);
+                        debug1.push(book[2]);
+                    }
                     push_local_db(r, book[0], book[2]);
                 });
             });
         }
     }
+    let debug = [];
+    let debug1 = [];
     //推入local資料庫
     function push_local_db(exdb_row, name, path) {
         let instr = "local_name, local_path";
@@ -168,12 +177,13 @@ function create_init_html(document) {
                     console.log((end - t_start) / 1000 + "sec");
                     //全部push進local.db結束時執行
                     db.run("COMMIT");
+                    console.log(debug);
+                    console.log(debug1);
                     module.exports.to_home();
                 }
             });
         });
     }
-
     function update_db() {
         book_list = [];
 

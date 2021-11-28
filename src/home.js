@@ -65,7 +65,7 @@ function goto_page(str) {
 
 function search(input) {
     global.book_id = 0;
-    global.key_flag = false;
+    //global.key_flag = false;
     //let token = input.trim().split(/\s+/);
     let token;
     let sql = `SELECT * FROM data` + "\n" + `WHERE `;
@@ -195,10 +195,13 @@ function search(input) {
             token[scount] = token[scount].substring(1, token[scount].length);
             return "NOT" + elem();
         } else if (token[scount][0] == ".") {
-            if (token[scount] == ".null") {
+            if (token[scount] == ".null" || token[scount] == ".NULL") {
                 scount++;
                 flag = 0;
                 return " gid ISNULL";
+            }
+            else {
+                throw err;
             }
         } else if (isnamespace(token[scount])) {
             let str = token[scount].trim().split(/:/)[1];
@@ -232,8 +235,7 @@ function search(input) {
             return sqlstr(token[scount++]);
         }
     }
-
-    try {
+try {
         token = lex(input);
         sql += sear();
 
@@ -711,6 +713,25 @@ async function create_home() {
                 global.mainWindow.setFullScreen(global.full);
             } else if (is_key(e, "exit")) {
                 ipcRenderer.send("exit");
+            } else if (is_key(e, "name_sort")) {
+                console.log("name_sort");
+
+                global.group.sort((a, b) =>
+                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
+                );
+                create_home().then();
+            } else if (is_key(e, "random_sort")) {
+                //切換排序
+                console.log("Random");
+
+                global.group.sort(() => Math.random() - 0.5);
+                create_home().then();
+            } else if (is_key(e, "chronology")) {
+                console.log("chronology");
+                global.group.sort((a, b) => {
+                    return b.posted - a.posted;
+                });
+                create_home().then();
             }
         };
     }

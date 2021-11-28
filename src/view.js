@@ -228,24 +228,62 @@ function key_word(e) {
         if (viewer) viewer.destroy();
         eventDisable();
         module.exports.back();
-    } else if (is_key("sort")) {
+    } else if (is_key("name_sort")) {
+        let id = global.group[global.book_id].local_id;
+
+        console.log(global.group);
+        let ttt = document.getElementById("ttt");
+        ttt.style =
+            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+        ttt.value = "Name Sort";
+        setTimeout(() => {
+            ttt.style =
+                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+        }, 2000);
+
+        global.group.sort((a, b) =>
+            a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
+        );
+
+        for (let i in global.group) {
+            if (id == global.group[i].local_id) {
+                global.book_id = parseInt(i, 10);
+                break;
+            }
+        }
+    } else if (is_key("random_sort")) {
         //切換排序
         let id = global.group[global.book_id].local_id;
-        if ((global.key_flag = !global.key_flag)) {
-            let ttt = document.getElementById("ttt");
+        let ttt = document.getElementById("ttt");
+        ttt.style =
+            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+        ttt.value = "Random Sort";
+        setTimeout(() => {
             ttt.style =
-                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-            ttt.value = "Random";
-            setTimeout(() => {
-                ttt.style =
-                    "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-            }, 2000);
-            global.group.sort(() => Math.random() - 0.5);
-        } else {
-            global.group.sort((a, b) =>
-                a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
-            );
+                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+        }, 2000);
+        global.group.sort(() => Math.random() - 0.5);
+
+        for (let i in global.group) {
+            if (id == global.group[i].local_id) {
+                global.book_id = parseInt(i, 10);
+                break;
+            }
         }
+    } else if (is_key("chronology")) {
+        let id = global.group[global.book_id].local_id;
+
+        let ttt = document.getElementById("ttt");
+        ttt.style =
+            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+        ttt.value = "chronology";
+        setTimeout(() => {
+            ttt.style =
+                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+        }, 2000);
+        global.group.sort((a, b) => {
+            return b.posted - a.posted;
+        });
 
         for (let i in global.group) {
             if (id == global.group[i].local_id) {

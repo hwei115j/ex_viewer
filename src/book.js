@@ -90,7 +90,10 @@ async function create() {
                         <div id="taglist">
                         </div>
                         <div id="tagmenu_act" style="display:none">
-                            <a href="#" style="font-size:medium" onclick="goto_search()">${replace("book search", "search")}</a>
+                            <a href="#" style="font-size:medium" onclick="goto_search()">${replace(
+                                "book search",
+                                "search"
+                            )}</a>
                         </div>
 
                     </div>
@@ -115,7 +118,7 @@ async function create() {
             data: {
                 style:
                     "width:250px; height:351px; background:transparent url('" +
-                    await img.gethead_async() +
+                    (await img.gethead_async()) +
                     "') 0 0 no-repeat;background-size:contain"
             }
         };
@@ -222,7 +225,7 @@ async function create() {
 
             //取得中文標籤
             function get_chinese_name(tabs, name, tag) {
-                if(Object.keys(trans).length == 0) {
+                if (Object.keys(trans).length == 0) {
                     return tabs[name][tag];
                 }
                 if (
@@ -238,7 +241,7 @@ async function create() {
 
             //取得中文解釋
             function get_chinese_intro(tabs, name, tag) {
-                if(Object.keys(trans).length == 0) {
+                if (Object.keys(trans).length == 0) {
                     return "";
                 }
                 if (
@@ -566,10 +569,16 @@ async function create() {
                 if (key == 33 || key == 34) return false; //去除pageup、pagedown
                 for (let i in arr) {
                     if (typeof arr[i] == "number") {
-                        if (key == arr[i]) return true;
+                        if (key == arr[i]) {
+                            return true;
+                        }
                     } else {
-                        if (arr[i].length == 1 && key == arr[i][0]) return true;
-                        if (key == arr[i][1] && e[arr[i][0]]) return true;
+                        if (arr[i].length == 1 && key == arr[i][0]) {
+                            return true;
+                        }
+                        if (key == arr[i][1] && e[arr[i][0]]) {
+                            return true;
+                        }
                     }
                 }
                 return false;
@@ -602,18 +611,42 @@ async function create() {
                 global.mainWindow.setFullScreen(global.full);
             } else if (is_key(e, "back")) {
                 module.exports.back();
-            } else if (is_key(e, "sort")) {
+            } else if (is_key(e, "name_sort")) {
                 let id = global.group[global.book_id].local_id;
 
-                if ((global.key_flag = !global.key_flag)) {
-                    console.log("random");
-                    global.group.sort(() => Math.random() - 0.5);
-                } else {
-                    console.log("sort");
-                    global.group.sort((a, b) =>
-                        a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
-                    );
+                console.log("name_sort");
+
+                global.group.sort((a, b) =>
+                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
+                );
+
+                for (let i in global.group) {
+                    if (id == global.group[i].local_id) {
+                        global.book_id = parseInt(i, 10);
+                        break;
+                    }
                 }
+            } else if (is_key(e, "random_sort")) {
+                //切換排序
+                let id = global.group[global.book_id].local_id;
+
+                console.log("Random");
+
+                global.group.sort(() => Math.random() - 0.5);
+
+                for (let i in global.group) {
+                    if (id == global.group[i].local_id) {
+                        global.book_id = parseInt(i, 10);
+                        break;
+                    }
+                }
+            } else if (is_key(e, "chronology")) {
+                let id = global.group[global.book_id].local_id;
+
+                console.log("chronology");
+                global.group.sort((a, b) => {
+                    return b.posted - a.posted;
+                });
 
                 for (let i in global.group) {
                     if (id == global.group[i].local_id) {
@@ -655,7 +688,7 @@ function create_book_html(docu) {
         document.oncontextmenu = e => {
             e.stopPropagation();
             //e.preventDefault();
-            menu.popup({ window: remote.getCurrentWindow()});
+            menu.popup({ window: remote.getCurrentWindow() });
         };
         create();
     });
