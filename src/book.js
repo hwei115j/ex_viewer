@@ -68,6 +68,8 @@ async function create() {
 
     function insert_template() {
         document.getElementById("body").innerHTML = `<body id="body">
+        <div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
+        <input  type="button" id="ttt" style="display:none" value="" ></div>
             <div class="gm">
                 <div id="gleft">
                     <div id="gd1">
@@ -613,11 +615,18 @@ async function create() {
                 module.exports.back();
             } else if (is_key(e, "name_sort")) {
                 let id = global.group[global.book_id].local_id;
-
+                let ttt = document.getElementById("ttt");
+                ttt.style =
+                    "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                ttt.value = "Name";
+                setTimeout(() => {
+                    ttt.style =
+                        "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                }, 2000);
                 console.log("name_sort");
 
                 global.group.sort((a, b) =>
-                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
+                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW", {numeric: true})
                 );
 
                 for (let i in global.group) {
@@ -629,7 +638,14 @@ async function create() {
             } else if (is_key(e, "random_sort")) {
                 //切換排序
                 let id = global.group[global.book_id].local_id;
-
+                let ttt = document.getElementById("ttt");
+                ttt.style =
+                    "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                ttt.value = "Random";
+                setTimeout(() => {
+                    ttt.style =
+                        "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                }, 2000);
                 console.log("Random");
 
                 global.group.sort(() => Math.random() - 0.5);
@@ -642,8 +658,15 @@ async function create() {
                 }
             } else if (is_key(e, "chronology")) {
                 let id = global.group[global.book_id].local_id;
-
-                console.log("chronology");
+                let ttt = document.getElementById("ttt");
+                ttt.style =
+                    "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                ttt.value = "Chronology";
+                setTimeout(() => {
+                    ttt.style =
+                        "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                }, 2000);
+                console.log("Chronology");
                 global.group.sort((a, b) => {
                     return b.posted - a.posted;
                 });

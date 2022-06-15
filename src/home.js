@@ -199,8 +199,7 @@ function search(input) {
                 scount++;
                 flag = 0;
                 return " gid ISNULL";
-            }
-            else {
+            } else {
                 throw err;
             }
         } else if (isnamespace(token[scount])) {
@@ -235,7 +234,7 @@ function search(input) {
             return sqlstr(token[scount++]);
         }
     }
-try {
+    try {
         token = lex(input);
         sql += sear();
 
@@ -255,7 +254,7 @@ try {
                 }
                 global.group = rows;
                 global.group.sort((a, b) =>
-                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
+                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW", {numeric: true})
                 );
                 create_home().then(() => {
                     search_str = input;
@@ -292,7 +291,9 @@ async function create_home() {
     function template() {
         document.getElementById(
             "body"
-        ).innerHTML = `<div id="ido" class="ido" style="max-width:1370px">
+        ).innerHTML = `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
+        <input  type="button" id="ttt" style="display:none" value="" ></div>
+        <div id="ido" class="ido" style="max-width:1370px">
 		<div style="position:relative; z-index:2">
 			<div id="searchbox" class="idi">
 				<form id="from_onsubmit" style="margin: 0px; padding: 0px;">
@@ -366,7 +367,8 @@ async function create_home() {
 					</p>
 					<div id="advdiv" style="display: none;"></div>
 				</form>
-			</div>
+            </div>
+            <p id="gpc" style="text-align:center"></p>
 			<table class="ptt" style="margin:2px auto 0px">
 			</table>
 			<div id="page">	
@@ -682,11 +684,19 @@ async function create_home() {
         let ptt = document.getElementsByClassName("ptt");
         ptt[0].appendChild(create_dom());
         ptt[1].appendChild(create_dom());
+
+        document.getElementById("gpc").textContent = `Showing ${page *
+            page_max +
+            1} - ${
+            (page + 1) * page_max < global.group.length
+                ? (page + 1) * page_max
+                : global.group.length
+        } of ${global.group.length} results`;
     }
 
     function insert_key() {
         window.onkeydown = e => {
-            //e.preventDefault();
+            //e.preventDefault();/
 
             function is_key(e, str) {
                 let arr = global.setting.keyboard[str];
@@ -714,24 +724,51 @@ async function create_home() {
             } else if (is_key(e, "exit")) {
                 ipcRenderer.send("exit");
             } else if (is_key(e, "name_sort")) {
-                console.log("name_sort");
-
                 global.group.sort((a, b) =>
-                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
+                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW", {numeric: true})
                 );
-                create_home().then();
+
+                console.log("name_sort");
+                create_home().then(() => {
+                    setTimeout(() => {
+                        ttt.style =
+                            "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                    }, 2000);
+                });
+                let ttt = document.getElementById("ttt");
+                ttt.style =
+                    "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                ttt.value = "Name";
             } else if (is_key(e, "random_sort")) {
                 //切換排序
                 console.log("Random");
 
                 global.group.sort(() => Math.random() - 0.5);
-                create_home().then();
+                create_home().then(() => {
+                    setTimeout(() => {
+                        ttt.style =
+                            "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                    }, 2000);
+                });
+                let ttt = document.getElementById("ttt");
+                ttt.style =
+                    "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                ttt.value = "Random";
             } else if (is_key(e, "chronology")) {
                 console.log("chronology");
                 global.group.sort((a, b) => {
                     return b.posted - a.posted;
                 });
-                create_home().then();
+                create_home().then(() => {
+                    setTimeout(() => {
+                        ttt.style =
+                            "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                    }, 2000);
+                });
+                let ttt = document.getElementById("ttt");
+                ttt.style =
+                    "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                ttt.value = "Chronology";
             }
         };
     }
@@ -786,7 +823,6 @@ async function create_home() {
     insert_ptt();
     insert_key();
     insert_cat();
-
     /*
     let img = image.init(global.group[0].local_path);
     console.log(img.gethead());

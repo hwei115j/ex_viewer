@@ -48,12 +48,12 @@ function create_viewer() {
 }
 
 function image_view() {
-    document.title = "ex_viewer - " + global.group[global.book_id].local_name;
     if (viewer) viewer.destroy();
     if (element) element.onload = null;
     viewer = element = null;
     element = getElement(global.img_id);
 
+    document.title = "ex_viewer - " + global.group[global.book_id].local_name + "【" + img.getname(global.img_id) + "】";
     if (global.img_id == 0) {
         let ttt = document.getElementById("ttt");
         ttt.style =
@@ -235,14 +235,14 @@ function key_word(e) {
         let ttt = document.getElementById("ttt");
         ttt.style =
             "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "Name Sort";
+        ttt.value = "Name";
         setTimeout(() => {
             ttt.style =
                 "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
         }, 2000);
 
         global.group.sort((a, b) =>
-            a.local_name.localeCompare(b.local_name, "zh-Hant-TW")
+            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", {numeric: true})
         );
 
         for (let i in global.group) {
@@ -257,7 +257,7 @@ function key_word(e) {
         let ttt = document.getElementById("ttt");
         ttt.style =
             "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "Random Sort";
+        ttt.value = "Random";
         setTimeout(() => {
             ttt.style =
                 "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
@@ -276,7 +276,7 @@ function key_word(e) {
         let ttt = document.getElementById("ttt");
         ttt.style =
             "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "chronology";
+        ttt.value = "Chronology";
         setTimeout(() => {
             ttt.style =
                 "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
@@ -311,7 +311,6 @@ function mouse(e) {
 function create_html_view(document) {
     eventEnable();
     //window.onresize = create_viewer;
-    document.title = "ex_viewer - " + global.group[global.book_id].local_name;
     let body = document.getElementsByTagName("body");
     //body[0].style = "overflow:hidden";
     body[0].innerHTML =

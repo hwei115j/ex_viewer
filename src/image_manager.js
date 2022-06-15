@@ -185,6 +185,9 @@ async function init(path) {
 
     if (path.indexOf(".zip") == -1 && path.indexOf(".ZIP") == -1) {
         let dir = fs.readdirSync(path);
+        dir.sort((a, b) =>
+            a.localeCompare(b, "zh-Hant-TW", {numeric: true})
+        );
         for (let i in dir) {
             if (exten.test(dir[i])) {
                 img_list.push(url.pathToFileURL(join(path, dir[i])).href);
@@ -195,6 +198,7 @@ async function init(path) {
         const zip = new StreamZip.async({ file: path });
         zip_path = path;
         const entries = await zip.entries();
+        //TODO: 需要處理ZIP 排序錯誤問題
         for (const entry of Object.values(entries)) {
             if(!entry.isDirectory && exten.test(entry.name)) {
                 img_list.push(url.pathToFileURL(join(path, entry.name)).href);
