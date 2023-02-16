@@ -227,6 +227,9 @@ async function create() {
 
             //取得中文標籤
             function get_chinese_name(tabs, name, tag) {
+                if(name == "other") {
+                    return tabs[name][tag];
+                }
                 if (Object.keys(trans).length == 0) {
                     return tabs[name][tag];
                 }
