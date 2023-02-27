@@ -5,10 +5,7 @@
     <meta charset="utf-8" />
     <title>ex_viewer</title>
     <link rel="stylesheet" type="text/css" href="exhentai.css" />
-    <script type="text/javascript" src="../render.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.9.0/viewer.css"
-        integrity="sha512-HHYZlJVYgHVdz/pMWo63/ya7zc22sdXeqtNzv4Oz76V3gh7R+xPqbjNUp/NRmf0R85J++Yg6R0Kkmz+TGYHz8g=="
-        crossorigin="anonymous" />
+    <script type="text/javascript" src="../home.js"></script>
     <style type="text/css">
         @supports (display: grid) {
             .gld {
@@ -98,8 +95,96 @@
     </style>
 </head>
 
-<body id="body">
-    <div></div>
+<body>
+    <div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
+        <input type="button" id="ttt" style="display:none" value="">
+    </div>
+    <div class="ido" style="max-width:1370px">
+        <div style="position:relative; z-index:2">
+            <div id="searchbox" class="idi">
+                <form id="from_onsubmit" style="margin: 0px; padding: 0px;">
+                    <input type="hidden" id="f_cats" name="f_cats" value="0" disabled="disabled">
+                    <table class="itc">
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div id="cat_2" class="cs ct2">
+                                        同人誌
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="cat_4" class="cs ct3">
+                                        漫畫
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="cat_8" class="cs ct4">
+                                        畫師CG
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="cat_16" class="cs ct5">
+                                        遊戲CG
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="cat_512" class="cs cta">
+                                        西方
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div id="cat_256" class="cs ct9">
+                                        無H
+                                    </div>
+                                </td>
+                                <td>
+                                    <d iv="" id="cat_32" class="cs ct6">
+                                        圖集
+                                    </d>
+                                </td>
+                                <td>
+                                    <div id="cat_64" class="cs ct7">
+                                        Cosplay
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="cat_128" class="cs ct8">
+                                        亞洲色情
+                                    </div>
+                                </td>
+                                <td>
+                                    <div id="cat_1" class="cs ct1">
+                                        雜項
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p class="nopm">
+                        <input type="text" id="f_search" name="f_search" placeholder="請輸入關鍵字" size="50" maxlength="200"
+                            autocomplete="off">
+                        <input type="submit" id="search" value="應用篩選">
+                        <input type="button" value="清除篩選" onclick="document.getElementById('f_search').value = ''">
+                    </p>
+                    <div id="advdiv" style="display: none;"></div>
+                </form>
+            </div>
+            <p id="pageSelectorText" style="text-align:center"></p>
+            <table class="ptt" style="margin:2px auto 0px">
+                <tbody id="pageSelector1">
+                </tbody>
+            </table>
+            <div id="page">
+               
+            </div>
+            <table class="ptt" style="margin:2px auto 0px">
+                <tbody id="pageSelector2">
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 
 </html>

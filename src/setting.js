@@ -1,4 +1,5 @@
-{
+
+var json = {
     "//": "這是用來設定的JSON檔案",
     "//": "然後因為技術力不足加上JSON的格式蠻嚴格的，容易寫錯，如果修改設定後程式當掉，可以從壓縮檔中恢復setting.json",
     "//": "鍵盤設定",
@@ -237,3 +238,255 @@
         }
     }
 }
+var r_json = JSON.parse(JSON.stringify(json));
+
+const settingDiv = document.getElementById("setting-div");
+
+const keyNames = {
+    8: "Backspace",
+    9: "Tab",
+    13: "Enter",
+    16: "Shift",
+    17: "Control",
+    18: "Alt",
+    19: "Pause",
+    20: "CapsLock",
+    27: "Escape",
+    32: "Space",
+    33: "PageUp",
+    34: "PageDown",
+    35: "End",
+    36: "Home",
+    37: "ArrowLeft (←)",
+    38: "ArrowUp (↑)",
+    39: "ArrowRight (→)",
+    40: "ArrowDown (↓)",
+    45: "Insert",
+    46: "Delete",
+    48: "0",
+    49: "1",
+    50: "2",
+    51: "3",
+    52: "4",
+    53: "5",
+    54: "6",
+    55: "7",
+    56: "8",
+    57: "9",
+    65: "KeyA",
+    66: "KeyB",
+    67: "KeyC",
+    68: "KeyD",
+    69: "KeyE",
+    70: "KeyF",
+    71: "KeyG",
+    72: "KeyH",
+    73: "KeyI",
+    74: "KeyJ",
+    75: "KeyK",
+    76: "KeyL",
+    77: "KeyM",
+    78: "KeyN",
+    79: "KeyO",
+    80: "KeyP",
+    81: "KeyQ",
+    82: "KeyR",
+    83: "KeyS",
+    84: "KeyT",
+    85: "KeyU",
+    86: "KeyV",
+    87: "KeyW",
+    88: "KeyX",
+    89: "KeyY",
+    90: "KeyZ",
+    91: "Meta",
+    93: "ContextMenu",
+    96: "Numpad0",
+    97: "Numpad1",
+    98: "Numpad2",
+    99: "Numpad3",
+    100: "Numpad4",
+    101: "Numpad5",
+    102: "Numpad6",
+    103: "Numpad7",
+    104: "Numpad8",
+    105: "Numpad9",
+    106: "NumpadMultiply (*)",
+    107: "NumpadAdd (+)",
+    109: "NumpadSubtract (-)",
+    110: "NumpadDecimal (.)",
+    111: "NumpadDivide (/)",
+    144: "NumLock",
+    145: "ScrollLock",
+    186: "Semicolon (;)",
+    187: "Equal (=)",
+    188: "Comma (,)",
+    189: "Minus (-)",
+    190: "Period (.)",
+    191: "Slash (/)",
+    192: "Backquote (`)",
+    219: "BracketLeft ([)",
+    220: "Backslash",
+    221: "BracketRight (])",
+    222: "Quote (')"
+};
+
+function parse(jsonInput, currentLevel = 1) {
+    switch (jsonInput.type) {
+        case "list": {
+            let div = document.createElement("div");
+            settingDiv.appendChild(div)
+            div.style.marginLeft = `${(currentLevel - 1) * 20}px`; // Add an indentation based on currentLevel
+            div.innerHTML = `<h${currentLevel}>${jsonInput.text}</h${currentLevel}>`
+            settingDiv.appendChild(div)
+            if (currentLevel > 4) {
+                currentLevel = 4;
+            }
+            for (i in jsonInput.value) {
+                parse(jsonInput.value[i], currentLevel + 1);
+            }
+            break;
+        }
+        case "bool": {
+            let div = document.createElement("div");
+            settingDiv.appendChild(div);
+            div.style.marginLeft = `${(currentLevel - 1) * 20}px`; // Add an extra indentation based on parentLevel
+
+            let checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.checked = jsonInput.value;
+            checkbox.addEventListener("change", function () {
+                jsonInput.value = this.checked;
+            });
+            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(document.createElement("br"));
+            div.appendChild(checkbox);
+            settingDiv.appendChild(document.createElement("br"));
+            break;
+        }
+        case "number": {
+            let div = document.createElement("div");
+            settingDiv.appendChild(div);
+            div.style.marginLeft = `${(currentLevel - 1) * 20}px`; // Add an extra indentation based on parentLevel
+
+            let inputbox = document.createElement("input");
+            inputbox.value = jsonInput.value;
+            inputbox.addEventListener("change", function () {
+                let r = parseInt(this.value, 10);
+                if (r != NaN && r > 0) {
+                    console.log(r);
+                    jsonInput.value = r;
+                }
+            });
+
+            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(document.createElement("br"));
+            div.appendChild(inputbox);
+            settingDiv.appendChild(document.createElement("br"));
+            break;
+        }
+        case "key": {
+            let div = document.createElement("div");
+            let pressedKeys = [];
+            let addPressedKeys = [];
+            settingDiv.appendChild(div)
+            div.style.marginLeft = `${(currentLevel - 1) * 20}px`; // Add an extra indentation based on parentLevel
+
+            let inputBox = document.createElement("input");
+            let addBtn = document.createElement("button");
+            addBtn.textContent = "Add";
+            let delBtn = document.createElement("button");
+            delBtn.textContent = "Delete";
+            let select = document.createElement("select");
+
+            for (i in jsonInput.value) {
+                let op = document.createElement("option");
+
+                if (jsonInput.value[i].constructor === Array) {
+                    op.textContent = keyNames[parseInt(jsonInput.value[i][0])] + " + " + keyNames[parseInt(jsonInput.value[i][1])];
+                } else {
+                    //op.textContent = parseInt(jsonInput.value[i]);
+                    op.textContent = keyNames[parseInt(jsonInput.value[i])];
+                }
+                select.appendChild(op);
+            }
+
+
+            inputBox.addEventListener("keydown", function (event) {
+                event.preventDefault(); // prevent the typed text from appearing in the input box
+
+                if (pressedKeys.length < 2 && !pressedKeys.includes(event.keyCode)) {
+                    pressedKeys.push(event.keyCode);
+                }
+
+                if (pressedKeys.length > 2) {
+                    pressedKeys = pressedKeys.slice(0, 2);
+                }
+
+                let keyName = pressedKeys.map(keyCode => {
+                    return keyNames[parseInt(keyCode)];
+                }).join(" + ");
+
+                addPressedKeys = JSON.parse(JSON.stringify(pressedKeys));
+                inputBox.value = keyName;
+            });
+
+            inputBox.addEventListener("keyup", function (event) {
+                let index = pressedKeys.indexOf(event.keyCode);
+                if (index > -1) {
+                    pressedKeys.splice(index, 1);
+                }
+            });
+
+            addBtn.addEventListener("click", () => {
+                console.log(addPressedKeys);
+                if(addPressedKeys.length == 0  || !keyNames.hasOwnProperty(addPressedKeys[0])) {
+                    inputBox.value = "";
+                    addPressedKeys = [];
+                    return ;
+                }
+                let op = document.createElement("option");
+                if (addPressedKeys.length == 1) {
+                    op.textContent = keyNames[addPressedKeys[0]];
+                    jsonInput.value.push(addPressedKeys[0]);
+                } else {
+                    op.textContent = keyNames[addPressedKeys[0]] + " + " + keyNames[addPressedKeys[1]];
+                    jsonInput.value.push(addPressedKeys);
+                }
+                inputBox.value = "";
+                addPressedKeys = [];
+                select.appendChild(op);
+            });
+
+            delBtn.addEventListener("click", () => {
+                if(select.length == 0) {
+                    return ;
+                } 
+                // get the currently selected option in the dropdown
+                const selectedOption = select.options[select.selectedIndex];
+                console.log(selectedOption.value+" , "+ jsonInput.value[select.selectedIndex]);
+                jsonInput.value.splice(select.selectedIndex, 1);
+                // remove the selected option from the dropdown
+                select.removeChild(selectedOption);
+            });
+            //div.innerHTML = `<label>${jsonInput.text}</label><br><input type="text"><button>Add</button><select></select><button>Delete</button>`;
+            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(document.createElement("br"));
+            div.appendChild(inputBox);
+            div.appendChild(addBtn);
+            div.appendChild(select);
+            div.appendChild(delBtn);
+            settingDiv.appendChild(document.createElement("br"));
+            break;
+
+        }
+    }
+}
+
+parse(r_json);
+
+let saveBtn = document.getElementById("saveBtn");
+saveBtn.addEventListener("click", () => {
+    console.log("SAVE");
+    json  = JSON.parse(JSON.stringify(r_json));
+});
