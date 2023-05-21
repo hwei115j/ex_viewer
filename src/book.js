@@ -227,37 +227,45 @@ async function create() {
 
             //取得中文標籤
             function get_chinese_name(tabs, name, tag) {
-                if(name == "other") {
-                    return tabs[name][tag];
-                }
+                //console.log(trans["data"].find(obj => obj.namespace === name));
                 if (Object.keys(trans).length == 0) {
                     return tabs[name][tag];
                 }
-                if (
-                    trans["data"][list[name]]["data"][tabs[name][tag]] !=
-                    undefined
-                ) {
-                    return trans["data"][list[name]]["data"][tabs[name][tag]][
-                        "name"
-                    ];
+                try {
+                    if (
+                        trans["data"].find(obj => obj.namespace === name)["data"][tabs[name][tag]] !=
+                        undefined
+                    ) {
+                        return trans["data"].find(obj => obj.namespace === name)["data"][tabs[name][tag]][
+                            "name"
+                        ];
+                    }
+                }
+                catch {
+                    return tabs[name][tag];
                 }
                 return tabs[name][tag];
             }
 
             //取得中文解釋
             function get_chinese_intro(tabs, name, tag) {
+                //console.log(trans["data"].find(obj => obj.namespace === name));
                 if (Object.keys(trans).length == 0) {
                     return "";
                 }
-                if (
-                    trans["data"][list[name]]["data"][tabs[name][tag]] !=
-                    undefined
-                ) {
-                    return trans["data"][list[name]]["data"][tabs[name][tag]][
-                        "intro"
-                    ];
+                try {
+                    if (
+                        trans["data"].find(obj => obj.namespace === name)["data"][tabs[name][tag]] !=
+                        undefined
+                    ) {
+                        return trans["data"].find(obj => obj.namespace === name)["data"][tabs[name][tag]][
+                            "intro"
+                        ];
+                    }
                 }
-                return "";
+                catch {
+                    return "";
+                }
             }
 
             function get_tags_name(s1, s2) {
@@ -268,16 +276,6 @@ async function create() {
             }
 
             let tabs = db_tags(global.group[global.book_id]);
-            let list = {
-                language: 2,
-                parody: 3,
-                character: 4,
-                group: 5,
-                artist: 6,
-                male: 7,
-                female: 8,
-                misc: 9
-            };
             let trans = global.definition_db;
             let root = {
                 tag: "table",
@@ -345,7 +343,7 @@ async function create() {
                                             "gright"
                                         );
                                         node.innerHTML = "";
-                                        console.log(tags_name);
+                                        //console.log(tags_name);
                                         if (add(tags_name))
                                             str = get_chinese_intro(
                                                 tabs,
