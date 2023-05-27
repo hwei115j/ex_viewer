@@ -1,70 +1,19 @@
 /*jshint esversion: 6 */
 const electron = require("electron");
-const fs = require("fs");
+const { nativeImage } = require('electron');
 const join = require("path").join;
 const { ipcMain, dialog } = require("electron");
-const local_db_path = join(".", "setting", "local", "local.db");
-const ex_db_path = join(".", "setting", "ex.db");
-const dir_path = join(".", "setting", "local", "dir.json");
-const definition_json = join(".", "setting", "language", "definition.json");
-const ui_json = join(".", "setting", "language", "ui.json");
-const setting_json = join(".", "setting", "setting.json");
+const mainApp = require("./mainApplication");
 
 // 創建應用程序對象
 const app = electron.app;
 // 創建一個瀏覽器窗口，主要用來加載HTML頁面
 const BrowserWindow = electron.BrowserWindow;
-
 // 聲明一個BrowserWindow對象實例
 let mainWindow;
 
-let setting;
-
-pageStatus = {
-    book_id: 0,
-    img_id: 0,
-    full: false,
-    sort_flag: false,
-    home_scrollTop: 0,
-    book_scrollTop: 0,
-    definition_db: (() => {
-        try {
-            return JSON.parse(fs.readFileSync(definition_json).toString());
-        } catch (err) {
-            return {};
-        }
-    })(),
-    ui: (() => {
-        try {
-            return JSON.parse(fs.readFileSync(ui_json).toString());
-        } catch (err) {
-            return {};
-        }
-    })(),
-    setting: (() => {
-        try {
-            return JSON.parse(fs.readFileSync(setting_json).toString());
-        } catch (err) {
-            throw err;
-        }
-    })(),
-    dir: (() => {
-        try {
-            return JSON.parse(fs.readFileSync(dir_path).toString());
-        } catch (err) {
-            fs.writeFileSync(
-                dir_path,
-                JSON.stringify(JSON.parse('{"dir":[], "layers":[]}'))
-            );
-            return JSON.parse('{"dir":[], "layers":[]}');
-        }
-    })(),
-};
 
 function createWindow() {
-    console.log(electron.ipcMain);
-
-    setting = JSON.parse(fs.readFileSync(setting_json).toString());
 
     // 創建一個瀏覽器窗口對象，並指定窗口的大小
     mainWindow = new BrowserWindow({
@@ -79,35 +28,22 @@ function createWindow() {
     //隱藏工具列
     electron.Menu.setApplicationMenu(null);
 
+    mainApp.appInit();
 
-    mainWindow.loadURL("file://" + join(__dirname, "html", "home.html"));
-
-    if (setting.debug) {
+    if (mainApp.setting.value.debug.value) {
         mainWindow.webContents.openDevTools();
     }
-    ipcMain.on('get-pageStatus', (event, arg) => {
-        console.log("ipc");
-        event.reply('pageStatus-data', { pageStatus });
-    });
+
     mainWindow.on("closed", function () {
         mainWindow = null;
     });
-
+    mainWindow.loadURL("file://" + join(__dirname, "html", "home.html"));
 }
-
-
-ipcMain.on("open-file-dialog", event => {
-    event.sender.send(
-        "selected-directory",
-        dialog.showOpenDialogSync({
-            properties: ["openDirectory"]
-        })
-    );
-});
 
 ipcMain.on("exit", event => {
     app.quit();
 });
+
 
 app.on("ready", createWindow);
 

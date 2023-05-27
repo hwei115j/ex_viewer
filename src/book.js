@@ -718,6 +718,7 @@ function create_book_html(docu) {
     });
 }
 
+
 module.exports = {
     create_book_html: create_book_html,
     back: null
