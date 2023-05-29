@@ -6,6 +6,7 @@ let page_max;
 let groupLength;
 let book_id;
 let pageBook;
+let group;
 
 const { ipcRenderer } = require("electron");
 
@@ -37,7 +38,8 @@ function goto_page(str) {
                 if (p > len) return;
                 if (p < 1) return;
                 book_id = (p - 1) * page_max;
-                ipcRenderer.send('get-pageStatus', book_id);
+                updataHome();
+                //ipcRenderer.send('get-pageStatus', book_id);
                 return;
             });
             return;
@@ -49,7 +51,8 @@ function goto_page(str) {
         } else if (p >= 0) {
             book_id = (p - 1) * page_max;
         }
-        ipcRenderer.send('get-pageStatus', book_id);
+        updataHome();
+        //ipcRenderer.send('get-pageStatus', book_id);
     };
 }
 
@@ -100,7 +103,7 @@ function createPtt() {
         pageSelector.appendChild(td);
     }
     pageSelector.appendChild(document.createElement("tr"));
-    func(">");
+    func("<");
     if (len < 7) {
         //7
         for (let i = 0; i < len; i++) {
@@ -133,8 +136,8 @@ function createPtt() {
     }
     func(">");
 
-    ptt[1].appendChild(pageSelector.cloneNode(true));
     ptt[0].appendChild(pageSelector);
+    ptt[1].appendChild(pageSelector.cloneNode(true));
 }
 
 function createPage() {
@@ -271,7 +274,7 @@ function createPage() {
     }
 }
 
-function updataHome() {
+function _updataHome() {
     let ptt = document.getElementsByClassName("ptt");
     let pageDiv = document.getElementById("page");
 
@@ -289,12 +292,28 @@ function updataHome() {
     createPage();
 }
 
+function updataHome() {
+    let ptt = document.getElementsByClassName("ptt");
+    let pageDiv = document.getElementById("page");
+    ptt[0].removeChild(ptt[0].firstChild);
+    ptt[1].removeChild(ptt[1].firstChild);
+    //pageDiv.removeChild(pageDiv.firstChild);
+    page = Math.floor(book_id / page_max);
+    document.getElementById("pageSelectorText").textContent = `Showing ${page * page_max + 1} - 
+        ${(page + 1) * page_max < groupLength
+            ? (page + 1) * page_max
+            : groupLength
+        } of ${groupLength} results`;
+
+    createPtt();
+}
+
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('pageStatus-data', (event, data) => {
     page_max = data.page_max;
-    groupLength = data.groupLength;
     book_id = data.book_id;
-    pageBook = data.pageBook;
+    group = data.group;
 
+    groupLength = group.length;
     updataHome();
 });

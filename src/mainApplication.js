@@ -1,4 +1,5 @@
 /*jshint esversion: 8 */
+const { group } = require("console");
 const { ipcMain, dialog } = require("electron");
 const join = require("path").join;
 const sqlite3 = require("sqlite3").verbose();
@@ -307,9 +308,8 @@ ipcMain.on('get-pageStatus', (event, arg) => {
     }
     event.reply('pageStatus-data', {
         page_max: pageStatus.setting.value.home_max.value,
-        groupLength: pageStatus.group.length,
         book_id: pageStatus.book_id,
-        pageBook: r
+        group: pageStatus.group
     });
 });
 ipcMain.on('get-book', (event, arg) => {
