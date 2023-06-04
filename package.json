@@ -5,6 +5,7 @@
 	"dependencies": {
 		"dialogs": "^2.0.1",
 		"fast-levenshtein": "^2.0.6",
+		"jquery": "^3.7.0",
 		"jshint": "^2.13.4",
 		"jszip-sync": "^3.2.1-sync",
 		"node-stream-zip": "^1.15.0",

@@ -4,6 +4,7 @@ const { ipcMain, dialog } = require("electron");
 const join = require("path").join;
 const sqlite3 = require("sqlite3").verbose();
 const fs = require("fs");
+const { event } = require("jquery");
 const url = require("url");
 
 const ex_db_path = join(".", "setting", "ex.db");
@@ -15,6 +16,7 @@ const setting_json = join(".", "setting", "setting.json");
 
 let db;
 let setting = JSON.parse(fs.readFileSync(setting_json).toString());
+
 let pageStatus = {
     book_id: 0,
     img_id: 0,
@@ -306,12 +308,24 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         //n.local_path = getHead(pageStatus.group[pageStatus.book_id + i].local_path);
         r.push(n);
     }
-    event.reply('pageStatus-data', {
-        page_max: pageStatus.setting.value.home_max.value,
+    event.reply('get-pageStatus-reply', {
+        home_max: pageStatus.setting.value.home_max.value,
+        page_max: pageStatus.setting.value.page_max.value,
         book_id: pageStatus.book_id,
-        group: pageStatus.group
+        img_id: pageStatus.img_id,
+        group: pageStatus.group,
+        uiLanguage: pageStatus.ui,
+        definition: pageStatus.definition_db,
     });
 });
+
+ipcMain.on('put-homeStatus', (event, arg) => {
+    pageStatus.book_id = arg.book_id;
+    console.log(arg.book_id);
+    event.reply('put-homeStatus-reply', {
+    });
+});
+
 ipcMain.on('get-book', (event, arg) => {
     let r = [];
     let page_max = pageStatus.setting.value.home_max.value;

@@ -1,17 +1,27 @@
 /*jshint esversion: 8 */
+
 const fs = require("fs");
 const join = require("path").join;
 const url = require("url");
 const { remote, ipcRenderer, clipboard } = require("electron");
-const global = remote.getGlobal("sharedObject");
+//const global = remote.getGlobal("sharedObject");
 const dialogs = require("dialogs")();
-const image = require("./image_manager");
-const { Menu, MenuItem } = remote;
+const image = require("../image_manager");
+//const Menu = remote.Menu;
+//const MenuItem = remote.MenuItem;
+//const { Menu, MenuItem } = remote
 
-let page_max = global.setting.page_max;
+let book_id;
+let group;
+let uiLanguage;
+let definition;
+let page_max;
+let imageArray;
+let img_id = 0;
+
 let page = 0;
-let img;
-let document;
+//let img;
+//let document;
 
 function replace(name, text) {
     if (text) {
@@ -21,7 +31,7 @@ function replace(name, text) {
 }
 function goto_page(str) {
     let p = parseInt(str);
-    let len = Math.floor(img.length / page_max) + 1;
+    let len = Math.floor(imageArray.length / page_max) + 1;
 
     return () => {
         if (isNaN(p)) {
@@ -33,19 +43,19 @@ function goto_page(str) {
                 if (isNaN(p)) return;
                 if (p > len) return;
                 if (p < 1) return;
-                global.img_id = (p - 1) * page_max;
-                create();
+                img_id = (p - 1) * page_max;
+                updataBook();
             });
             return;
         }
         if (p == -1 && page != 0) {
-            global.img_id = (page - 1) * page_max;
-        } else if (p == -2 && page < img.length / page_max - 1) {
-            global.img_id = (page + 1) * page_max;
+            img_id = (page - 1) * page_max;
+        } else if (p == -2 && page < imageArray.length / page_max - 1) {
+            img_id = (page + 1) * page_max;
         } else if (p >= 0) {
-            global.img_id = (p - 1) * page_max;
+            img_id = (p - 1) * page_max;
         } else return;
-        create();
+        updataBook();
     };
 }
 
@@ -93,9 +103,9 @@ async function create() {
                         </div>
                         <div id="tagmenu_act" style="display:none">
                             <a href="#" style="font-size:medium" onclick="goto_search()">${replace(
-                                "book search",
-                                "search"
-                            )}</a>
+            "book search",
+            "search"
+        )}</a>
                         </div>
 
                     </div>
@@ -227,7 +237,9 @@ async function create() {
 
             //取得中文標籤
             function get_chinese_name(tabs, name, tag) {
-                //console.log(trans["data"].find(obj => obj.namespace === name));
+                if (name == "other") {
+                    return tabs[name][tag];
+                }
                 if (Object.keys(trans).length == 0) {
                     return tabs[name][tag];
                 }
@@ -292,7 +304,7 @@ async function create() {
                     menu.append(
                         new MenuItem({
                             label: replace("copy tag"),
-                            click: function() {
+                            click: function () {
                                 console.log(tag_name);
                                 clipboard.writeText(tag_name);
                             }
@@ -530,11 +542,10 @@ async function create() {
 
         document.getElementById("gpc").textContent = `Showing ${page *
             page_max +
-            1} - ${
-            (page + 1) * page_max < img.length
+            1} - ${(page + 1) * page_max < img.length
                 ? (page + 1) * page_max
                 : img.length
-        } of ${img.length} images`;
+            } of ${img.length} images`;
         let r = document.getElementById("page");
         let node = document.getElementById("gdt");
         let root = {
@@ -627,7 +638,7 @@ async function create() {
                 console.log("name_sort");
 
                 global.group.sort((a, b) =>
-                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW", {numeric: true})
+                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
                 );
 
                 for (let i in global.group) {
@@ -694,6 +705,78 @@ async function create() {
     insert_key();
 }
 
+function createPtt() {
+    function handleClick(event) {
+        let value = event.target.innerText;
+        if (value == "<") {
+            goto_page("-1")();
+        }
+        else if (value == ">") {
+            goto_page("-2")();
+        }
+        else if (value == "1") {
+            goto_page(1)();
+        }
+        else if (value == "...") {
+            goto_page(null)();
+        }
+        else {
+            goto_page(value)();
+        }
+    }
+
+    let ptt = document.getElementsByClassName("ptt");
+    let len = Math.floor(imageArray.length / page_max) + 1;
+    let strHtml = "";
+
+    if (len <= 7) {
+        //7
+        for (let i = 0; i < len; i++) {
+            strHtml += `<td><a>${i + 1}</a></td>`
+        }
+    } else if (page + 1 < 7) {
+        //7, ..., len
+        for (let i = 0; i < 7; i++) {
+            strHtml += `<td><a>${i + 1}</a></td>`;
+        }
+        strHtml += `<td><a>...</a></td>`;
+        strHtml += `<td><a>${len}</a></td>`;
+    } else if (page > len - 7) {
+        //1, ..., 7
+        strHtml += `<td><a>1</a></td>`;
+        strHtml += `<td><a>...</a></td>`;
+        for (let i = len - 7; i < len; i++) {
+            strHtml += `<td><a>${i + 1}</a></td>`;
+        }
+    } else {
+        //1, ..., 5, ..., len
+        strHtml += `<td><a>1</a></td>`;
+        strHtml += `<td><a>...</a></td>`;
+        for (let i = page - 2; i <= page + 2; i++) {
+            strHtml += `<td><a>${i + 1}</a></td>`;
+        }
+        strHtml += `<td><a>...</a></td>`;
+        strHtml += `<td><a>${len}</a></td>`;
+    }
+
+    strHtml = `<tbody><tr></tr><td><a>&lt;</a></td>${strHtml}<td><a>&gt;</a></td></tbody></table>`
+    ptt[0].innerHTML = strHtml;
+    ptt[1].innerHTML = strHtml;
+
+    //event
+    let tdTags0 = ptt[0].getElementsByTagName("td");
+    let tdTags1 = ptt[1].getElementsByTagName("td");
+    for (let i = 0; i < tdTags0.length; i++) {
+        if (tdTags0[i].getElementsByTagName("a")[0].innerText == (page + 1)) {
+            tdTags0[i].classList.add("ptds");
+            tdTags1[i].classList.add("ptds");
+        } else {
+            tdTags0[i].addEventListener("click", handleClick);
+            tdTags1[i].addEventListener("click", handleClick);
+        }
+    }
+}
+
 function create_book_html(docu) {
     image.init(global.group[global.book_id].local_path).then(e => {
         img = e;
@@ -704,7 +787,7 @@ function create_book_html(docu) {
         menu.append(
             new MenuItem({
                 label: replace("previous page"),
-                click: function() {
+                click: function () {
                     module.exports.back();
                 }
             })
@@ -714,12 +797,47 @@ function create_book_html(docu) {
             //e.preventDefault();
             menu.popup({ window: remote.getCurrentWindow() });
         };
-        create();
     });
 }
 
+function updataBook() {
+    page = Math.floor(img_id / page_max);
+    document.title = "ex_viewer - " + group[book_id].local_name;
 
-module.exports = {
-    create_book_html: create_book_html,
-    back: null
-};
+    document.getElementById("gpc").textContent =
+        `Showing ${page * page_max + 1} - ${((page + 1) * page_max < imageArray.length)
+            ? ((page + 1) * page_max)
+            : imageArray.length} of ${imageArray.length} images`;
+    createPtt();
+}
+
+
+ipcRenderer.send('get-pageStatus');
+ipcRenderer.on('get-pageStatus-reply', (event, data) => {
+    book_id = data.book_id,
+        img_id = data.img_id,
+        page_max = data.page_max;
+    group = data.group;
+    uiLanguage = data.uiLanguage;
+    definition = data.definition;
+    image.init(group[book_id].local_path).then(e => {
+        imageArray = e;
+        /*
+        const menu = new Menu();
+        menu.append(
+            new MenuItem({
+                label: replace("previous page"),
+                click: function () {
+                    module.exports.back();
+                }
+            })
+        );
+        document.oncontextmenu = e => {
+            e.stopPropagation();
+            //e.preventDefault();
+            menu.popup({ window: remote.getCurrentWindow() });
+        };
+        */
+        updataBook();
+    });
+});
