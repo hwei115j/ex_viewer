@@ -16,8 +16,10 @@ let group;
 let uiLanguage;
 let definition;
 let page_max;
+//@TODO 修改imageArray名稱
 let imageArray;
 let img_id = 0;
+let search_str = [];
 
 let page = 0;
 //let img;
@@ -705,6 +707,30 @@ async function create() {
     insert_key();
 }
 
+function create_book_html(docu) {
+    image.init(global.group[global.book_id].local_path).then(e => {
+        img = e;
+        document = docu;
+        window.onwheel = null;
+        page = Math.floor(global.img_id / page_max);
+        const menu = new Menu();
+        menu.append(
+            new MenuItem({
+                label: replace("previous page"),
+                click: function () {
+                    module.exports.back();
+                }
+            })
+        );
+        document.oncontextmenu = e => {
+            e.stopPropagation();
+            //e.preventDefault();
+            menu.popup({ window: remote.getCurrentWindow() });
+        };
+    });
+}
+
+
 function createPtt() {
     function handleClick(event) {
         let value = event.target.innerText;
@@ -777,27 +803,175 @@ function createPtt() {
     }
 }
 
-function create_book_html(docu) {
-    image.init(global.group[global.book_id].local_path).then(e => {
-        img = e;
-        document = docu;
-        window.onwheel = null;
-        page = Math.floor(global.img_id / page_max);
-        const menu = new Menu();
-        menu.append(
-            new MenuItem({
-                label: replace("previous page"),
-                click: function () {
-                    module.exports.back();
+function createFrom() {
+    let gdt = document.getElementById("gdt");
+    let strHtml = "";
+    let thisPageMax = ((page + 1) * page_max < imageArray.length) ? page_max : (imageArray.length - page * page_max);
+
+    for (let i = 0; i < thisPageMax; i++) {
+        let gCount = page * page_max + i;
+        strHtml += `<div class="gdtl" style="height: 306px;"><a>` +
+            `<img loading="lazy" title="Page ${gCount}: ${imageArray.getname(gCount)}" src="" style="height: auto; width: auto; max-width: 100%; max-height: 100%;">` +
+            `</a></div>`;
+    }
+    strHtml += `<div class="c"></div>`;
+    gdt.innerHTML = strHtml;
+
+    for (let i = 0; i < thisPageMax; i++) {
+        let gCount = page * page_max + i;
+
+        imageArray.getimg_async(gCount).then(url => {
+            gdt.getElementsByTagName("img")[i].src = url;
+        });
+        gdt.getElementsByTagName("a")[i].addEventListener("click", () => {
+            console.log(gCount);
+        });
+    }
+}
+
+function createInformation() {
+    function replace(name) {
+        return uiLanguage[name] ? uiLanguage[name] : name;
+    }
+    let cat = {
+        Doujinshi: ["cs ct2", replace("Doujinshi")],
+        Manga: ["cs ct3", replace("Manga")],
+        "Artist CG": ["cs ct4", replace("Artist CG")],
+        "Game CG": ["cs ct5", replace("Game CG")],
+        Western: ["cs cta", replace("Western")],
+        "Non-H": ["cs ct9", replace("Non-H")],
+        "Image Set": ["cs ct6", replace("Image Set")],
+        Cosplay: ["cs ct7", replace("Cosplay")],
+        "Asian Porn": ["cs ct8", replace("Asian Porn")],
+        Misc: ["cs ct1", replace("Misc")],
+        null: ["cs ct1", replace("null")]
+    };
+
+    (() => {
+        let gleft = document.getElementById("gleft");
+        imageArray.gethead_async().then(url => {
+            gleft.innerHTML =
+                `<div id="gd1"><div style="width: 250px; height: 351px; background: url(&quot;${url}&quot;) 0px 0px / contain no-repeat transparent;"></div></div>`;
+        });
+    })();
+
+    (() => {
+        let gd2 = document.getElementById("gd2");
+        let strHtml = "";
+        //@TODO 修改title 更明確資訊 
+        strHtml += `<h1 id="gn" title="local name">${group[book_id].local_name}</h1>`;
+        if (group[book_id].title) {
+            strHtml += `<h1 id="gn" title="title">${group[book_id].title}</h1>`;
+        }
+        if (group[book_id].title_jpn) {
+            strHtml += `<h1 id="gn" title="title jpn">${group[book_id].title_jpn}</h1>`;
+        }
+        gd2.innerHTML = strHtml;
+    })();
+
+    (() => {
+        //解析local.db中的tags欄位
+        function db_tags(dir) {
+            if (dir.tags == null) {
+                return null;
+            }
+            let list = dir.tags.match(
+                /[\w\ \-\.\|]+:[\w\ \-\.\|](?:,?(?![\w\ \-\.\|]+:)[\w\ \-\.\|]+)*/g
+            );
+            let tabs = [];
+            //console.log(list);
+
+            for (let n of list) {
+                let r = n.split(":");
+                if (!tabs[r[0]]) {
+                    tabs[r[0]] = [];
                 }
-            })
-        );
-        document.oncontextmenu = e => {
-            e.stopPropagation();
-            //e.preventDefault();
-            menu.popup({ window: remote.getCurrentWindow() });
-        };
-    });
+                let split = r[1].split(",");
+                for (let i in split) {
+                    tabs[r[0]].push(split[i]);
+                }
+            }
+            return tabs;
+        }
+
+        //@TODO 需要確認邊界條件
+        function get_chinese_name(namespace, tag) {
+            if (Object.keys(definition).length == 0) {
+                return tag;
+            }
+            let data = definition["data"].find(obj => obj.namespace === namespace);
+            if (data != undefined) {
+                return (data["data"][tag] != undefined) ? data["data"][tag]["name"] : tag;
+            }
+            //console.log(definition["data"].find(obj => obj.namespace === namespace)["data"][tag]);
+            return tag;
+        }
+
+        function get_chinese_definition(namespace, tag) {
+            if (Object.keys(definition).length == 0) {
+                return "";
+            }
+            let data = definition["data"].find(obj => obj.namespace === namespace);
+            if (data != undefined) {
+                return (data["data"][tag] != undefined) ? data["data"][tag]["intro"] : tag;
+            }
+            return "";
+        }
+        let tags = db_tags(group[book_id]);
+        let gmid = document.getElementById("gmid");
+        let strHtml = "";
+
+        strHtml += `<div id="gd3"><div id="gdc"></div><div id="gdn"></div><div id="gdd"></div><div id="gdc">` +
+            `<div class="${cat[group[book_id].category][0]}">${cat[group[book_id].category][1]}</div></div></div>`;
+
+        strHtml += `<div id="gd4"><div id="taglist"><table><tbody>`;
+
+        for (let name in tags) {
+            strHtml += `<tr><td class="tc">${name}:</td><td>`
+            //console.log(tags[name]);
+            for (let i in tags[name]) {
+                let tag = tags[name][i];
+                strHtml += `<div class="gt" title="${name}:${tag}$" style="opacity: 1;">` +
+                    `<a data-namespace="${name}" data-tag="${tag}">${get_chinese_name(name, tag)}</a></div>`;
+            }
+            strHtml += `</div></td></tr>`;
+        }
+
+        strHtml += `</tbody></table></div><div id="tagmenu_act" style="display:none"><a href="#" style="font-size:medium" >搜尋</a></div></div>`
+
+        gmid.innerHTML = strHtml
+
+        let gt = gmid.getElementsByClassName("gt")
+
+        for (let i = 0; i < gt.length; i++) {
+            let a = gt[i].getElementsByTagName("a")[0];
+            let name = a.getAttribute("data-namespace");
+            let tag = a.getAttribute("data-tag");
+            a.addEventListener("click", () => {
+                if (a.style.color == "blue") {
+                    a.style.color = "";
+                    document.getElementById("gright").innerHTML = "";
+                } else {
+                    a.style.color = "blue";
+                    document.getElementById("gright").innerHTML =
+                        `<div><div>${get_chinese_name(name, tag)}</div><div>${name}:"${tag}$"</div></div>` +
+                        `<br><div><p>${get_chinese_definition(name, tag)}</p></div></br>`;
+                }
+                let index = search_str.indexOf(`${name}:"${tag}$"`);
+                if (index !== -1) {
+                    search_str.splice(index, 1);
+                } else {
+                    search_str.push(`${name}:"${tag}$"`);
+                }
+                document.getElementById("tagmenu_act").style = search_str.length
+                    ? ""
+                    : "display: none";
+                //console.log(i, name, tag, get_chinese_definition(name, tag));
+                console.log(search_str.join(" "));
+            });
+        }
+
+    })();
 }
 
 function updataBook() {
@@ -809,6 +983,8 @@ function updataBook() {
             ? ((page + 1) * page_max)
             : imageArray.length} of ${imageArray.length} images`;
     createPtt();
+    createInformation();
+    createFrom();
 }
 
 
