@@ -280,24 +280,6 @@ function search(input, func_cb) {
     }
 }
 
-function getHead(path) {
-    const exten = /^.*(\.jpg)|(\.jpeg)|(\.jfif)|(\.pjpeg)|(\.pjp)|(\.svg)|(\.webp)|(\.png)|(\.gif)/;
-
-    let imgPath, name;
-    let dir = fs.readdirSync(path);
-
-    for (let i in dir) {
-
-        if (exten.test(dir[i])) {
-            imgPath = join(path, dir[i]);
-            break;
-        }
-    }
-    const fileData = fs.readFileSync(imgPath);
-
-    return fileData;
-}
-
 ipcMain.on('put-search', (event, arg) => {
     category = arg.category;
     pageStatus.search_str = arg.str;
@@ -314,13 +296,15 @@ ipcMain.on('get-pageStatus', (event, arg) => {
     if (arg != undefined) {
         pageStatus.book_id = arg;
     }
-    let r = [];
+    //let r = [];
     let page_max = pageStatus.setting.value.home_max.value;
+    /*
     for (let i = 0; pageStatus.group[pageStatus.book_id + i] && i < page_max; i++) {
         let n = JSON.parse(JSON.stringify(pageStatus.group[pageStatus.book_id + i]));
         //n.local_path = getHead(pageStatus.group[pageStatus.book_id + i].local_path);
         r.push(n);
     }
+        */
     event.reply('get-pageStatus-reply', {
         home_max: pageStatus.setting.value.home_max.value,
         page_max: pageStatus.setting.value.page_max.value,
