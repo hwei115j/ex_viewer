@@ -44,6 +44,10 @@ ipcMain.on("exit", event => {
     app.quit();
 });
 
+ipcMain.on("full_screen", event => {
+    mainApp.pageStatus.full = !mainApp.pageStatus.full;
+    mainWindow.setFullScreen(mainApp.pageStatus.full);
+});
 
 app.on("ready", createWindow);
 

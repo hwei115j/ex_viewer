@@ -109,39 +109,39 @@
                             <tr>
                                 <td>
                                     <div id="cat_2" class="cs ct2">
-                                        同人誌
+                                        Doujinshi
                                     </div>
                                 </td>
                                 <td>
                                     <div id="cat_4" class="cs ct3">
-                                        漫畫
+                                        Manga
                                     </div>
                                 </td>
                                 <td>
                                     <div id="cat_8" class="cs ct4">
-                                        畫師CG
+                                        Artist CG
                                     </div>
                                 </td>
                                 <td>
                                     <div id="cat_16" class="cs ct5">
-                                        遊戲CG
+                                        Game CG
                                     </div>
                                 </td>
                                 <td>
                                     <div id="cat_512" class="cs cta">
-                                        西方
+                                        Western
                                     </div>
                                 </td>
                             </tr>
                             <tr>
                                 <td>
                                     <div id="cat_256" class="cs ct9">
-                                        無H
+                                        Non-H
                                     </div>
                                 </td>
                                 <td>
                                     <d iv="" id="cat_32" class="cs ct6">
-                                        圖集
+                                        Image Set
                                     </d>
                                 </td>
                                 <td>
@@ -151,23 +151,24 @@
                                 </td>
                                 <td>
                                     <div id="cat_128" class="cs ct8">
-                                        亞洲色情
+                                        Asian Porn
                                     </div>
                                 </td>
                                 <td>
                                     <div id="cat_1" class="cs ct1">
-                                        雜項
+                                        Misc
                                     </div>
                                 </td>
                             </tr>
                         </tbody>
                     </table>
-                    <p class="nopm">
-                        <input type="text" id="f_search" name="f_search" placeholder="請輸入關鍵字" size="50" maxlength="200"
-                            autocomplete="off">
-                        <input type="submit" id="search" value="應用篩選">
-                        <input type="button" value="清除篩選" onclick="document.getElementById('f_search').value = ''">
-                    </p>
+                    <div>
+                        <input type="text" id="f_search" name="f_search" placeholder="search" text="" size="50"
+                            maxlength="200" autocomplete="off">
+                        <input type="submit" id="searchSubmit" value="search">
+                        <input type="button" id="searchClear" value="clear" onclick="document.getElementById('f_search').value = ''">
+                    </div>
+                    <div>[<a id="updateMatch"></a>] &nbsp; &nbsp;[<a id="notMatched"></a>]</div>
                     <div id="advdiv" style="display: none;"></div>
                 </form>
             </div>

@@ -24,6 +24,7 @@ let pageStatus = {
     sort_flag: false,
     home_scrollTop: 0,
     book_scrollTop: 0,
+    search_str: "",
     group: [],
     definition_db: (() => {
         try {
@@ -59,24 +60,24 @@ let pageStatus = {
     })(),
 };
 
+let category = [
+    "Doujinshi",
+    "Manga",
+    "Artist CG",
+    "Game CG",
+    "Western",
+    "Non-H",
+    "Image Set",
+    "Cosplay",
+    "Asian Porn",
+    "Misc"
+];
 function appInit() {
     db = new sqlite3.Database(local_db_path);
-    search("");
+    search(pageStatus.search_str, () => { });
 }
 
-function search(input) {
-    let category = [
-        "Doujinshi",
-        "Manga",
-        "Artist CG",
-        "Game CG",
-        "Western",
-        "Non-H",
-        "Image Set",
-        "Cosplay",
-        "Asian Porn",
-        "Misc"
-    ];
+function search(input, func_cb) {
     pageStatus.book_id = 0;
     //global.key_flag = false;
     //let token = input.trim().split(/\s+/);
@@ -269,6 +270,7 @@ function search(input) {
                 pageStatus.group.sort((a, b) =>
                     a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
                 );
+                func_cb();
             });
         });
     } catch (err) {
@@ -296,6 +298,17 @@ function getHead(path) {
     return fileData;
 }
 
+ipcMain.on('put-search', (event, arg) => {
+    category = arg.category;
+    pageStatus.search_str = arg.str;
+    search(pageStatus.search_str, () => {
+        event.reply('put-search-reply', {
+            book_id: pageStatus.book_id,
+            group: pageStatus.group,
+            search_str: pageStatus.search_str,
+        });
+    });
+})
 
 ipcMain.on('get-pageStatus', (event, arg) => {
     if (arg != undefined) {
@@ -313,9 +326,13 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         page_max: pageStatus.setting.value.page_max.value,
         book_id: pageStatus.book_id,
         img_id: pageStatus.img_id,
+        search_str: pageStatus.search_str,
         group: pageStatus.group,
         uiLanguage: pageStatus.ui,
         definition: pageStatus.definition_db,
+        keyboardEventHome: pageStatus.setting.value.keyboard_setting.value.home.value,
+        keyboardEventBook: pageStatus.setting.value.keyboard_setting.value.book.value,
+        keyboardEventView: pageStatus.setting.value.keyboard_setting.value.view.value,
     });
 });
 
@@ -344,11 +361,31 @@ ipcMain.on("open-file-dialog", event => {
     );
 });
 
-
+ipcMain.on("sort", (event, arg) => {
+    let id = pageStatus.group[pageStatus.book_id].local_id;
+    if (arg == "name") {
+        pageStatus.group.sort((a, b) =>
+            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
+        );
+    }
+    if (arg == "random") {
+        pageStatus.group.sort(() => Math.random() - 0.5);
+    }
+    if (arg == "chronology") {
+        pageStatus.group.sort((a, b) => {
+            return b.posted - a.posted;
+        });
+    }
+    pageStatus.book_id = pageStatus.group.findIndex(element => element.local_id === id);
+    event.reply("sort-reply", {
+        group: pageStatus.group,
+        book_id: pageStatus.book_id
+    });
+})
 
 
 module.exports = {
     pageStatus: pageStatus,
-    appInit: appInit, 
+    appInit: appInit,
     setting: setting
 };
