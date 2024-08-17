@@ -944,24 +944,25 @@ function createInformation() {
         let gt = gmid.getElementsByClassName("gt")
 
         for (let i = 0; i < gt.length; i++) {
-            let a = gt[i].getElementsByTagName("a")[0];
-            let name = a.getAttribute("data-namespace");
-            let tag = a.getAttribute("data-tag");
-            a.addEventListener("click", () => {
-                if (a.style.color == "blue") {
-                    a.style.color = "";
+            let tagNode = gt[i].getElementsByTagName("a")[0];
+            let dataNamespace = tagNode.getAttribute("data-namespace");
+            let dataTag = tagNode.getAttribute("data-tag");
+            tagNode.addEventListener("click", () => {
+                if (tagNode.style.color == "blue") {
+                    tagNode.style.color = "";
                     document.getElementById("gright").innerHTML = "";
                 } else {
-                    a.style.color = "blue";
+                    tagNode.style.color = "blue";
+                    //tag中文解釋
                     document.getElementById("gright").innerHTML =
-                        `<div><div>${get_chinese_name(name, tag)}</div><div>${name}:"${tag}$"</div></div>` +
-                        `<br><div><p>${get_chinese_definition(name, tag)}</p></div></br>`;
+                        `<div><div>${get_chinese_name(dataNamespace, dataTag)}</div><div>${dataNamespace}:"${dataTag}$"</div></div>` +
+                        `<br><div><p>${get_chinese_definition(dataNamespace, dataTag)}</p></div></br>`;
                 }
-                let index = search_str.indexOf(`${name}:"${tag}$"`);
+                let index = search_str.indexOf(`${dataNamespace}:"${dataTag}$"`);
                 if (index !== -1) {
                     search_str.splice(index, 1);
                 } else {
-                    search_str.push(`${name}:"${tag}$"`);
+                    search_str.push(`${dataNamespace}:"${dataTag}$"`);
                 }
                 document.getElementById("tagmenu_act").style = search_str.length
                     ? ""
@@ -991,8 +992,8 @@ function updataBook() {
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     book_id = data.book_id,
-        img_id = data.img_id,
-        page_max = data.page_max;
+    img_id = data.img_id,
+    page_max = data.page_max;
     group = data.group;
     uiLanguage = data.uiLanguage;
     definition = data.definition;
