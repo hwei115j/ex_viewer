@@ -155,6 +155,10 @@ function createFrom() {
         });
         gdt.getElementsByTagName("a")[i].addEventListener("click", () => {
             console.log(gCount);
+            ipcRenderer.send('put-homeStatus', {img_id: gCount});
+            ipcRenderer.once('put-homeStatus-reply', (event, data) => {
+                console.log(gCount);
+            });
         });
     }
 }
@@ -350,8 +354,8 @@ function updataBook() {
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     book_id = data.book_id,
-        img_id = data.img_id,
-        page_max = data.page_max;
+    img_id = data.img_id,
+    page_max = data.page_max;
     group = data.group;
     uiLanguage = data.uiLanguage;
     definition = data.definition;

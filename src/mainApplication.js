@@ -323,8 +323,13 @@ ipcMain.on('get-pageStatus', (event, arg) => {
 ipcMain.on('put-homeStatus', (event, arg) => {
     pageStatus.book_id = arg.book_id;
     console.log(arg.book_id);
-    event.reply('put-homeStatus-reply', {
-    });
+    event.reply('put-homeStatus-reply');
+});
+
+ipcMain.on('put-bookStatus', (event, arg) => {
+    pageStatus.img_id = arg.img_id;
+    console.log(arg.img_id);
+    event.reply('put-bookStatus-reply');
 });
 
 ipcMain.on('get-book', (event, arg) => {
