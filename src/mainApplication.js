@@ -6,6 +6,8 @@ const sqlite3 = require("sqlite3").verbose();
 const fs = require("fs");
 const { event } = require("jquery");
 const url = require("url");
+const { app, BrowserWindow, Menu } = require('electron');
+
 
 const ex_db_path = join(".", "setting", "ex.db");
 const dir_path = join(".", "setting", "local", "dir.json");
@@ -33,7 +35,7 @@ let pageStatus = {
             return {};
         }
     })(),
-    ui: (() => {
+    uiLanguage: (() => {
         try {
             return JSON.parse(fs.readFileSync(ui_json).toString());
         } catch (err) {
@@ -279,6 +281,17 @@ function search(input, func_cb) {
         return;
     }
 }
+function getTranslation(name) {
+    return pageStatus.uiLanguage[name] ? pageStatus.uiLanguage[name] : name;
+}
+ipcMain.on("open-file-dialog", event => {
+    event.sender.send(
+        "selected-directory",
+        dialog.showOpenDialogSync({
+            properties: ["openDirectory"]
+        })
+    );
+});
 
 ipcMain.on('put-search', (event, arg) => {
     category = arg.category;
@@ -312,7 +325,7 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         img_id: pageStatus.img_id,
         search_str: pageStatus.search_str,
         group: pageStatus.group,
-        uiLanguage: pageStatus.ui,
+        uiLanguage: pageStatus.uiLanguage,
         definition: pageStatus.definition_db,
         keyboardEventHome: pageStatus.setting.value.keyboard_setting.value.home.value,
         keyboardEventBook: pageStatus.setting.value.keyboard_setting.value.book.value,
@@ -326,10 +339,10 @@ ipcMain.on('put-homeStatus', (event, arg) => {
     event.reply('put-homeStatus-reply');
 });
 
-ipcMain.on('put-bookStatus', (event, arg) => {
+ipcMain.on('put-img_id', (event, arg) => {
     pageStatus.img_id = arg.img_id;
     console.log(arg.img_id);
-    event.reply('put-bookStatus-reply');
+    event.reply('put-img_id');
 });
 
 ipcMain.on('get-book', (event, arg) => {
@@ -341,14 +354,6 @@ ipcMain.on('get-book', (event, arg) => {
     event.reply('book-data', r);
 });
 
-ipcMain.on("open-file-dialog", event => {
-    event.sender.send(
-        "selected-directory",
-        dialog.showOpenDialogSync({
-            properties: ["openDirectory"]
-        })
-    );
-});
 
 ipcMain.on("sort", (event, arg) => {
     let id = pageStatus.group[pageStatus.book_id].local_id;
@@ -372,6 +377,24 @@ ipcMain.on("sort", (event, arg) => {
     });
 })
 
+// main
+ipcMain.on('show-context-menu', (event, arg) => {
+    const template = [];
+
+    if (arg.selectedText) {
+        template.push({
+            label: getTranslation('Copy'),
+            click: () => { event.sender.send('context-menu-command', 'copy', arg.selectedText); }
+        });
+    } else {
+        template.push({
+            label: getTranslation('Previous page'),
+            click: () => { event.sender.send('context-menu-command', 'previousPage'); }
+        });
+    }
+    const menu = Menu.buildFromTemplate(template)
+    menu.popup({ window: BrowserWindow.fromWebContents(event.sender) })
+})
 
 module.exports = {
     pageStatus: pageStatus,

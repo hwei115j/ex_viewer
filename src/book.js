@@ -7,9 +7,9 @@ const { remote, ipcRenderer, clipboard } = require("electron");
 //const global = remote.getGlobal("sharedObject");
 const dialogs = require("dialogs")();
 const image = require("../image_manager");
+//const { Menu, MenuItem } = remote
 //const Menu = remote.Menu;
 //const MenuItem = remote.MenuItem;
-//const { Menu, MenuItem } = remote
 
 let book_id;
 let group;
@@ -31,6 +31,7 @@ function replace(name, text) {
     }
     return global.ui[name] ? global.ui[name] : name;
 }
+
 function goto_page(str) {
     let p = parseInt(str);
     let len = Math.floor(imageArray.length / page_max) + 1;
@@ -155,8 +156,8 @@ function createFrom() {
         });
         gdt.getElementsByTagName("a")[i].addEventListener("click", () => {
             console.log(gCount);
-            ipcRenderer.send('put-homeStatus', {img_id: gCount});
-            ipcRenderer.once('put-homeStatus-reply', (event, data) => {
+            ipcRenderer.send('put-img_id', { img_id: gCount });
+            ipcRenderer.once('put-img_id-reply', (event, data) => {
                 console.log(gCount);
             });
         });
@@ -164,21 +165,21 @@ function createFrom() {
 }
 
 function createInformation() {
-    function replace(name) {
+    function getTranslation(name) {
         return uiLanguage[name] ? uiLanguage[name] : name;
     }
     let cat = {
-        Doujinshi: ["cs ct2", replace("Doujinshi")],
-        Manga: ["cs ct3", replace("Manga")],
-        "Artist CG": ["cs ct4", replace("Artist CG")],
-        "Game CG": ["cs ct5", replace("Game CG")],
-        Western: ["cs cta", replace("Western")],
-        "Non-H": ["cs ct9", replace("Non-H")],
-        "Image Set": ["cs ct6", replace("Image Set")],
-        Cosplay: ["cs ct7", replace("Cosplay")],
-        "Asian Porn": ["cs ct8", replace("Asian Porn")],
-        Misc: ["cs ct1", replace("Misc")],
-        null: ["cs ct1", replace("null")]
+        Doujinshi: ["cs ct2", getTranslation("Doujinshi")],
+        Manga: ["cs ct3", getTranslation("Manga")],
+        "Artist CG": ["cs ct4", getTranslation("Artist CG")],
+        "Game CG": ["cs ct5", getTranslation("Game CG")],
+        Western: ["cs cta", getTranslation("Western")],
+        "Non-H": ["cs ct9", getTranslation("Non-H")],
+        "Image Set": ["cs ct6", getTranslation("Image Set")],
+        Cosplay: ["cs ct7", getTranslation("Cosplay")],
+        "Asian Porn": ["cs ct8", getTranslation("Asian Porn")],
+        Misc: ["cs ct1", getTranslation("Misc")],
+        null: ["cs ct1", getTranslation("null")]
     };
 
     (() => {
@@ -267,13 +268,13 @@ function createInformation() {
             for (let i in tags[name]) {
                 let tag = tags[name][i];
                 strHtml += `<div class="gt" title="${name}:${tag}$" style="opacity: 1;">` +
-                    `<a data-namespace="${name}" data-tag="${tag}">${get_chinese_name(name, tag)}</a></div>`;
+                    `<a href="#" data-namespace="${name}" data-tag="${tag}">${get_chinese_name(name, tag)}</a></div>`;
             }
             strHtml += `</div></td></tr>`;
         }
 
         strHtml += `</tbody></table></div><div id="tagmenu_act" style="display:none"><a id="tagmenu_act_a" href="#" style="font-size:medium">
-        ${replace(
+        ${getTranslation(
             "book search",
             "search"
         )}</a></div></div>`
@@ -332,6 +333,12 @@ function createInformation() {
                 //console.log(i, name, tag, get_chinese_definition(name, tag));
                 console.log(search_str.join(" "));
             });
+            gt[i].addEventListener("contextmenu", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                //console.log(gt[i].title);
+                ipcRenderer.send('show-context-menu', { selectedText: gt[i].title})
+            });
         }
 
     })();
@@ -348,14 +355,34 @@ function updataBook() {
     createPtt();
     createInformation();
     createFrom();
+
+
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+        const selectedText = window.getSelection().toString();
+        ipcRenderer.send('show-context-menu', { selectedText: selectedText })
+    })
+    ipcRenderer.on('context-menu-command', (e, command, text) => {
+        if (command === 'copy') {
+            try {
+                clipboard.writeText(text);
+                console.log('Text copied to clipboard');
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+            }
+        } else if (command === 'previousPage') {
+           window.history.back(); 
+        }
+    });
+
 }
 
 
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     book_id = data.book_id,
-    img_id = data.img_id,
-    page_max = data.page_max;
+        img_id = data.img_id,
+        page_max = data.page_max;
     group = data.group;
     uiLanguage = data.uiLanguage;
     definition = data.definition;
