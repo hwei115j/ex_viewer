@@ -1,6 +1,7 @@
 /*jshint esversion: 8 */
-const global = require("electron").remote.getGlobal("sharedObject");
-const MAX = global.setting.cache;
+
+//TODO 應該由json檔設定
+const MAX = 20;
 
 function init(img, id) {
     let buffer = [];
@@ -63,7 +64,7 @@ function init(img, id) {
         }
         URL.revokeObjectURL(first.src);
         first = null;
-        buffer = {};
+        buffer = [];
     }
     return {
         getElement: getElement,

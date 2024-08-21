@@ -3,7 +3,7 @@ const { ipcRenderer, remote } = require("electron");
 const global = remote.getGlobal("sharedObject");
 const { Menu, MenuItem } = remote;
 const cache = require("./cache.js");
-const image = require("./image_manager");
+const image = require("./image_manager.js");
 const Viewer = require("viewerjs");
 let getElement;
 let img;

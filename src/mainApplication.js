@@ -342,7 +342,7 @@ ipcMain.on('put-homeStatus', (event, arg) => {
 ipcMain.on('put-img_id', (event, arg) => {
     pageStatus.img_id = arg.img_id;
     console.log(arg.img_id);
-    event.reply('put-img_id');
+    event.reply('put-img_id-reply');
 });
 
 ipcMain.on('get-book', (event, arg) => {

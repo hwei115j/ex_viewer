@@ -25,13 +25,6 @@ let page = 0;
 //let img;
 //let document;
 
-function replace(name, text) {
-    if (text) {
-        return global.ui[name] ? global.ui[name] : text;
-    }
-    return global.ui[name] ? global.ui[name] : name;
-}
-
 function goto_page(str) {
     let p = parseInt(str);
     let len = Math.floor(imageArray.length / page_max) + 1;
@@ -155,10 +148,10 @@ function createFrom() {
             gdt.getElementsByTagName("img")[i].src = url;
         });
         gdt.getElementsByTagName("a")[i].addEventListener("click", () => {
-            console.log(gCount);
             ipcRenderer.send('put-img_id', { img_id: gCount });
             ipcRenderer.once('put-img_id-reply', (event, data) => {
                 console.log(gCount);
+                window.location.href = "naiveViewer.html";
             });
         });
     }
