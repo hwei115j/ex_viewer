@@ -1,15 +1,9 @@
 /*jshint esversion: 8 */
 
-const fs = require("fs");
-const join = require("path").join;
-const url = require("url");
 const { remote, ipcRenderer, clipboard } = require("electron");
 //const global = remote.getGlobal("sharedObject");
 const dialogs = require("dialogs")();
 const image = require("../image_manager");
-//const { Menu, MenuItem } = remote
-//const Menu = remote.Menu;
-//const MenuItem = remote.MenuItem;
 
 let book_id;
 let group;
@@ -20,6 +14,8 @@ let page_max;
 let imageArray;
 let img_id = 0;
 let search_str = [];
+let globalHotkeys;
+let bookHotkeys;
 
 let page = 0;
 //let img;
@@ -330,7 +326,7 @@ function createInformation() {
                 e.preventDefault();
                 e.stopPropagation();
                 //console.log(gt[i].title);
-                ipcRenderer.send('show-context-menu', { selectedText: gt[i].title})
+                ipcRenderer.send('show-context-menu', { selectedText: gt[i].title })
             });
         }
 
@@ -364,13 +360,104 @@ function updataBook() {
                 console.error('Failed to copy text: ', err);
             }
         } else if (command === 'previousPage') {
-           window.history.back(); 
+            window.location.href = "home.html";
         }
     });
 
 }
 
+function searchHotkey(event) {
+    function isSame(list) {
+        const pressedKeys = new Set();
 
+        // 將 event 中的 keycode 加入到 pressedKeys 中
+        if (event.ctrlKey) pressedKeys.add(17); // Control keycode
+        if (event.shiftKey) pressedKeys.add(16); // Shift keycode
+        if (event.altKey) pressedKeys.add(18); // Alt keycode
+        if (event.metaKey) pressedKeys.add(91); // Meta keycode (Command on Mac)
+        pressedKeys.add(event.keyCode); // 事件的 keycode
+        // 先檢查組合鍵
+        for (const item of list) {
+            if (Array.isArray(item)) {
+                if(pressedKeys.has(item[0]) && pressedKeys.has(item[1])) {
+                    return true;
+                }
+            }
+        }
+
+        if(pressedKeys.size == 2) {
+            return false;
+        }
+        // 再檢查單一按鍵
+        for (const item of list) {
+            if (!Array.isArray(item)) {
+                if (pressedKeys.has(item)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    function isKey(command) {
+        for (i in globalHotkeys) {
+            if (i === command) {
+                return isSame(globalHotkeys[i].value);
+            }
+        }
+        for (i in bookHotkeys) {
+            if (i === command) {
+                return isSame(bookHotkeys[i].value);
+            }
+        }
+        return null;
+    }
+
+    if (isKey("full_screen")) {
+        console.log("full_screen");
+        //ipcRenderer.send('toggle-fullscreen');
+        return;
+    }
+    if (isKey("back")) {
+        console.log("back");
+        window.location.href = "home.html";
+        return;
+    }
+    if (isKey("name_sort")) {
+        console.log("name_sort");
+        return;
+
+    }
+    if (isKey("random_sort")) {
+        console.log("random_sort");
+        return;
+    }
+    if (isKey("chronology")) {
+        console.log("chronology");
+        return;
+    }
+    if (isKey("exit")) {
+        console.log("exit");
+        return;
+    }
+
+    if (isKey("prev")) {
+        console.log("prev");
+        return;
+    }
+    if (isKey("next")) {
+        console.log("next");
+        return;
+    }
+    if (isKey("prev_book")) {
+        console.log("prev_book");
+        return;
+    }
+    if (isKey("next_book")) {
+        console.log("next_book");
+        return;
+    }
+}
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     book_id = data.book_id,
@@ -379,24 +466,12 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     group = data.group;
     uiLanguage = data.uiLanguage;
     definition = data.definition;
+    globalHotkeys = data.globalHotkeys;
+    bookHotkeys = data.bookHotkeys;
     image.init(group[book_id].local_path).then(e => {
+        console.log(bookHotkeys);
+        document.addEventListener('keydown', searchHotkey);
         imageArray = e;
-        /*
-        const menu = new Menu();
-        menu.append(
-            new MenuItem({
-                label: replace("previous page"),
-                click: function () {
-                    module.exports.back();
-                }
-            })
-        );
-        document.oncontextmenu = e => {
-            e.stopPropagation();
-            //e.preventDefault();
-            menu.popup({ window: remote.getCurrentWindow() });
-        };
-        */
         updataBook();
     });
 });

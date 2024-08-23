@@ -327,9 +327,10 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         group: pageStatus.group,
         uiLanguage: pageStatus.uiLanguage,
         definition: pageStatus.definition_db,
-        keyboardEventHome: pageStatus.setting.value.keyboard_setting.value.home.value,
-        keyboardEventBook: pageStatus.setting.value.keyboard_setting.value.book.value,
-        keyboardEventView: pageStatus.setting.value.keyboard_setting.value.view.value,
+        globalHotkeys: pageStatus.setting.value.keyboard_setting.value.global.value,
+        homeHotkeys: pageStatus.setting.value.keyboard_setting.value.home.value,
+        bookHotkeys: pageStatus.setting.value.keyboard_setting.value.book.value,
+        viewHotkeys: pageStatus.setting.value.keyboard_setting.value.view.value,
     });
 });
 
@@ -375,7 +376,7 @@ ipcMain.on("sort", (event, arg) => {
         group: pageStatus.group,
         book_id: pageStatus.book_id
     });
-})
+});
 
 // main
 ipcMain.on('show-context-menu', (event, arg) => {

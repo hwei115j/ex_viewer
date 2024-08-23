@@ -22,7 +22,7 @@
                             ]
                         },
                         "back": {
-                            "text": "回到book，預設值是Backspace",
+                            "text": "回到上一頁，預設值是Backspace",
                             "type": "key",
                             "value": [
                                 8
@@ -129,16 +129,14 @@
                             "text": "上一頁，預設值是方向鍵←",
                             "type": "key",
                             "value": [
-                                37,
-                                33
+                                37
                             ]
                         },
                         "next": {
                             "text": "下一頁，預設值是方向鍵→",
                             "type": "key",
                             "value": [
-                                39,
-                                34
+                                39
                             ]
                         },
                         "full_screen": {
