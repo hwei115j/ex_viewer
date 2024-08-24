@@ -2,7 +2,7 @@
 const dialogs = require("dialogs")();
 const image = require("../image_manager");
 const { ipcRenderer } = require("electron");
-window.$ = window.jQuery = require('jquery');
+//window.$ = window.jQuery = require('jquery');
 
 let page = 0;
 let uiLanguage;
@@ -12,6 +12,8 @@ let book_id;
 let search_str;
 let group;
 let keyboardEventHome;
+let globalHotkeys;
+let homeHotkeys;
 
 let category = [
     "Doujinshi",
@@ -301,45 +303,101 @@ function updataHome() {
     createPage();
 }
 
-function createKeyboardEvent() {
-    window.onkeydown = e => {
-        function is_key(str) {
-            let arr = keyboardEventHome[str].value;
-            let key = e.keyCode;
+function hotkeyHandle(event) {
+    function isSame(list) {
+        const pressedKeys = new Set();
 
-            if (key == 33 || key == 34) {
-                //去除pageup、pagedown
-                return false;
-            }
-            for (let i in arr) {
-                if (typeof arr[i] == "number" && key == arr[i]) {
-                    console.log(str);
-                    return true;
-                } else if (key == arr[i][1] && e[arr[i][0]]) {
-                    console.log(str);
+        // 將 event 中的 keycode 加入到 pressedKeys 中
+        if (event.ctrlKey) pressedKeys.add(17); // Control keycode
+        if (event.shiftKey) pressedKeys.add(16); // Shift keycode
+        if (event.altKey) pressedKeys.add(18); // Alt keycode
+        if (event.metaKey) pressedKeys.add(91); // Meta keycode (Command on Mac)
+        pressedKeys.add(event.keyCode); // 事件的 keycode
+        // 先檢查組合鍵
+        for (const item of list) {
+            if (Array.isArray(item)) {
+                if (pressedKeys.has(item[0]) && pressedKeys.has(item[1])) {
                     return true;
                 }
             }
+        }
+
+        if (pressedKeys.size == 2) {
             return false;
         }
-
-        if (is_key("prev")) {
-            goto_page("-1")();
-        } else if (is_key("next")) {
-            goto_page("-2")();
-        } else if (is_key("full_screen")) {
-            ipcRenderer.send("full_screen");
-        } else if (is_key("exit")) {
-            ipcRenderer.send("exit");
-        } else if (is_key("name_sort")) {
-            ipcRenderer.send("sort", "name");
-        } else if (is_key("random_sort")) {
-            ipcRenderer.send("sort", "random");
-        } else if (is_key("chronology")) {
-            ipcRenderer.send("sort", "chronology");
+        // 再檢查單一按鍵
+        for (const item of list) {
+            if (!Array.isArray(item)) {
+                if (pressedKeys.has(item)) {
+                    return true;
+                }
+            }
         }
 
+        return false;
     }
+    function isKey(command) {
+        for (i in globalHotkeys) {
+            if (i === command) {
+                return isSame(globalHotkeys[i].value);
+            }
+        }
+        for (i in homeHotkeys) {
+            if (i === command) {
+                return isSame(homeHotkeys[i].value);
+            }
+        }
+        return null;
+    }
+
+    if (isKey("prev")) {
+        goto_page("-1")();
+        return;
+    }
+    if (isKey("next")) {
+        goto_page("-2")();
+        return;
+    }
+    if (isKey("full_screen")) {
+        console.log("full_screen");
+        ipcRenderer.send('toggle-fullscreen');
+        return;
+    }
+    if (isKey("exit")) {
+        ipcRenderer.send("exit");
+        return;
+    }
+    if (isKey("name_sort")) {
+        ipcRenderer.send("sort", "name");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("name_sort");
+            book_id = 0;
+            group = data.group;
+            updataHome();
+        });
+        return;
+    }
+    if (isKey("random_sort")) {
+        ipcRenderer.send("sort", "random");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("random_sort");
+            book_id = 0;
+            group = data.group;
+            updataHome();
+        });
+        return;
+    }
+    if (isKey("chronology")) {
+        ipcRenderer.send("sort", "chronology");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("chronology");
+            book_id = 0;
+            group = data.group;
+            updataHome();
+        });
+        return;
+    }
+
 
 
 
@@ -355,14 +413,10 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     search_str = data.search_str;
     keyboardEventHome = data.keyboardEventHome;
     groupLength = group.length;
+    globalHotkeys = data.globalHotkeys;
+    homeHotkeys = data.homeHotkeys;
 
+    document.addEventListener('keydown', hotkeyHandle);
     createSearch();
-    createKeyboardEvent();
-    updataHome();
-});
-
-ipcRenderer.on("sort-reply", (event, data) => {
-    book_id = data.book_id;
-    group = data.group;
     updataHome();
 });

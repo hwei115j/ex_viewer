@@ -354,7 +354,7 @@ function updataBook() {
 
 }
 
-function searchHotkey(event) {
+function hotkeyHandle(event) {
     function isSame(list) {
         const pressedKeys = new Set();
 
@@ -492,7 +492,7 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     bookHotkeys = data.bookHotkeys;
-    document.addEventListener('keydown', searchHotkey);
+    document.addEventListener('keydown', hotkeyHandle);
     image.init(group[book_id].local_path).then(e => {
         imageArray = e;
         updataBook();

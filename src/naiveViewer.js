@@ -18,7 +18,7 @@ let globalHotkeys;
 let viewHotkeys;
 
 function eventEnable() {
-    window.onkeydown = key_word;
+    window.onkeydown = hotkeyHandle;
     window.onwheel = mouse;
     window.onresize = image_view;
     window.addEventListener('contextmenu', (e) => {
@@ -102,7 +102,7 @@ function image_view() {
     }
 }
 
-function key_word(event) {
+function hotkeyHandle(event) {
     event.preventDefault();
     function move(x, y) {
         let clienWidth = document.documentElement.clientWidth;
