@@ -144,8 +144,8 @@ function createFrom() {
             gdt.getElementsByTagName("img")[i].src = url;
         });
         gdt.getElementsByTagName("a")[i].addEventListener("click", () => {
-            ipcRenderer.send('put-img_id', { img_id: gCount });
-            ipcRenderer.once('put-img_id-reply', (event, data) => {
+            ipcRenderer.send('put-bookStatus', { img_id: gCount, book_id: book_id });
+            ipcRenderer.once('put-bookStatus-reply', (event, data) => {
                 console.log(gCount);
                 window.location.href = "naiveViewer.html";
             });
@@ -351,18 +351,6 @@ function updataBook() {
         const selectedText = window.getSelection().toString();
         ipcRenderer.send('show-context-menu', { selectedText: selectedText })
     })
-    ipcRenderer.on('context-menu-command', (e, command, text) => {
-        if (command === 'copy') {
-            try {
-                clipboard.writeText(text);
-                console.log('Text copied to clipboard');
-            } catch (err) {
-                console.error('Failed to copy text: ', err);
-            }
-        } else if (command === 'previousPage') {
-            window.location.href = "home.html";
-        }
-    });
 
 }
 
@@ -379,13 +367,13 @@ function searchHotkey(event) {
         // 先檢查組合鍵
         for (const item of list) {
             if (Array.isArray(item)) {
-                if(pressedKeys.has(item[0]) && pressedKeys.has(item[1])) {
+                if (pressedKeys.has(item[0]) && pressedKeys.has(item[1])) {
                     return true;
                 }
             }
         }
 
-        if(pressedKeys.size == 2) {
+        if (pressedKeys.size == 2) {
             return false;
         }
         // 再檢查單一按鍵
@@ -420,7 +408,11 @@ function searchHotkey(event) {
     }
     if (isKey("back")) {
         console.log("back");
-        window.location.href = "home.html";
+        ipcRenderer.send('put-bookStatus', { img_id: 0, book_id: book_id });
+        ipcRenderer.once('put-bookStatus-reply', (e) => {
+            console.log("back");
+            window.location.href = "home.html";
+        });
         return;
     }
     if (isKey("name_sort")) {
@@ -469,27 +461,22 @@ function searchHotkey(event) {
     }
     if (isKey("prev_book")) {
         console.log("prev_book");
-        book_id = (book_id-1 < 0)?(group.length-1):(book_id-1);
+        book_id = (book_id - 1 < 0) ? (group.length - 1) : (book_id - 1);
         img_id = 0;
-        ipcRenderer.send('put-bookStatus', {img_id: img_id, book_id: book_id});
-        ipcRenderer.once('put-bookStatus-reply', ()=> {
-            image.init(group[book_id].local_path).then(e => {
-                imageArray = e;
-                updataBook();
-            });
+
+        image.init(group[book_id].local_path).then(e => {
+            imageArray = e;
+            updataBook();
         });
         return;
     }
     if (isKey("next_book")) {
         console.log("next_book");
-        book_id = (book_id+1 == group.length)?0:(book_id+1);
+        book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
         img_id = 0;
-        ipcRenderer.send('put-bookStatus', {img_id: img_id, book_id: book_id});
-        ipcRenderer.once('put-bookStatus-reply', ()=> {
-            image.init(group[book_id].local_path).then(e => {
-                imageArray = e;
-                updataBook();
-            });
+        image.init(group[book_id].local_path).then(e => {
+            imageArray = e;
+            updataBook();
         });
         return;
     }
@@ -510,4 +497,20 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
         imageArray = e;
         updataBook();
     });
+});
+ipcRenderer.on('context-menu-command', (e, command, text) => {
+    if (command === 'copy') {
+        try {
+            clipboard.writeText(text);
+            console.log('Text copied to clipboard');
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    } else if (command === 'previousPage') {
+        ipcRenderer.send('put-bookStatus', { img_id: 0, book_id: book_id });
+        ipcRenderer.once('put-bookStatus-reply', (e) => {
+            console.log("back");
+            window.location.href = "home.html";
+        });
+    }
 });
