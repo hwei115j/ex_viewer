@@ -1,5 +1,5 @@
 /*jshint esversion: 6 */
-const { ipcRenderer, remote } = require("electron");
+const { ipcRenderer} = require("electron");
 const cache = require("../cache.js");
 const image = require("../image_manager.js");
 const Viewer = require("viewerjs");
@@ -12,10 +12,8 @@ let sizeWidth = 0;
 
 let book_id;
 let img_id;
-let page_max;
 let group;
 let uiLanguage;
-let definition;
 let globalHotkeys;
 let viewHotkeys;
 
@@ -23,6 +21,11 @@ function eventEnable() {
     window.onkeydown = key_word;
     window.onwheel = mouse;
     window.onresize = image_view;
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+        const selectedText = window.getSelection().toString();
+        ipcRenderer.send('show-context-menu', { selectedText: selectedText })
+    })
 }
 
 function eventDisable() {
@@ -30,9 +33,11 @@ function eventDisable() {
     window.onwheel = null;
     window.onresize = null;
 }
+
 function getTranslation(name) {
     return uiLanguage[name] ? uiLanguage[name] : name;
 }
+
 function create_viewer() {
     viewer.show(true);
     let naturalHeight = viewer.imageData.naturalHeight;
@@ -336,26 +341,9 @@ function mouse(e) {
     }
 }
 
-function create_html_view(document) {
-    eventEnable();
-    //window.onresize = create_viewer;
-    let body = document.getElementsByTagName("body");
-    //body[0].style = "overflow:hidden";
-    body[0].innerHTML =
-        `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
-        `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
-        <input  type="button" id="ttt" style="display:none" value="第一頁" ></div>`;
-    html = document.getElementById("im");
-    image.init(group[book_id].local_path).then(e => {
-        img = e;
-        cacheObj = cache.init(img, img_id);
-        getElement = cacheObj.getElement;
-        image_view();
-    });
-}
 
 function load_viewer() {
-    eventEnable();
+    eventEnable();    
     let body = document.getElementsByTagName("body");
     body[0].innerHTML =
         `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
@@ -373,7 +361,7 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
         page_max = data.page_max;
     group = data.group;
     uiLanguage = data.uiLanguage;
-    definition = data.definition;
+    //definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     viewHotkeys = data.viewHotkeys;
 
@@ -383,4 +371,25 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
         getElement = cacheObj.getElement;
         load_viewer();
     });
+});
+
+ipcRenderer.on('context-menu-command', (e, command, text) => {
+    if (command === 'copy') {
+        try {
+            clipboard.writeText(text);
+            console.log('Text copied to clipboard');
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    } else if (command === 'previousPage') {
+        ipcRenderer.send('put-bookStatus', { img_id: img_id, book_id: book_id });
+        ipcRenderer.once('put-bookStatus-reply', (e) => {
+            console.log("back");
+            if (viewer) {
+                viewer.destroy();
+            }
+            eventDisable();
+            window.location.href = "book.html";
+        });
+    }
 });
