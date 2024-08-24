@@ -1,5 +1,5 @@
 /*jshint esversion: 6 */
-const { ipcRenderer, remote } = require("electron");
+const { ipcRenderer} = require("electron");
 const cache = require("../cache.js");
 const image = require("../image_manager.js");
 const Viewer = require("viewerjs");
@@ -12,15 +12,20 @@ let sizeWidth = 0;
 
 let book_id;
 let img_id;
-let page_max;
 let group;
 let uiLanguage;
-let definition;
+let globalHotkeys;
+let viewHotkeys;
 
 function eventEnable() {
     window.onkeydown = key_word;
     window.onwheel = mouse;
     window.onresize = image_view;
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+        const selectedText = window.getSelection().toString();
+        ipcRenderer.send('show-context-menu', { selectedText: selectedText })
+    })
 }
 
 function eventDisable() {
@@ -28,9 +33,11 @@ function eventDisable() {
     window.onwheel = null;
     window.onresize = null;
 }
+
 function getTranslation(name) {
     return uiLanguage[name] ? uiLanguage[name] : name;
 }
+
 function create_viewer() {
     viewer.show(true);
     let naturalHeight = viewer.imageData.naturalHeight;
@@ -95,8 +102,8 @@ function image_view() {
     }
 }
 
-function key_word(e) {
-    e.preventDefault();
+function key_word(event) {
+    event.preventDefault();
     function move(x, y) {
         let clienWidth = document.documentElement.clientWidth;
         let clienHeight = document.documentElement.clientHeight;
@@ -126,56 +133,95 @@ function key_word(e) {
             viewer.moveTo(img_x, max_y);
         }
     }
-    function is_key(str) {
-        let arr = setting.keyboard[str];
-        let key = e.keyCode;
-
-        for (let i in arr) {
-            if (typeof arr[i] == "number" && !e.ctrlKey) {
-                if (key == arr[i]) {
-                    return true;
-                }
-            } else {
-                if (arr[i].length == 1 && key == arr[i][0]) {
-                    return true;
-                }
-                if (key == arr[i][1] && e[arr[i][0]]) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
 
     const xMove = viewer.imageData.width / 10;
     const yMove = viewer.imageData.height / 10;
     const MF = viewer.imageData.width > document.documentElement.clientWidth;
 
-    if (is_key("move_up")) {
+    function isSame(list) {
+        const pressedKeys = new Set();
+
+        // 將 event 中的 keycode 加入到 pressedKeys 中
+        if (event.ctrlKey) pressedKeys.add(17); // Control keycode
+        if (event.shiftKey) pressedKeys.add(16); // Shift keycode
+        if (event.altKey) pressedKeys.add(18); // Alt keycode
+        if (event.metaKey) pressedKeys.add(91); // Meta keycode (Command on Mac)
+        pressedKeys.add(event.keyCode); // 事件的 keycode
+        // 先檢查組合鍵
+        for (const item of list) {
+            if (Array.isArray(item)) {
+                if (pressedKeys.has(item[0]) && pressedKeys.has(item[1])) {
+                    return true;
+                }
+            }
+        }
+
+        if (pressedKeys.size == 2) {
+            return false;
+        }
+        // 再檢查單一按鍵
+        for (const item of list) {
+            if (!Array.isArray(item)) {
+                if (pressedKeys.has(item)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    function isKey(command) {
+        for (i in globalHotkeys) {
+            if (i === command) {
+                return isSame(globalHotkeys[i].value);
+            }
+        }
+        for (i in viewHotkeys) {
+            if (i === command) {
+                return isSame(viewHotkeys[i].value);
+            }
+        }
+        return null;
+    }
+
+    if (isKey("move_up")) {
         move(0, yMove);
-    } else if (is_key("move_down")) {
+        return;
+    }
+    if (isKey("move_down")) {
         move(0, -yMove);
-    } else if (is_key("move_left") && MF) {
+        return;
+    }
+    if (isKey("move_left") && MF) {
         move(xMove, 0);
-    } else if (is_key("move_right") && MF) {
+        return;
+    }
+    if (isKey("move_right") && MF) {
         move(-xMove, 0);
-    } else if (is_key("zoom_in")) {
+        return;
+    }
+    if (isKey("zoom_in")) {
         window.onresize = null;
         viewer.zoom(0.1, true);
         sizeWidth = viewer.imageData.width;
-    } else if (is_key("zoom_out")) {
+        return;
+    }
+    if (isKey("zoom_out")) {
         window.onresize = null;
         viewer.zoom(-0.1, true);
         sizeWidth = viewer.imageData.width;
-    } else if (is_key("zoom")) {
+        return;
+    }
+    if (isKey("zoom")) {
         window.onresize = image_view;
         setTimeout(() => image_view(), 50);
         sizeWidth = 0;
-    } else if (is_key("next_book")) {
+        return;
+    }
+    if (isKey("next_book")) {
         //路徑清單的下一個路徑
-        book_id =
-            book_id + 1 < group.length ? book_id + 1 : 0;
-        group[book_id] = group[book_id];
+        console.log("next_book");
+        book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
         img_id = 0;
         book_scrollTop = 0;
         image.init(group[book_id].local_path).then(e => {
@@ -185,15 +231,15 @@ function key_word(e) {
             getElement = cacheObj.getElement;
             image_view();
         });
-    } else if (is_key("prev_book")) {
+        return;
+    }
+    if (isKey("prev_book")) {
         //路徑清單的上一個路徑
-        book_id =
-            book_id - 1 >= 0
-                ? book_id - 1
-                : group.length - 1;
-        group[book_id] = group[book_id];
+        console.log("prev_book");
+        book_id = (book_id - 1 < 0) ? (group.length - 1) : (book_id - 1);
         img_id = 0;
         book_scrollTop = 0;
+
         image.init(group[book_id].local_path).then(e => {
             img = e;
             cacheObj.free();
@@ -201,99 +247,85 @@ function key_word(e) {
             getElement = cacheObj.getElement;
             image_view();
         });
-    } else if (is_key("prev")) {
+        return;
+    }
+    if (isKey("prev")) {
         //上一頁
         img_id = img_id < 1 ? img.length - 1 : img_id - 1;
         image_view();
-    } else if (is_key("next")) {
+        return;
+    }
+    if (isKey("next")) {
         //下一頁
         img_id = img_id < img.length - 1 ? img_id + 1 : 0;
+
         image_view();
-    } else if (is_key("end")) {
+        return;
+    }
+    if (isKey("end")) {
         //END
         img_id = img.length - 1;
         image_view();
-    } else if (is_key("home")) {
+        return;
+    }
+    if (isKey("home")) {
         //HOME
         img_id = 0;
         image_view();
-    } else if (is_key("full_screen")) {
+        return;
+    }
+    if (isKey("full_screen")) {
         //全螢幕
-        full = !full;
+        console.log("full_screen");
         window.onresize = image_view;
-        mainWindow.setFullScreen(full);
         setTimeout(() => image_view(), 50);
         sizeWidth = 0;
-    } else if (is_key("back")) {
+        ipcRenderer.send('toggle-fullscreen');
+        return;
+    }
+    if (isKey("back")) {
         //back
-        if (viewer) viewer.destroy();
-        eventDisable();
-        module.exports.back();
-    } else if (is_key("name_sort")) {
-        let id = group[book_id].local_id;
-
-        console.log(group);
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "Name";
-        setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 2000);
-
-        group.sort((a, b) =>
-            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
-        );
-
-        for (let i in group) {
-            if (id == group[i].local_id) {
-                book_id = parseInt(i, 10);
-                break;
+        ipcRenderer.send('put-bookStatus', { img_id: img_id, book_id: book_id });
+        ipcRenderer.once('put-bookStatus-reply', (e) => {
+            console.log("back");
+            if (viewer) {
+                viewer.destroy();
             }
-        }
-    } else if (is_key("random_sort")) {
-        //切換排序
-        let id = group[book_id].local_id;
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "Random";
-        setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 2000);
-        group.sort(() => Math.random() - 0.5);
-
-        for (let i in group) {
-            if (id == group[i].local_id) {
-                book_id = parseInt(i, 10);
-                break;
-            }
-        }
-    } else if (is_key("chronology")) {
-        let id = group[book_id].local_id;
-
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "Chronology";
-        setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 2000);
-        group.sort((a, b) => {
-            return b.posted - a.posted;
+            eventDisable();
+            window.location.href = "book.html";
         });
-
-        for (let i in group) {
-            if (id == group[i].local_id) {
-                book_id = parseInt(i, 10);
-                break;
-            }
-        }
-    } else if (is_key("exit")) {
+        return;
+    }
+    if (isKey("name_sort")) {
+        ipcRenderer.send("sort", "name");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("name_sort");
+            book_id = data.book_id;
+            group = data.group;
+        });
+        return;
+    }
+    if (isKey("random_sort")) {
+        ipcRenderer.send("sort", "random");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("random_sort");
+            book_id = data.book_id;
+            group = data.group;
+        });
+        return;
+    }
+    if (isKey("chronology")) {
+        ipcRenderer.send("sort", "chronology");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("chronology");
+            book_id = data.book_id;
+            group = data.group;
+        });
+        return;
+    }
+    if (isKey("exit")) {
         ipcRenderer.send("exit");
+        return;
     }
 }
 
@@ -309,26 +341,9 @@ function mouse(e) {
     }
 }
 
-function create_html_view(document) {
-    eventEnable();
-    //window.onresize = create_viewer;
-    let body = document.getElementsByTagName("body");
-    //body[0].style = "overflow:hidden";
-    body[0].innerHTML =
-        `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
-        `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
-        <input  type="button" id="ttt" style="display:none" value="第一頁" ></div>`;
-    html = document.getElementById("im");
-    image.init(group[book_id].local_path).then(e => {
-        img = e;
-        cacheObj = cache.init(img, img_id);
-        getElement = cacheObj.getElement;
-        image_view();
-    });
-}
 
 function load_viewer() {
-    eventEnable();
+    eventEnable();    
     let body = document.getElementsByTagName("body");
     body[0].innerHTML =
         `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
@@ -342,11 +357,13 @@ function load_viewer() {
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     book_id = data.book_id,
-    img_id = data.img_id,
-    page_max = data.page_max;
+        img_id = data.img_id,
+        page_max = data.page_max;
     group = data.group;
     uiLanguage = data.uiLanguage;
-    definition = data.definition;
+    //definition = data.definition;
+    globalHotkeys = data.globalHotkeys;
+    viewHotkeys = data.viewHotkeys;
 
     image.init(group[book_id].local_path).then(e => {
         img = e;
@@ -354,4 +371,25 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
         getElement = cacheObj.getElement;
         load_viewer();
     });
+});
+
+ipcRenderer.on('context-menu-command', (e, command, text) => {
+    if (command === 'copy') {
+        try {
+            clipboard.writeText(text);
+            console.log('Text copied to clipboard');
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    } else if (command === 'previousPage') {
+        ipcRenderer.send('put-bookStatus', { img_id: img_id, book_id: book_id });
+        ipcRenderer.once('put-bookStatus-reply', (e) => {
+            console.log("back");
+            if (viewer) {
+                viewer.destroy();
+            }
+            eventDisable();
+            window.location.href = "book.html";
+        });
+    }
 });
