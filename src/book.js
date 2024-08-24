@@ -271,7 +271,7 @@ function createInformation() {
         gmid.innerHTML = strHtml;
 
         gmid.getElementById
-        console.log(gmid.getElementsByClassName("gt"));
+        //console.log(gmid.getElementsByClassName("gt"));
         //console.log(gmid.getElementById("tagmenu_act-a"));
         gmid.querySelector("#tagmenu_act_a").onclick = () => {
             console.log("1");
@@ -415,7 +415,7 @@ function searchHotkey(event) {
 
     if (isKey("full_screen")) {
         console.log("full_screen");
-        //ipcRenderer.send('toggle-fullscreen');
+        ipcRenderer.send('toggle-fullscreen');
         return;
     }
     if (isKey("back")) {
@@ -424,42 +424,79 @@ function searchHotkey(event) {
         return;
     }
     if (isKey("name_sort")) {
-        console.log("name_sort");
+        ipcRenderer.send("sort", "name");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("name_sort");
+            book_id = data.book_id;
+            group = data.group;
+        });
         return;
 
     }
     if (isKey("random_sort")) {
-        console.log("random_sort");
+        ipcRenderer.send("sort", "random");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("random_sort");
+            book_id = data.book_id;
+            group = data.group;
+        });
         return;
     }
     if (isKey("chronology")) {
-        console.log("chronology");
+        ipcRenderer.send("sort", "chronology");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("chronology");
+            book_id = data.book_id;
+            group = data.group;
+        });
         return;
     }
     if (isKey("exit")) {
         console.log("exit");
+        ipcRenderer.send("exit");
         return;
     }
 
     if (isKey("prev")) {
+        goto_page("-1")();
         console.log("prev");
         return;
     }
     if (isKey("next")) {
+        goto_page("-2")();
         console.log("next");
         return;
     }
     if (isKey("prev_book")) {
         console.log("prev_book");
+        book_id = (book_id-1 < 0)?(group.length-1):(book_id-1);
+        img_id = 0;
+        ipcRenderer.send('put-bookStatus', {img_id: img_id, book_id: book_id});
+        ipcRenderer.once('put-bookStatus-reply', ()=> {
+            image.init(group[book_id].local_path).then(e => {
+                imageArray = e;
+                updataBook();
+            });
+        });
         return;
     }
     if (isKey("next_book")) {
         console.log("next_book");
+        book_id = (book_id+1 == group.length)?0:(book_id+1);
+        img_id = 0;
+        ipcRenderer.send('put-bookStatus', {img_id: img_id, book_id: book_id});
+        ipcRenderer.once('put-bookStatus-reply', ()=> {
+            image.init(group[book_id].local_path).then(e => {
+                imageArray = e;
+                updataBook();
+            });
+        });
         return;
     }
 }
+
 ipcRenderer.send('get-pageStatus');
-ipcRenderer.on('get-pageStatus-reply', (event, data) => {
+ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     book_id = data.book_id,
         img_id = data.img_id,
         page_max = data.page_max;
@@ -468,9 +505,8 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     bookHotkeys = data.bookHotkeys;
+    document.addEventListener('keydown', searchHotkey);
     image.init(group[book_id].local_path).then(e => {
-        console.log(bookHotkeys);
-        document.addEventListener('keydown', searchHotkey);
         imageArray = e;
         updataBook();
     });
