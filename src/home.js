@@ -1,7 +1,7 @@
 /*jshint esversion: 8 */
 const dialogs = require("dialogs")();
 const image = require("../image_manager");
-const { ipcRenderer } = require("electron");
+const { ipcRenderer, clipboard } = require("electron");
 //window.$ = window.jQuery = require('jquery');
 
 let page = 0;
@@ -129,18 +129,41 @@ function createPage() {
     }
 
     pageDiv.innerHTML = `<div class="itg gld">${strHtml}</div>`;
-
     for (let i = 0; i < thisPageMax; i++) {
-        function click() {
+        const click = (event) => {
+            const selectedText = window.getSelection().toString().trim();
+
+            if (selectedText.length) {
+                return;
+            }
+
             console.log(page * page_max + i, group[page * page_max + i].local_name);
             ipcRenderer.send('put-homeStatus', { book_id: page * page_max + i });
-            ipcRenderer.on('put-homeStatus-reply', (event, data) => {
+
+            // 確保只添加一次事件監聽器
+            ipcRenderer.once('put-homeStatus-reply', (event, data) => {
                 window.location.href = "book.html";
+            });
+        };
+
+        const contextmenu = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            ipcRenderer.send('show-context-menu', { 
+                filePath: group[i].local_path,
+                fileName: group[i].local_name
             });
         }
 
-        pageDiv.getElementsByClassName("gl1t")[i].querySelector("a").addEventListener("click", click);
-        pageDiv.getElementsByClassName("gl3t")[i].querySelector("a").addEventListener("click", click);
+        const gl1tLink = pageDiv.getElementsByClassName("gl1t")[i].querySelector("a");
+        const gl3tLink = pageDiv.getElementsByClassName("gl3t")[i].querySelector("a");
+
+        gl1tLink.addEventListener("click", click);
+        gl3tLink.addEventListener("click", click);
+
+        gl1tLink.addEventListener('contextmenu', contextmenu);
+        gl3tLink.addEventListener('contextmenu', contextmenu);
+           
         image.getheadAsync(group[page * page_max + i].local_path).then(url => {
             pageDiv.getElementsByTagName("img")[i].src = url;
         });
@@ -301,6 +324,14 @@ function updataHome() {
 
     createPtt();
     createPage();
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+        const selectedText = window.getSelection().toString();
+        if (!selectedText) {
+            return;
+        }
+        ipcRenderer.send('show-context-menu', { selectedText: selectedText });
+    });
 }
 
 function hotkeyHandle(event) {
@@ -419,4 +450,16 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     document.addEventListener('keydown', hotkeyHandle);
     createSearch();
     updataHome();
+});
+
+ipcRenderer.on('context-menu-command', (e, command, text) => {
+    if (command === 'copy') {
+        try {
+            clipboard.writeText(text);
+            window.getSelection().removeAllRanges();
+            console.log(text);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    }
 });

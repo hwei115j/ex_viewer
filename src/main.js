@@ -423,17 +423,31 @@ ipcMain.on("sort", (event, arg) => {
 ipcMain.on('show-context-menu', (event, arg) => {
     const template = [];
 
+    if(arg.fileName) {
+        template.push({
+            label: getTranslation('Copy Name'),
+            click: () => { event.sender.send('context-menu-command', 'copy', arg.fileName); }
+        });
+    }
+    if(arg.filePath) {
+        template.push({
+            label: getTranslation('Copy Path'),
+            click: () => { event.sender.send('context-menu-command', 'copy', arg.filePath); }
+        });
+    }
     if (arg.selectedText) {
         template.push({
             label: getTranslation('Copy'),
             click: () => { event.sender.send('context-menu-command', 'copy', arg.selectedText); }
         });
-    } else {
+    } 
+    if(arg.previousPage) {
         template.push({
             label: getTranslation('Previous page'),
             click: () => { event.sender.send('context-menu-command', 'previousPage'); }
         });
     }
+   
     const menu = Menu.buildFromTemplate(template)
     menu.popup({ window: BrowserWindow.fromWebContents(event.sender) })
 })

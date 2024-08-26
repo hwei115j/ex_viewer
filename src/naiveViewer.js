@@ -24,7 +24,10 @@ function eventEnable() {
     window.addEventListener('contextmenu', (e) => {
         e.preventDefault()
         const selectedText = window.getSelection().toString();
-        ipcRenderer.send('show-context-menu', { selectedText: selectedText })
+        ipcRenderer.send('show-context-menu', {
+            selectedText: selectedText,
+            previousPage: true
+        });
     })
 }
 

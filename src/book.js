@@ -326,7 +326,9 @@ function createInformation() {
                 e.preventDefault();
                 e.stopPropagation();
                 //console.log(gt[i].title);
-                ipcRenderer.send('show-context-menu', { selectedText: gt[i].title })
+                ipcRenderer.send('show-context-menu', { 
+                    selectedText: gt[i].title,
+                });
             });
         }
 
@@ -349,7 +351,10 @@ function updataBook() {
     window.addEventListener('contextmenu', (e) => {
         e.preventDefault()
         const selectedText = window.getSelection().toString();
-        ipcRenderer.send('show-context-menu', { selectedText: selectedText })
+        ipcRenderer.send('show-context-menu', { 
+            selectedText: selectedText,
+            previousPage: !!!selectedText
+        });
     })
 
 }
@@ -502,7 +507,7 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
     if (command === 'copy') {
         try {
             clipboard.writeText(text);
-            console.log('Text copied to clipboard');
+            console.log(text);
         } catch (err) {
             console.error('Failed to copy text: ', err);
         }
