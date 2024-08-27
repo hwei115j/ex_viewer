@@ -149,7 +149,7 @@ function createPage() {
         const contextmenu = (e) => {
             e.preventDefault();
             e.stopPropagation();
-            ipcRenderer.send('show-context-menu', { 
+            ipcRenderer.send('show-context-menu', {
                 filePath: group[i].local_path,
                 fileName: group[i].local_name
             });
@@ -163,7 +163,7 @@ function createPage() {
 
         gl1tLink.addEventListener('contextmenu', contextmenu);
         gl3tLink.addEventListener('contextmenu', contextmenu);
-           
+
         image.getheadAsync(group[page * page_max + i].local_path).then(url => {
             pageDiv.getElementsByTagName("img")[i].src = url;
         });
@@ -310,7 +310,7 @@ function createSearch() {
         f_search.value = ".null";
         document.getElementById("from_onsubmit").onsubmit();
     }
-    document.getElementById("updateMatch").innerText = "update match"
+    //document.getElementById("updateMatch").innerText = "update match"
 }
 
 function updataHome() {
@@ -332,6 +332,30 @@ function updataHome() {
         }
         ipcRenderer.send('show-context-menu', { selectedText: selectedText });
     });
+    document.getElementById('menuButton').addEventListener('click', function () {
+        document.getElementById('sideMenu').classList.remove('hidden');
+        document.getElementById('sideMenu').style.display = 'block';
+        document.getElementById('menuButton').style.display = 'none';
+    });
+
+    document.getElementById('closeButton').addEventListener('click', function () {
+        document.getElementById('sideMenu').classList.add('hidden');
+        document.getElementById('sideMenu').style.display = 'none';
+        document.getElementById('menuButton').style.display = 'block';
+    });
+    document.querySelectorAll('.pinButton').forEach(button => {
+    button.addEventListener('click', () => {
+        button.classList.toggle('active');
+        const icon = button.querySelector('i');
+        if (button.classList.contains('active')) {
+            icon.classList.remove('far');
+            icon.classList.add('fas');
+        } else {
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+        }
+    });
+});
 }
 
 function hotkeyHandle(event) {

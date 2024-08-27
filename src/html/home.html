@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <title>ex_viewer</title>
     <link rel="stylesheet" type="text/css" href="exhentai.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script type="text/javascript" src="../home.js"></script>
     <style type="text/css">
         @supports (display: grid) {
@@ -69,37 +70,192 @@
             }
         }
 
-        .ehs-introduce-box {
-            font-size: 10pt;
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            right: -5px;
-            overflow: auto;
-            background: #edebdf;
-            text-align: left;
-            -webkit-box-orient: vertical;
-            -webkit-flex-direction: column;
-            -moz-box-orient: vertical;
-            -ms-flex-direction: column;
-            flex-direction: column;
-            -webkit-border-radius: 0 0 5px 0;
-            -moz-border-radius: 0 0 5px 0;
-            border-radius: 0 0 5px 0;
+        #menuButton {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            background-color: #333;
+            color: white;
+            border: 2px solid #7c7979;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
         }
 
-        .ehs-introduce-box::-webkit-scrollbar {
-            width: 2px;
+        .menuButton {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            transition: background-color 0.3s;
+        }
+
+
+
+        #sideMenu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 25%;
+            height: 100%;
+            background-color: rgba(17, 17, 17, 0.7);
+            /* 半透明背景 */
+            color: white;
+            padding: 20px;
+            padding-top: 50px;
+            display: none;
+            z-index: 999;
+            box-sizing: border-box;
+            backdrop-filter: blur(10px);
+            /* 磨砂效果 */
+            overflow-y: auto
+        }
+
+        #closeButton {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: transparent;
+            /* 去掉背景顏色 */
+            color: #bbb;
+            /* 更淡的字體顏色 */
+            border: none;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            text-align: center;
+            line-height: 30px;
+            font-size: 16px;
+            transition: color 0.3s;
+            /* 平滑過渡效果 */
+        }
+
+
+        .menuButton:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .historySection {
+            margin-top: 20px;
+        }
+
+        .historySection h3 {
+            margin-bottom: 10px;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        .historySection ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+        }
+
+        .historySection li {
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pinButton {
+            background-color: transparent;
+            color: #bbb;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+
+        .pinButton i {
+            font-size: 16px;
+        }
+
+        .pinButton {
+            background-color: transparent;
+            color: #bbb;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: color 0.3s;
+        }
+
+        .pinButton.active i {
+            color: yellow;
+        }
+
+        .pinButton:hover {
+            color: #fff;
+        }
+
+        .historySection a {
+            color: white;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.3s;
+        }
+
+        .historySection a:hover {
+            color: #ccc;
+        }
+
+        .clearButton {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: rgba(255, 0, 0, 0.1);
+            color: white;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+
+        .clearButton:hover {
+            background-color: rgba(255, 0, 0, 0.2);
         }
     </style>
 </head>
 
 <body>
+    <button id="menuButton">☰</button>
+    <div id="sideMenu">
+        <button id="closeButton">X</button>
+        <button class="menuButton">設定</button>
+        <button class="menuButton">搜尋</button>
+        <div class="historySection">
+            <h3>搜尋紀錄</h3>
+            <ul>
+                <li>
+                    <a href="#">紀錄 1</a>
+                    <button class="pinButton"><i class="far fa-star"></i></button>
+                </li>
+                <li>
+                    <a href="#">紀錄 2</a>
+                    <button class="pinButton"><i class="far fa-star"></i></button>
+                </li>
+                <li>
+                    <a href="#">紀錄 3</a>
+                    <button class="pinButton"><i class="far fa-star"></i></button>
+                </li>
+            </ul>
+        </div>
+        <button class="clearButton">清除列表</button>
+    </div>
+
     <div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
         <input type="button" id="ttt" style="display:none" value="">
     </div>
     <div class="ido" style="max-width:1370px">
+        <h1 class="ih"><a></a>
+            <a"> </a>
+        </h1>
         <div style="position:relative; z-index:2">
             <div id="searchbox" class="idi">
                 <form id="from_onsubmit" style="margin: 0px; padding: 0px;">
@@ -166,9 +322,10 @@
                         <input type="text" id="f_search" name="f_search" placeholder="search" text="" size="50"
                             maxlength="200" autocomplete="off">
                         <input type="submit" id="searchSubmit" value="search">
-                        <input type="button" id="searchClear" value="clear" onclick="document.getElementById('f_search').value = ''">
+                        <input type="button" id="searchClear" value="clear"
+                            onclick="document.getElementById('f_search').value = ''">
                     </div>
-                    <div>[<a id="updateMatch"></a>] &nbsp; &nbsp;[<a id="notMatched"></a>]</div>
+                    <div>&nbsp;[<a id="notMatched"></a>]</div>
                     <div id="advdiv" style="display: none;"></div>
                 </form>
             </div>
