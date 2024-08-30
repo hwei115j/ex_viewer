@@ -14,6 +14,7 @@ let group;
 let keyboardEventHome;
 let globalHotkeys;
 let homeHotkeys;
+let historyList;
 
 let category = [
     "Doujinshi",
@@ -43,7 +44,7 @@ function goto_page(str) {
                 if (p > len) return;
                 if (p < 1) return;
                 book_id = (p - 1) * page_max;
-                updataHome();
+                updateHome();
                 //ipcRenderer.send('get-pageStatus', book_id);
                 return;
             });
@@ -56,7 +57,7 @@ function goto_page(str) {
         } else if (p >= 0) {
             book_id = (p - 1) * page_max;
         }
-        updataHome();
+        updateHome();
         //ipcRenderer.send('get-pageStatus', book_id);
     };
 }
@@ -294,14 +295,30 @@ function createSearch() {
     document.getElementById("searchClear").value = replace("clear");
 
     document.getElementById("from_onsubmit").onsubmit = () => {
+        if (!historyList.some(item => item.text === f_search.value) && f_search.value !== "") {
+            const newItem = {
+                text: f_search.value,
+                pinned: false,
+                order: 2434
+            };
+            historyList.push(newItem);
+            ipcRenderer.send("put-historyList", historyList);
+            ipcRenderer.once("put-historyList-reply", () => {
+                console.log("update");
+                updateHistoryList();
+            });
+        }
         ipcRenderer.send("put-search", { str: f_search.value, category: category });
         ipcRenderer.on("put-search-reply", (event, data) => {
             book_id = data.book_id;
             group = data.group;
             search_str = data.search_str;
             groupLength = group.length;
-            updataHome();
+            console.log(data.search_str);
+            updateHome();
         });
+
+
         return false;
     };
 
@@ -312,8 +329,92 @@ function createSearch() {
     }
     //document.getElementById("updateMatch").innerText = "update match"
 }
+function updateHistoryList() {
+    let historyHtml = "";
+    for (const i in historyList) {
+        let star_class = (historyList[i].pinned) ? "fa-star fas" : "far fa-star";
+        let button_class = (historyList[i].pinned) ? "pinButton active" : "pinButton";
+        historyHtml += `<li><a class="history-link" title='${historyList[i].text}'>${historyList[i].text}</a><button class="${button_class}"><i class='${star_class}'></i></button></li>`;
+    }
+    document.getElementById('historyList').innerHTML = historyHtml;
 
-function updataHome() {
+    document.querySelectorAll('.history-link').forEach((link, index) => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            document.getElementById("f_search").value = historyList[index].text;
+            document.getElementById("from_onsubmit").onsubmit();
+        });
+    });
+    document.querySelectorAll('.pinButton').forEach((button, index) => {
+        button.addEventListener('click', () => {
+            button.classList.toggle('active');
+            const icon = button.querySelector('i');
+            if (button.classList.contains('active')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                historyList[index].pinned = true;
+
+                let maxOrder = 0;
+                historyList.forEach(item => {
+                    if (item.order !== 2434) {
+                        maxOrder = Math.max(maxOrder, item.order);
+                    }
+                });
+                historyList[index].order = maxOrder + 1;
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                historyList[index].pinned = false;
+                historyList[index].order = 2434;
+            }
+            historyList.sort((a, b) => a.order - b.order);
+            ipcRenderer.send("put-historyList", historyList);
+            ipcRenderer.once("put-historyList-reply", () => {
+                console.log("update");
+                updateHistoryList();
+            });
+        });
+    });
+}
+function createSidebar() {
+    const sideMenu = document.getElementById('sideMenu');
+    const menuButton = document.getElementById('menuButton');
+
+    function closeSidebar() {
+        sideMenu.classList.add('hidden');
+        sideMenu.style.display = 'none';
+        menuButton.style.display = 'block';
+    }
+
+    updateHistoryList();
+
+    menuButton.addEventListener('click', function () {
+        sideMenu.classList.remove('hidden');
+        sideMenu.style.display = 'block';
+        menuButton.style.display = 'none';
+    });
+
+    document.getElementById('closeButton').addEventListener('click', function () {
+        closeSidebar();
+    });
+
+    document.getElementById('sideClearButton').addEventListener('click', () => {
+        historyList = historyList.filter(item => item.pinned !== false);
+        ipcRenderer.send("put-historyList", historyList);
+        ipcRenderer.once("put-historyList-reply", () => {
+            updateHistoryList();
+        });
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!sideMenu.contains(event.target) && !menuButton.contains(event.target)) {
+            closeSidebar();
+        }
+    });
+
+}
+
+function updateHome() {
     page = Math.floor(book_id / page_max);
     document.getElementById("f_search").value = search_str;
     document.getElementById("pageSelectorText").textContent = `Showing ${page * page_max + 1} - 
@@ -324,6 +425,8 @@ function updataHome() {
 
     createPtt();
     createPage();
+    createSidebar();
+
     window.addEventListener('contextmenu', (e) => {
         e.preventDefault()
         const selectedText = window.getSelection().toString();
@@ -332,30 +435,7 @@ function updataHome() {
         }
         ipcRenderer.send('show-context-menu', { selectedText: selectedText });
     });
-    document.getElementById('menuButton').addEventListener('click', function () {
-        document.getElementById('sideMenu').classList.remove('hidden');
-        document.getElementById('sideMenu').style.display = 'block';
-        document.getElementById('menuButton').style.display = 'none';
-    });
 
-    document.getElementById('closeButton').addEventListener('click', function () {
-        document.getElementById('sideMenu').classList.add('hidden');
-        document.getElementById('sideMenu').style.display = 'none';
-        document.getElementById('menuButton').style.display = 'block';
-    });
-    document.querySelectorAll('.pinButton').forEach(button => {
-    button.addEventListener('click', () => {
-        button.classList.toggle('active');
-        const icon = button.querySelector('i');
-        if (button.classList.contains('active')) {
-            icon.classList.remove('far');
-            icon.classList.add('fas');
-        } else {
-            icon.classList.remove('fas');
-            icon.classList.add('far');
-        }
-    });
-});
 }
 
 function hotkeyHandle(event) {
@@ -428,7 +508,7 @@ function hotkeyHandle(event) {
             console.log("name_sort");
             book_id = 0;
             group = data.group;
-            updataHome();
+            updateHome();
         });
         return;
     }
@@ -438,7 +518,7 @@ function hotkeyHandle(event) {
             console.log("random_sort");
             book_id = 0;
             group = data.group;
-            updataHome();
+            updateHome();
         });
         return;
     }
@@ -448,7 +528,7 @@ function hotkeyHandle(event) {
             console.log("chronology");
             book_id = 0;
             group = data.group;
-            updataHome();
+            updateHome();
         });
         return;
     }
@@ -470,10 +550,14 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     groupLength = group.length;
     globalHotkeys = data.globalHotkeys;
     homeHotkeys = data.homeHotkeys;
+    historyList = data.historyList;
 
     document.addEventListener('keydown', hotkeyHandle);
     createSearch();
-    updataHome();
+    //console.log(search_str);
+    document.getElementById("f_search").value = search_str;
+    document.getElementById("from_onsubmit").onsubmit();
+    //updateHome();
 });
 
 ipcRenderer.on('context-menu-command', (e, command, text) => {
