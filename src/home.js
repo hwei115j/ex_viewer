@@ -340,10 +340,11 @@ function createSearch() {
 function updateHistoryList() {
     let historyHtml = "";
     for (const i in historyList) {
-        let star_class = (historyList[i].pinned) ? "fa-star fas" : "far fa-star";
+        let star_class = (historyList[i].pinned) ? "bi-star-fill" : "bi-star";
         let button_class = (historyList[i].pinned) ? "pinButton active" : "pinButton";
         historyHtml += `<li><a class="history-link" title='${historyList[i].text}'>${historyList[i].text}</a><button class="${button_class}"><i class='${star_class}'></i></button></li>`;
     }
+    
     document.getElementById('historyList').innerHTML = historyHtml;
 
     document.querySelectorAll('.history-link').forEach((link, index) => {
