@@ -264,7 +264,7 @@ function createInformation() {
 
         strHtml += `</tbody></table></div><div id="tagmenu_act" style="display:none"><a id="tagmenu_act_a" href="#" style="font-size:medium">
         ${getTranslation(
-            "book search",
+            "search",
             "search"
         )}</a></div></div>`
 

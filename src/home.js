@@ -394,6 +394,11 @@ function createSidebar() {
         menuButton.style.display = 'block';
     }
 
+    sideMenu.getElementsByTagName('button')[1].textContent  = replace("Settings");
+    sideMenu.getElementsByTagName('button')[2].textContent  = replace("search");
+    sideMenu.getElementsByTagName('button')[3].textContent  = replace("Clear list");
+    sideMenu.getElementsByTagName('h3')[0].textContent  = replace("Search history");
+
     updateHistoryList();
 
     menuButton.addEventListener('click', function () {
