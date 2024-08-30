@@ -290,17 +290,21 @@ function createSearch() {
     document.getElementById("cat_512").addEventListener("click", categoryEvent);
 
     let f_search = document.getElementById("f_search");
+    let searchClear = document.getElementById("searchClear");
+    let from_onsubmit = document.getElementById("from_onsubmit");
+
+    f_search.onkeydown = (e) => { e.stopPropagation(); }
     f_search.placeholder = replace("search text");
     document.getElementById("searchSubmit").value = replace("search");
-    document.getElementById("searchClear").value = replace("clear");
+    searchClear.value = replace("clear");
 
-    document.getElementById("from_onsubmit").onsubmit = () => {
+    from_onsubmit.onsubmit = () => {
         if (!historyList.some(item => item.text === f_search.value) && f_search.value !== "") {
             const newItem = {
                 text: f_search.value,
                 pinned: false,
                 order: 2434
-            };
+            }
             historyList.push(newItem);
             ipcRenderer.send("put-historyList", historyList);
             ipcRenderer.once("put-historyList-reply", () => {
@@ -320,12 +324,16 @@ function createSearch() {
 
 
         return false;
-    };
+    }
 
     document.getElementById("notMatched").innerText = "not matched"
     document.getElementById("notMatched").onclick = () => {
         f_search.value = ".null";
-        document.getElementById("from_onsubmit").onsubmit();
+        from_onsubmit.onsubmit();
+    }
+    searchClear.onclick = () => {
+        f_search.value = "";
+        from_onsubmit.onsubmit();
     }
     //document.getElementById("updateMatch").innerText = "update match"
 }
