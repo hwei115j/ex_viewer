@@ -13,8 +13,8 @@
 		"viewerjs": "^1.10.3"
 	},
 	"devDependencies": {
-		"electron": "^12.2.3",
-		"electron-builder": "^22.14.13"
+		"electron": "^32.0.1",
+		"electron-builder": "^24.13.3"
 	},
 	"scripts": {
 		"dist": "electron-builder --x64"
