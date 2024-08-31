@@ -1,8 +1,8 @@
 /*jshint esversion: 8 */
 const dialogs = require("dialogs")();
 const image = require("../image_manager");
-const { ipcRenderer } = require("electron");
-window.$ = window.jQuery = require('jquery');
+const { ipcRenderer, clipboard } = require("electron");
+//window.$ = window.jQuery = require('jquery');
 
 let page = 0;
 let uiLanguage;
@@ -12,6 +12,9 @@ let book_id;
 let search_str;
 let group;
 let keyboardEventHome;
+let globalHotkeys;
+let homeHotkeys;
+let historyList;
 
 let category = [
     "Doujinshi",
@@ -41,7 +44,7 @@ function goto_page(str) {
                 if (p > len) return;
                 if (p < 1) return;
                 book_id = (p - 1) * page_max;
-                updataHome();
+                updateHome();
                 //ipcRenderer.send('get-pageStatus', book_id);
                 return;
             });
@@ -54,7 +57,7 @@ function goto_page(str) {
         } else if (p >= 0) {
             book_id = (p - 1) * page_max;
         }
-        updataHome();
+        updateHome();
         //ipcRenderer.send('get-pageStatus', book_id);
     };
 }
@@ -127,18 +130,41 @@ function createPage() {
     }
 
     pageDiv.innerHTML = `<div class="itg gld">${strHtml}</div>`;
-
     for (let i = 0; i < thisPageMax; i++) {
-        function click() {
+        const click = (event) => {
+            const selectedText = window.getSelection().toString().trim();
+
+            if (selectedText.length) {
+                return;
+            }
+
             console.log(page * page_max + i, group[page * page_max + i].local_name);
             ipcRenderer.send('put-homeStatus', { book_id: page * page_max + i });
-            ipcRenderer.on('put-homeStatus-reply', (event, data) => {
+
+            // 確保只添加一次事件監聽器
+            ipcRenderer.once('put-homeStatus-reply', (event, data) => {
                 window.location.href = "book.html";
+            });
+        };
+
+        const contextmenu = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            ipcRenderer.send('show-context-menu', {
+                filePath: group[i].local_path,
+                fileName: group[i].local_name
             });
         }
 
-        pageDiv.getElementsByClassName("gl1t")[i].querySelector("a").addEventListener("click", click);
-        pageDiv.getElementsByClassName("gl3t")[i].querySelector("a").addEventListener("click", click);
+        const gl1tLink = pageDiv.getElementsByClassName("gl1t")[i].querySelector("a");
+        const gl3tLink = pageDiv.getElementsByClassName("gl3t")[i].querySelector("a");
+
+        gl1tLink.addEventListener("click", click);
+        gl3tLink.addEventListener("click", click);
+
+        gl1tLink.addEventListener('contextmenu', contextmenu);
+        gl3tLink.addEventListener('contextmenu', contextmenu);
+
         image.getheadAsync(group[page * page_max + i].local_path).then(url => {
             pageDiv.getElementsByTagName("img")[i].src = url;
         });
@@ -264,31 +290,145 @@ function createSearch() {
     document.getElementById("cat_512").addEventListener("click", categoryEvent);
 
     let f_search = document.getElementById("f_search");
+    let searchClear = document.getElementById("searchClear");
+    let from_onsubmit = document.getElementById("from_onsubmit");
+
+    f_search.onkeydown = (e) => { e.stopPropagation(); }
     f_search.placeholder = replace("search text");
     document.getElementById("searchSubmit").value = replace("search");
-    document.getElementById("searchClear").value = replace("clear");
+    searchClear.value = replace("clear");
 
-    document.getElementById("from_onsubmit").onsubmit = () => {
+    from_onsubmit.onsubmit = () => {
+        if (!historyList.some(item => item.text === f_search.value) && f_search.value !== "") {
+            const newItem = {
+                text: f_search.value,
+                pinned: false,
+                order: 2434
+            }
+            historyList.push(newItem);
+            ipcRenderer.send("put-historyList", historyList);
+            ipcRenderer.once("put-historyList-reply", () => {
+                console.log("update");
+                updateHistoryList();
+            });
+        }
         ipcRenderer.send("put-search", { str: f_search.value, category: category });
         ipcRenderer.on("put-search-reply", (event, data) => {
             book_id = data.book_id;
             group = data.group;
             search_str = data.search_str;
             groupLength = group.length;
-            updataHome();
+            console.log(data.search_str);
+            updateHome();
         });
+
+
         return false;
-    };
+    }
 
     document.getElementById("notMatched").innerText = "not matched"
     document.getElementById("notMatched").onclick = () => {
         f_search.value = ".null";
-        document.getElementById("from_onsubmit").onsubmit();
+        from_onsubmit.onsubmit();
     }
-    document.getElementById("updateMatch").innerText = "update match"
+    searchClear.onclick = () => {
+        f_search.value = "";
+        from_onsubmit.onsubmit();
+    }
+    //document.getElementById("updateMatch").innerText = "update match"
+}
+function updateHistoryList() {
+    let historyHtml = "";
+    for (const i in historyList) {
+        let star_class = (historyList[i].pinned) ? "bi-star-fill" : "bi-star";
+        let button_class = (historyList[i].pinned) ? "pinButton active" : "pinButton";
+        historyHtml += `<li><a class="history-link" title='${historyList[i].text}'>${historyList[i].text}</a><button class="${button_class}"><i class='${star_class}'></i></button></li>`;
+    }
+    
+    document.getElementById('historyList').innerHTML = historyHtml;
+
+    document.querySelectorAll('.history-link').forEach((link, index) => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault();
+            document.getElementById("f_search").value = historyList[index].text;
+            document.getElementById("from_onsubmit").onsubmit();
+        });
+    });
+    document.querySelectorAll('.pinButton').forEach((button, index) => {
+        button.addEventListener('click', () => {
+            button.classList.toggle('active');
+            const icon = button.querySelector('i');
+            if (button.classList.contains('active')) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+                historyList[index].pinned = true;
+
+                let maxOrder = 0;
+                historyList.forEach(item => {
+                    if (item.order !== 2434) {
+                        maxOrder = Math.max(maxOrder, item.order);
+                    }
+                });
+                historyList[index].order = maxOrder + 1;
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+                historyList[index].pinned = false;
+                historyList[index].order = 2434;
+            }
+            historyList.sort((a, b) => a.order - b.order);
+            ipcRenderer.send("put-historyList", historyList);
+            ipcRenderer.once("put-historyList-reply", () => {
+                console.log("update");
+                updateHistoryList();
+            });
+        });
+    });
+}
+function createSidebar() {
+    const sideMenu = document.getElementById('sideMenu');
+    const menuButton = document.getElementById('menuButton');
+
+    function closeSidebar() {
+        sideMenu.classList.add('hidden');
+        sideMenu.style.display = 'none';
+        menuButton.style.display = 'block';
+    }
+
+    sideMenu.getElementsByTagName('button')[1].textContent  = replace("Settings");
+    sideMenu.getElementsByTagName('button')[2].textContent  = replace("search");
+    sideMenu.getElementsByTagName('button')[3].textContent  = replace("Clear list");
+    sideMenu.getElementsByTagName('h3')[0].textContent  = replace("Search history");
+
+    updateHistoryList();
+
+    menuButton.addEventListener('click', function () {
+        sideMenu.classList.remove('hidden');
+        sideMenu.style.display = 'block';
+        menuButton.style.display = 'none';
+    });
+
+    document.getElementById('closeButton').addEventListener('click', function () {
+        closeSidebar();
+    });
+
+    document.getElementById('sideClearButton').addEventListener('click', () => {
+        historyList = historyList.filter(item => item.pinned !== false);
+        ipcRenderer.send("put-historyList", historyList);
+        ipcRenderer.once("put-historyList-reply", () => {
+            updateHistoryList();
+        });
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!sideMenu.contains(event.target) && !menuButton.contains(event.target)) {
+            closeSidebar();
+        }
+    });
+
 }
 
-function updataHome() {
+function updateHome() {
     page = Math.floor(book_id / page_max);
     document.getElementById("f_search").value = search_str;
     document.getElementById("pageSelectorText").textContent = `Showing ${page * page_max + 1} - 
@@ -299,47 +439,114 @@ function updataHome() {
 
     createPtt();
     createPage();
+    createSidebar();
+
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+        const selectedText = window.getSelection().toString();
+        if (!selectedText) {
+            return;
+        }
+        ipcRenderer.send('show-context-menu', { selectedText: selectedText });
+    });
+
 }
 
-function createKeyboardEvent() {
-    window.onkeydown = e => {
-        function is_key(str) {
-            let arr = keyboardEventHome[str].value;
-            let key = e.keyCode;
+function hotkeyHandle(event) {
+    function isSame(list) {
+        const pressedKeys = new Set();
 
-            if (key == 33 || key == 34) {
-                //去除pageup、pagedown
-                return false;
-            }
-            for (let i in arr) {
-                if (typeof arr[i] == "number" && key == arr[i]) {
-                    console.log(str);
-                    return true;
-                } else if (key == arr[i][1] && e[arr[i][0]]) {
-                    console.log(str);
+        // 將 event 中的 keycode 加入到 pressedKeys 中
+        if (event.ctrlKey) pressedKeys.add(17); // Control keycode
+        if (event.shiftKey) pressedKeys.add(16); // Shift keycode
+        if (event.altKey) pressedKeys.add(18); // Alt keycode
+        if (event.metaKey) pressedKeys.add(91); // Meta keycode (Command on Mac)
+        pressedKeys.add(event.keyCode); // 事件的 keycode
+        // 先檢查組合鍵
+        for (const item of list) {
+            if (Array.isArray(item)) {
+                if (pressedKeys.has(item[0]) && pressedKeys.has(item[1])) {
                     return true;
                 }
             }
+        }
+
+        if (pressedKeys.size == 2) {
             return false;
         }
-
-        if (is_key("prev")) {
-            goto_page("-1")();
-        } else if (is_key("next")) {
-            goto_page("-2")();
-        } else if (is_key("full_screen")) {
-            ipcRenderer.send("full_screen");
-        } else if (is_key("exit")) {
-            ipcRenderer.send("exit");
-        } else if (is_key("name_sort")) {
-            ipcRenderer.send("sort", "name");
-        } else if (is_key("random_sort")) {
-            ipcRenderer.send("sort", "random");
-        } else if (is_key("chronology")) {
-            ipcRenderer.send("sort", "chronology");
+        // 再檢查單一按鍵
+        for (const item of list) {
+            if (!Array.isArray(item)) {
+                if (pressedKeys.has(item)) {
+                    return true;
+                }
+            }
         }
 
+        return false;
     }
+    function isKey(command) {
+        for (i in globalHotkeys) {
+            if (i === command) {
+                return isSame(globalHotkeys[i].value);
+            }
+        }
+        for (i in homeHotkeys) {
+            if (i === command) {
+                return isSame(homeHotkeys[i].value);
+            }
+        }
+        return null;
+    }
+
+    if (isKey("prev")) {
+        goto_page("-1")();
+        return;
+    }
+    if (isKey("next")) {
+        goto_page("-2")();
+        return;
+    }
+    if (isKey("full_screen")) {
+        console.log("full_screen");
+        ipcRenderer.send('toggle-fullscreen');
+        return;
+    }
+    if (isKey("exit")) {
+        ipcRenderer.send("exit");
+        return;
+    }
+    if (isKey("name_sort")) {
+        ipcRenderer.send("sort", "name");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("name_sort");
+            book_id = 0;
+            group = data.group;
+            updateHome();
+        });
+        return;
+    }
+    if (isKey("random_sort")) {
+        ipcRenderer.send("sort", "random");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("random_sort");
+            book_id = 0;
+            group = data.group;
+            updateHome();
+        });
+        return;
+    }
+    if (isKey("chronology")) {
+        ipcRenderer.send("sort", "chronology");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("chronology");
+            book_id = 0;
+            group = data.group;
+            updateHome();
+        });
+        return;
+    }
+
 
 
 
@@ -355,14 +562,26 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     search_str = data.search_str;
     keyboardEventHome = data.keyboardEventHome;
     groupLength = group.length;
+    globalHotkeys = data.globalHotkeys;
+    homeHotkeys = data.homeHotkeys;
+    historyList = data.historyList;
 
+    document.addEventListener('keydown', hotkeyHandle);
     createSearch();
-    createKeyboardEvent();
-    updataHome();
+    //console.log(search_str);
+    document.getElementById("f_search").value = search_str;
+    document.getElementById("from_onsubmit").onsubmit();
+    //updateHome();
 });
 
-ipcRenderer.on("sort-reply", (event, data) => {
-    book_id = data.book_id;
-    group = data.group;
-    updataHome();
+ipcRenderer.on('context-menu-command', (e, command, text) => {
+    if (command === 'copy') {
+        try {
+            clipboard.writeText(text);
+            window.getSelection().removeAllRanges();
+            console.log(text);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    }
 });

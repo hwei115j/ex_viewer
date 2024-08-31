@@ -18,13 +18,16 @@ let globalHotkeys;
 let viewHotkeys;
 
 function eventEnable() {
-    window.onkeydown = key_word;
+    window.onkeydown = hotkeyHandle;
     window.onwheel = mouse;
     window.onresize = image_view;
     window.addEventListener('contextmenu', (e) => {
         e.preventDefault()
         const selectedText = window.getSelection().toString();
-        ipcRenderer.send('show-context-menu', { selectedText: selectedText })
+        ipcRenderer.send('show-context-menu', {
+            selectedText: selectedText,
+            previousPage: true
+        });
     })
 }
 
@@ -102,7 +105,7 @@ function image_view() {
     }
 }
 
-function key_word(event) {
+function hotkeyHandle(event) {
     event.preventDefault();
     function move(x, y) {
         let clienWidth = document.documentElement.clientWidth;

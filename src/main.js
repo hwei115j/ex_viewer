@@ -21,7 +21,7 @@ const definition_json = join(".", "setting", "language", "definition.json");
 const ui_json = join(".", "setting", "language", "ui.json");
 const local_db_path = join(".", "setting", "local", "local.db");
 const setting_json = join(".", "setting", "setting.json");
-
+const historyList_json = join(".", "setting", "historyList.json");
 let db;
 let setting = JSON.parse(fs.readFileSync(setting_json).toString());
 
@@ -91,6 +91,17 @@ let pageStatus = {
                 JSON.stringify(JSON.parse('{"dir":[], "layers":[]}'))
             );
             return JSON.parse('{"dir":[], "layers":[]}');
+        }
+    })(),
+    historyList: (() => {
+        try {
+            return JSON.parse(fs.readFileSync(historyList_json).toString());
+        } catch (err) {
+            fs.writeFileSync(
+                historyList_json,
+                JSON.stringify(JSON.parse('[]'))
+            );
+            return JSON.parse('[]');
         }
     })(),
 };
@@ -367,6 +378,7 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         homeHotkeys: pageStatus.setting.value.keyboard_setting.value.home.value,
         bookHotkeys: pageStatus.setting.value.keyboard_setting.value.book.value,
         viewHotkeys: pageStatus.setting.value.keyboard_setting.value.view.value,
+        historyList: pageStatus.historyList.sort((a, b) => a.order - b.order),
     });
 });
 
@@ -387,6 +399,19 @@ ipcMain.on('put-img_id', (event, arg) => {
     console.log(arg.img_id);
     event.reply('put-img_id-reply');
 });
+
+ipcMain.on('put-historyList', (event, list) => {
+    pageStatus.historyList = list;
+    const updatedData = JSON.stringify(pageStatus.historyList);
+    fs.writeFile(historyList_json, updatedData, 'utf8', (err) => {
+        event.reply('put-historyList-reply');
+        if (err) {
+            console.error('寫入文件時發生錯誤:', err);
+            return;
+        }
+        console.log('文件已成功更新');
+    });
+})
 
 ipcMain.on('get-book', (event, arg) => {
     let r = [];
@@ -423,17 +448,31 @@ ipcMain.on("sort", (event, arg) => {
 ipcMain.on('show-context-menu', (event, arg) => {
     const template = [];
 
+    if (arg.fileName) {
+        template.push({
+            label: getTranslation('Copy Name'),
+            click: () => { event.sender.send('context-menu-command', 'copy', arg.fileName); }
+        });
+    }
+    if (arg.filePath) {
+        template.push({
+            label: getTranslation('Copy Path'),
+            click: () => { event.sender.send('context-menu-command', 'copy', arg.filePath); }
+        });
+    }
     if (arg.selectedText) {
         template.push({
             label: getTranslation('Copy'),
             click: () => { event.sender.send('context-menu-command', 'copy', arg.selectedText); }
         });
-    } else {
+    }
+    if (arg.previousPage) {
         template.push({
             label: getTranslation('Previous page'),
             click: () => { event.sender.send('context-menu-command', 'previousPage'); }
         });
     }
+
     const menu = Menu.buildFromTemplate(template)
     menu.popup({ window: BrowserWindow.fromWebContents(event.sender) })
 })

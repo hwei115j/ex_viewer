@@ -264,7 +264,7 @@ function createInformation() {
 
         strHtml += `</tbody></table></div><div id="tagmenu_act" style="display:none"><a id="tagmenu_act_a" href="#" style="font-size:medium">
         ${getTranslation(
-            "book search",
+            "search",
             "search"
         )}</a></div></div>`
 
@@ -326,7 +326,9 @@ function createInformation() {
                 e.preventDefault();
                 e.stopPropagation();
                 //console.log(gt[i].title);
-                ipcRenderer.send('show-context-menu', { selectedText: gt[i].title })
+                ipcRenderer.send('show-context-menu', { 
+                    selectedText: gt[i].title,
+                });
             });
         }
 
@@ -349,12 +351,15 @@ function updataBook() {
     window.addEventListener('contextmenu', (e) => {
         e.preventDefault()
         const selectedText = window.getSelection().toString();
-        ipcRenderer.send('show-context-menu', { selectedText: selectedText })
+        ipcRenderer.send('show-context-menu', { 
+            selectedText: selectedText,
+            previousPage: !!!selectedText
+        });
     })
 
 }
 
-function searchHotkey(event) {
+function hotkeyHandle(event) {
     function isSame(list) {
         const pressedKeys = new Set();
 
@@ -492,7 +497,7 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     bookHotkeys = data.bookHotkeys;
-    document.addEventListener('keydown', searchHotkey);
+    document.addEventListener('keydown', hotkeyHandle);
     image.init(group[book_id].local_path).then(e => {
         imageArray = e;
         updataBook();
@@ -502,7 +507,7 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
     if (command === 'copy') {
         try {
             clipboard.writeText(text);
-            console.log('Text copied to clipboard');
+            console.log(text);
         } catch (err) {
             console.error('Failed to copy text: ', err);
         }
