@@ -18,7 +18,7 @@
 		"electron-builder": "^24.13.3"
 	},
 	"scripts": {
-		"dist": "electron-builder --x64"
+		"dist": "electron-builder --x64 --dir"
 	},
 	"build": {
 		"files": [
@@ -27,6 +27,7 @@
 			"!dist",
 			".git/*",
 			".vscode/*"
-		]
+		],
+		"asar": true
 	}
 }
