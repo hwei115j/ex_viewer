@@ -424,7 +424,7 @@ function hotkeyHandle(event) {
         ipcRenderer.send("sort", "name");
         ipcRenderer.once("sort-reply", (e, data) => {
             console.log("name_sort");
-            book_id = data.book_id;
+            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
             group = data.group;
         });
         return;
@@ -434,7 +434,7 @@ function hotkeyHandle(event) {
         ipcRenderer.send("sort", "random");
         ipcRenderer.once("sort-reply", (e, data) => {
             console.log("random_sort");
-            book_id = data.book_id;
+            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
             group = data.group;
         });
         return;
@@ -443,7 +443,7 @@ function hotkeyHandle(event) {
         ipcRenderer.send("sort", "chronology");
         ipcRenderer.once("sort-reply", (e, data) => {
             console.log("chronology");
-            book_id = data.book_id;
+            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
             group = data.group;
         });
         return;
