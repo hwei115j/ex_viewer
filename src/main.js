@@ -437,7 +437,7 @@ ipcMain.on("sort", (event, arg) => {
             return b.posted - a.posted;
         });
     }
-    pageStatus.book_id = pageStatus.group.findIndex(element => element.local_id === id);
+    //pageStatus.book_id = pageStatus.group.findIndex(element => element.local_id === id);
     event.reply("sort-reply", {
         group: pageStatus.group,
         book_id: pageStatus.book_id
