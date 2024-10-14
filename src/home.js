@@ -570,8 +570,9 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     createSearch();
     //console.log(search_str);
     document.getElementById("f_search").value = search_str;
-    document.getElementById("from_onsubmit").onsubmit();
-    //updateHome();
+    //document.getElementById("from_onsubmit").onsubmit();
+    updateHome();
+    console.log(book_id);
 });
 
 ipcRenderer.on('context-menu-command', (e, command, text) => {
