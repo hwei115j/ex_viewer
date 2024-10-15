@@ -395,6 +395,7 @@ function parse(jsonInput, currentLevel = 1) {
             let inputBox = document.createElement("input");
             let addBtn = document.createElement("button");
             addBtn.textContent = "Add";
+            addBtn.classList.add("add-button");
             let delBtn = document.createElement("button");
             delBtn.textContent = "Delete";
             let select = document.createElement("select");
