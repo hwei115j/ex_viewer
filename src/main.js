@@ -40,8 +40,6 @@ function createWindow() {
     //隱藏工具列
     electron.Menu.setApplicationMenu(null);
 
-    appInit();
-
     if (setting.value.debug.value) {
         mainWindow.webContents.openDevTools();
     }
@@ -49,7 +47,15 @@ function createWindow() {
     mainWindow.on("closed", function () {
         mainWindow = null;
     });
-    mainWindow.loadURL("file://" + join(__dirname, "html", "home.html"));
+
+    fs.access(local_db_path, fs.constants.F_OK, (err) => {
+        if (err) {
+            mainWindow.loadURL("file://" + join(__dirname, "html", "match.html"));
+        } else {
+            appInit();
+            mainWindow.loadURL("file://" + join(__dirname, "html", "home.html"));
+        }
+    });
 }
 
 let pageStatus = {
@@ -422,6 +428,13 @@ ipcMain.on('get-book', (event, arg) => {
     event.reply('book-data', r);
 });
 
+ipcMain.on('put-match', (event, arg) => {
+    const path_list = arg.path_list;
+    const layers_list =  arg.layers_list;
+
+    console.log(path_list);
+    console.log(layers_list);
+});
 ipcMain.on("sort", (event, arg) => {
     let id = pageStatus.group[pageStatus.book_id].local_id;
     if (arg == "name") {
