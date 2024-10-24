@@ -2,6 +2,7 @@
 const { ipcRenderer } = require("electron");
 let uiLanguage;
 let path_list = [];
+let dir;
 
 function replace(name, text) {
     if (text) {
@@ -63,13 +64,12 @@ function create_init_html() {
                 <option value="3">3</option>
                 </select></div>`;
         }
+
         let layers = document.getElementsByClassName("layers");
-        /*
         for (let i = 0; i < layers.length; i++) {
             layers[i].getElementsByTagName("select")[0].value =
-                global.dir.layers[i];
+                dir.layers[i];
         }
-        */
 
         start.addEventListener("click", event => {
             let layers = document.getElementsByClassName("layers");
@@ -116,6 +116,7 @@ function create_init_html() {
 
     let body = document.getElementById("body");
     body.innerHTML = replace("init_text1") + body.innerHTML;
+    path_list = [...new Set(dir.dir)];
     insert();
 }
 
@@ -134,6 +135,6 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     globalHotkeys = data.globalHotkeys;
     homeHotkeys = data.homeHotkeys;
     historyList = data.historyList;
-
+    dir = data.dir;
     create_init_html();
 });
