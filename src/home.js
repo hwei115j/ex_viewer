@@ -570,8 +570,11 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     createSearch();
     //console.log(search_str);
     document.getElementById("f_search").value = search_str;
-    //document.getElementById("from_onsubmit").onsubmit();
-    updateHome();
+    if (!Array.isArray(group) || group.length === 0) {
+        document.getElementById("from_onsubmit").onsubmit();
+    } else {
+        updateHome();
+    }
     console.log(book_id);
 });
 

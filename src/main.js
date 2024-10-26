@@ -3,6 +3,8 @@ const electron = require("electron");
 const { nativeImage } = require('electron');
 const join = require("path").join;
 const { ipcMain, dialog } = require("electron");
+const image = require("./image_manager.js");
+const levenshtein = require("fast-levenshtein");
 
 // 聲明一個BrowserWindow對象實例
 let mainWindow;
@@ -40,8 +42,6 @@ function createWindow() {
     //隱藏工具列
     electron.Menu.setApplicationMenu(null);
 
-    appInit();
-
     if (setting.value.debug.value) {
         mainWindow.webContents.openDevTools();
     }
@@ -49,7 +49,15 @@ function createWindow() {
     mainWindow.on("closed", function () {
         mainWindow = null;
     });
-    mainWindow.loadURL("file://" + join(__dirname, "html", "home.html"));
+
+    fs.access(local_db_path, fs.constants.F_OK, (err) => {
+        if (err) {
+            mainWindow.loadURL("file://" + join(__dirname, "html", "match.html"));
+        } else {
+            appInit();
+            mainWindow.loadURL("file://" + join(__dirname, "html", "home.html"));
+        }
+    });
 }
 
 let pageStatus = {
@@ -370,6 +378,7 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         page_max: pageStatus.setting.value.page_max.value,
         book_id: pageStatus.book_id,
         img_id: pageStatus.img_id,
+        dir: pageStatus.dir,
         search_str: pageStatus.search_str,
         group: pageStatus.group,
         uiLanguage: pageStatus.uiLanguage,
@@ -422,6 +431,211 @@ ipcMain.on('get-book', (event, arg) => {
     event.reply('book-data', r);
 });
 
+ipcMain.on('put-match', (event, arg) => {
+    const path_list = arg.path_list;
+    const layers_list = arg.layers_list;
+    const t_start = new Date().getTime();
+    let book_count = 0;
+    let book_list = [];
+    let debug = [];
+    let debug1 = [];
+
+    function create_book_list(path, layers) {
+        function max_string(str) {
+            let r = str;
+            str = str.replace(/\[[^\]]*\]/g, "%");
+            str = str.replace(/\([^)]*\)/g, "%");
+            str = str.replace(/\{[^}]*\}/g, "%");
+
+            str = str.replace(/\【[^}]*\】/g, "%");
+            str = str.replace(/\（[^)]*\）/g, "%");
+
+            let arr = str.split("%");
+            let max = 0, maxs;
+            for (let i in arr) {
+                if (max < arr[i].length) {
+                    max = arr[i].length;
+                    maxs = i;
+                }
+            }
+
+            if (!arr[maxs]) {
+                console.log(r);
+                return r;
+            }
+            return arr[maxs].replace(/(^[\s]*)|([\s]*$)|/g, "").replace(/^-/g, '');
+        }
+        let files;
+        let list = [];
+
+        try {
+            files = fs.readdirSync(path);
+        } catch (e) {
+            return list;
+        }
+        for (let i in files) {
+            let title = files[i];
+            let bookPath = join(path, title);
+
+            if (image.isbook(bookPath)) {
+                list.push([title, max_string(files[i]), path]);
+            }
+            if (layers != 1) {
+                list = list.concat(create_book_list(bookPath, layers - 1));
+            }
+        }
+
+        return list;
+    }
+    function levens(rows, str) {
+        //去除ex下載&H@H下載時的後綴
+        str = str.replace(/\[\d+\]|\[\d+\-\d+x\]|\-\d+x/g, "");
+        if (!Array.isArray(rows) || rows.length === 0) {
+            return null;
+        }
+        let min = Infinity;
+        let reg = null;
+        rows.forEach(row => {
+            let title = levenshtein.get(row.title, str);
+            let title_jpn = levenshtein.get(row.title_jpn, str);
+
+            if (title <= min) {
+                min = title;
+                reg = row;
+            }
+            if (title_jpn <= min) {
+                min = title_jpn;
+                reg = row;
+            }
+        });
+        return reg;
+    }
+    //推入local資料庫
+    function push_local_db(exdb_row, name, path) {
+        let instr = "local_name, local_path";
+        for (let i in exdb_row) {
+            instr += "," + i;
+        }
+        db.serialize(() => {
+            function progressBar() {
+                event.reply("put-match-reply", { totalBooks: book_list.length, currentBooks: book_count });
+            }
+
+            let str = `"${name}", "${join(path, name)}"`;
+            for (let i in exdb_row) {
+                str += `,"${exdb_row[i]}"`;
+            }
+            book_count++;
+            db.run(`INSERT INTO data (${instr}) VALUES (${str});`, [], () => {
+                if (book_count == book_list.length) {
+                    let end = new Date().getTime();
+                    console.log((end - t_start) / 1000 + "sec");
+                    //全部push進local.db結束時執行
+                    db.run("COMMIT");
+                    //console.log(debug);
+                    //console.log(debug1);
+                }
+                progressBar();
+            });
+        });
+    }
+    function sql_where() {
+        function fullwidth(str) {
+            str = str.replace("！", "!");
+            str = str.replace("？", "?");
+            str = str.replace("：", ":");
+            str = str.replace("＆", "&amp;");
+            str = str.replace("&", "&amp;");
+            str = str.replace("　", " ");
+            str = str.replace("-", " ");
+            return str;
+        }
+        if (book_list.length == 0) {
+            console.log("sql_where");
+            return;
+        }
+        let meta_db = new sqlite3.Database(ex_db_path);
+
+        db.run(
+            "CREATE TABLE IF NOT EXISTS  data(" +
+            "local_id INTEGER PRIMARY KEY AUTOINCREMENT," +
+            "local_name nvarchar," +
+            "local_path nvarchar," +
+            "gid    int," +
+            "token  nvarchar," +
+            //                "archiver_key nvarchar," +
+            "title  nvarchar," +
+            "title_jpn  nvarchar," +
+            "category nvarchar," +
+            //                "thumb  nvarchar," +
+            //                "uploader nvarchar," +
+            "posted nvarchar," +
+            "filecount nvarchar," +
+            //                "filesize  int," +
+            //                "expunged   bool," +
+            //                "rating    nvarchar," +
+            //                "torrentcount   nvarchar," +
+            //                "torrents   nvarchar," +
+            "tags   nvarchar," +
+            "error   nvarchar" +
+            ");"
+        );
+        db.run("BEGIN TRANSACTION;");
+
+        for (let book of book_list) {
+            //console.log(book[1]);
+            //console.log(fullwidth(book[1]));
+            /*
+            let sql =
+                "SELECT * FROM data " +
+                `WHERE title_jpn LIKE "%${book[1]}%"`+
+                `OR title LIKE "%${book[1]}%"`+
+                `OR title_jpn LIKE "%${fullwidth(book[1])}"`+
+                `OR title LIKE "%${fullwidth(book[1])}%"`;
+            */
+            let sql =
+                "SELECT * FROM data " +
+                `WHERE title_jpn MATCH "${book[1]}"` +
+                `OR title MATCH "${book[1]}"` +
+                `OR title_jpn MATCH "${fullwidth(book[1])}"` +
+                `OR title MATCH "${fullwidth(book[1])}"`;
+            meta_db.serialize(() => {
+                meta_db.all(sql, [], (err, rows) => {
+                    if (err) {
+                        //console.log(err);
+                        console.log(sql);
+                        push_local_db(null, book[0], book[2]);
+                        return;
+                        throw err;
+                    }
+                    //把候選檔名和原始檔名做比對
+                    let r = levens(rows, book[0]);
+                    if (!Array.isArray(r) || r.length === 0) {
+                        debug.push(sql);
+                        debug1.push(book[2]);
+                    }
+                    push_local_db(r, book[0], book[2]);
+                });
+            });
+        }
+    }
+
+    pageStatus.dir.dir = path_list;
+    pageStatus.dir.layers = layers_list;
+    db = new sqlite3.Database(local_db_path);
+
+    for (let i in path_list) {
+        book_list = book_list.concat(
+            create_book_list(path_list[i], layers_list[i])
+        );
+    }
+    book_list = [...new Set(book_list)]; //消除重複
+    sql_where();
+
+    console.log(path_list);
+    console.log(layers_list);
+    fs.writeFileSync(dir_path, JSON.stringify(pageStatus.dir));
+});
 ipcMain.on("sort", (event, arg) => {
     let id = pageStatus.group[pageStatus.book_id].local_id;
     if (arg == "name") {
