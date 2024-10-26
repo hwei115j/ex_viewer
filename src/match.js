@@ -90,7 +90,7 @@ function create_init_html() {
                     "count"
                 ).innerHTML = `<h1>${ret.currentBooks}/${ret.totalBooks}</h1>`;
                 if(ret.currentBooks == ret.totalBooks) {
-                    //window.location.href = "home.html";
+                    window.location.href = "home.html";
                 }
             });
         });
