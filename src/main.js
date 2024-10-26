@@ -463,7 +463,7 @@ ipcMain.on('put-match', (event, arg) => {
                 console.log(r);
                 return r;
             }
-            return arr[maxs].replace(/(^[\s]*)|([\s]*$)/g, "");
+            return arr[maxs].replace(/(^[\s]*)|([\s]*$)|/g, "").replace(/^-/g, '');
         }
         let files;
         let list = [];
@@ -518,7 +518,7 @@ ipcMain.on('put-match', (event, arg) => {
         }
         db.serialize(() => {
             function progressBar() {
-                event.reply("put-match-reply", {totalBooks: book_list.length, currentBooks: book_count});
+                event.reply("put-match-reply", { totalBooks: book_list.length, currentBooks: book_count });
             }
 
             let str = `"${name}", "${join(path, name)}"`;
@@ -585,16 +585,25 @@ ipcMain.on('put-match', (event, arg) => {
         for (let book of book_list) {
             //console.log(book[1]);
             //console.log(fullwidth(book[1]));
+            /*
             let sql =
                 "SELECT * FROM data " +
-                `WHERE title_jpn MATCH "${book[1]}" OR title MATCH "${book[1]
-                }" OR title_jpn MATCH "${fullwidth(
-                    book[1]
-                )}" OR title MATCH "${fullwidth(book[1])}"`;
+                `WHERE title_jpn LIKE "%${book[1]}%"`+
+                `OR title LIKE "%${book[1]}%"`+
+                `OR title_jpn LIKE "%${fullwidth(book[1])}"`+
+                `OR title LIKE "%${fullwidth(book[1])}%"`;
+            */
+            let sql =
+                "SELECT * FROM data " +
+                `WHERE title_jpn MATCH "${book[1]}"` +
+                `OR title MATCH "${book[1]}"` +
+                `OR title_jpn MATCH "${fullwidth(book[1])}"` +
+                `OR title MATCH "${fullwidth(book[1])}"`;
             meta_db.serialize(() => {
                 meta_db.all(sql, [], (err, rows) => {
                     if (err) {
-                        console.log(err);
+                        //console.log(err);
+                        console.log(sql);
                         push_local_db(null, book[0], book[2]);
                         return;
                         throw err;
