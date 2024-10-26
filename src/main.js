@@ -434,6 +434,7 @@ ipcMain.on('get-book', (event, arg) => {
 ipcMain.on('put-match', (event, arg) => {
     const path_list = arg.path_list;
     const layers_list = arg.layers_list;
+    const t_start = new Date().getTime();
     let book_count = 0;
     let book_list = [];
     let debug = [];
@@ -517,9 +518,7 @@ ipcMain.on('put-match', (event, arg) => {
         }
         db.serialize(() => {
             function progressBar() {
-                document.getElementById(
-                    "count"
-                ).innerHTML = `<h1>${++book_count}/${book_list.length}</h1>`;
+                event.reply("put-match-reply", {totalBooks: book_list.length, currentBooks: book_count});
             }
 
             let str = `"${name}", "${join(path, name)}"`;
@@ -528,16 +527,15 @@ ipcMain.on('put-match', (event, arg) => {
             }
             book_count++;
             db.run(`INSERT INTO data (${instr}) VALUES (${str});`, [], () => {
-                //progressBar();
                 if (book_count == book_list.length) {
                     let end = new Date().getTime();
-                    //console.log((end - t_start) / 1000 + "sec");
+                    console.log((end - t_start) / 1000 + "sec");
                     //全部push進local.db結束時執行
                     db.run("COMMIT");
-                    console.log(debug);
-                    console.log(debug1);
-                    event.reply("put-match-reply");
+                    //console.log(debug);
+                    //console.log(debug1);
                 }
+                progressBar();
             });
         });
     }
@@ -614,7 +612,7 @@ ipcMain.on('put-match', (event, arg) => {
     }
 
     pageStatus.dir.dir = path_list;
-    pageStatus.dir.layers_list = layers_list;
+    pageStatus.dir.layers = layers_list;
     db = new sqlite3.Database(local_db_path);
 
     for (let i in path_list) {
@@ -627,7 +625,7 @@ ipcMain.on('put-match', (event, arg) => {
 
     console.log(path_list);
     console.log(layers_list);
-    //fs.writeFileSync(dir_path, JSON.stringify(pageStatus.dir));
+    fs.writeFileSync(dir_path, JSON.stringify(pageStatus.dir));
 });
 ipcMain.on("sort", (event, arg) => {
     let id = pageStatus.group[pageStatus.book_id].local_id;

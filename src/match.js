@@ -39,12 +39,12 @@ function create_init_html() {
         document.getElementById("body").innerHTML = `
         <button id="select-directory" style="display:none">
         ${replace("select_directory")}</button></select>
+        <div id='count'></div>
         <p></p>
         <button id="start" style="display:none">${replace("start")}</button>
         <p></p>
         <div id='path'></div>
         <p></p>
-        <div id='count'></div>
         <p></p>`;
     }
 
@@ -85,8 +85,13 @@ function create_init_html() {
             console.log(path_list);
             console.log(layers_list);
             ipcRenderer.send('put-match', { path_list: path_list, layers_list: layers_list });
-            ipcRenderer.on('put-match-reply', event => {
-                window.location.href = "home.html";
+            ipcRenderer.on('put-match-reply', (event, ret) => {
+                document.getElementById(
+                    "count"
+                ).innerHTML = `<h1>${ret.currentBooks}/${ret.totalBooks}</h1>`;
+                if(ret.currentBooks == ret.totalBooks) {
+                    //window.location.href = "home.html";
+                }
             });
         });
 
