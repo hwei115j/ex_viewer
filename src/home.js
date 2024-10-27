@@ -296,6 +296,25 @@ function createSearch() {
 
     f_search.onkeydown = (e) => { e.stopPropagation(); }
     f_search.placeholder = replace("search text");
+    f_search.addEventListener('contextmenu', (event) => {
+        event.preventDefault(); // 阻止默认的上下文菜单
+        event.stopPropagation(); // 阻止事件冒泡
+
+        const start = f_search.selectionStart;
+        const end = f_search.selectionEnd;
+
+        if (start !== end) {
+            const selectedText = f_search.value.substring(start, end);
+            ipcRenderer.send('show-context-menu', {
+                isInput: true,
+                selectedText: selectedText
+            });
+        } else {
+            ipcRenderer.send('show-context-menu', {
+                isInput: true
+            });
+        }
+    });
     document.getElementById("searchSubmit").value = replace("search");
     searchClear.value = replace("clear");
 
@@ -345,7 +364,7 @@ function updateHistoryList() {
         let button_class = (historyList[i].pinned) ? "pinButton active" : "pinButton";
         historyHtml += `<li><a class="history-link" title='${historyList[i].text}'>${historyList[i].text}</a><button class="${button_class}"><i class='${star_class}'></i></button></li>`;
     }
-    
+
     document.getElementById('historyList').innerHTML = historyHtml;
 
     document.querySelectorAll('.history-link').forEach((link, index) => {
@@ -396,10 +415,10 @@ function createSidebar() {
         menuButton.style.display = 'block';
     }
 
-    sideMenu.getElementsByTagName('button')[1].textContent  = replace("Settings");
-    sideMenu.getElementsByTagName('button')[2].textContent  = replace("search");
-    sideMenu.getElementsByTagName('button')[3].textContent  = replace("Clear list");
-    sideMenu.getElementsByTagName('h3')[0].textContent  = replace("Search history");
+    sideMenu.getElementsByTagName('button')[1].textContent = replace("Settings");
+    sideMenu.getElementsByTagName('button')[2].textContent = replace("search");
+    sideMenu.getElementsByTagName('button')[3].textContent = replace("Clear list");
+    sideMenu.getElementsByTagName('h3')[0].textContent = replace("Search history");
 
     updateHistoryList();
 
@@ -415,7 +434,7 @@ function createSidebar() {
 
     document.getElementById('settingButton').addEventListener('click', function () {
         console.log("setting");
-        ipcRenderer.send('put-homeStatus', { book_id: page * page_max});
+        ipcRenderer.send('put-homeStatus', { book_id: page * page_max });
         ipcRenderer.once('put-homeStatus-reply', (event, data) => {
             window.location.href = "setting.html";
         });
@@ -576,7 +595,7 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     historyList = data.historyList;
     setting = data.setting;
 
-    webFrame.setZoomFactor(setting.value.zoom.value/100);
+    webFrame.setZoomFactor(setting.value.zoom.value / 100);
     document.addEventListener('keydown', hotkeyHandle);
     createSearch();
     //console.log(search_str);
@@ -598,5 +617,19 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
         } catch (err) {
             console.error('Failed to copy text: ', err);
         }
+    }
+    if (command === 'Paste') {
+        const inputElement = document.getElementById("f_search")
+        const start = inputElement.selectionStart;
+        const end = inputElement.selectionEnd;
+        const value = inputElement.value;
+        const text = clipboard.readText('clipboard');
+
+        console.log(clipboard.readText('clipboard'));
+        inputElement.value = value.slice(0, start) + text + value.slice(end);
+
+        const newPosition = start + text.length;
+        inputElement.setSelectionRange(newPosition, newPosition);
+        inputElement.focus();
     }
 });

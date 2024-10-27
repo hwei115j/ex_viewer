@@ -696,6 +696,12 @@ ipcMain.on('show-context-menu', (event, arg) => {
         });
     }
 
+    if (arg.isInput) {
+        template.push({
+            label: getTranslation('Paste'),
+            click: () => { event.sender.send('context-menu-command', 'Paste'); }
+        });
+    }
     const menu = Menu.buildFromTemplate(template)
     menu.popup({ window: BrowserWindow.fromWebContents(event.sender) })
 })
