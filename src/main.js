@@ -41,7 +41,7 @@ function createWindow() {
     //隱藏工具列
     electron.Menu.setApplicationMenu(null);
 
-    appInit();
+    //appInit();
 
     if (pageStatus.setting.value.debug.value) {
         mainWindow.webContents.openDevTools();
