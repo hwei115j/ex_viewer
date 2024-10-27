@@ -151,9 +151,11 @@ function createPage() {
         const contextmenu = (e) => {
             e.preventDefault();
             e.stopPropagation();
+            const selectedText = window.getSelection().toString();
             ipcRenderer.send('show-context-menu', {
                 filePath: group[i].local_path,
-                fileName: group[i].local_name
+                fileName: group[i].local_name,
+                selectedText: selectedText
             });
         }
 
