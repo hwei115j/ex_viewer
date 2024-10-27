@@ -1,6 +1,7 @@
 /*jshint esversion: 8 */
 const dialogs = require("dialogs")();
 const image = require("../image_manager");
+const { webFrame } = require('electron');
 const { ipcRenderer, clipboard } = require("electron");
 //window.$ = window.jQuery = require('jquery');
 
@@ -412,6 +413,14 @@ function createSidebar() {
         closeSidebar();
     });
 
+    document.getElementById('settingButton').addEventListener('click', function () {
+        console.log("setting");
+        ipcRenderer.send('put-homeStatus', { book_id: page * page_max});
+        ipcRenderer.once('put-homeStatus-reply', (event, data) => {
+            window.location.href = "setting.html";
+        });
+    });
+
     document.getElementById('sideClearButton').addEventListener('click', () => {
         historyList = historyList.filter(item => item.pinned !== false);
         ipcRenderer.send("put-historyList", historyList);
@@ -565,7 +574,9 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     globalHotkeys = data.globalHotkeys;
     homeHotkeys = data.homeHotkeys;
     historyList = data.historyList;
+    setting = data.setting;
 
+    webFrame.setZoomFactor(setting.value.zoom.value/100);
     document.addEventListener('keydown', hotkeyHandle);
     createSearch();
     //console.log(search_str);

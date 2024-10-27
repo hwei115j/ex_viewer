@@ -1,6 +1,5 @@
 /*jshint esversion: 6 */
 const electron = require("electron");
-const { nativeImage } = require('electron');
 const join = require("path").join;
 const { ipcMain, dialog } = require("electron");
 const image = require("./image_manager.js");
@@ -22,10 +21,10 @@ const dir_path = join(".", "setting", "local", "dir.json");
 const definition_json = join(".", "setting", "language", "definition.json");
 const ui_json = join(".", "setting", "language", "ui.json");
 const local_db_path = join(".", "setting", "local", "local.db");
-const setting_json = join(".", "setting", "setting.json");
+const setting_path = join(".", "setting", "setting.json");
 const historyList_json = join(".", "setting", "historyList.json");
 let db;
-let setting = JSON.parse(fs.readFileSync(setting_json).toString());
+let setting = JSON.parse(fs.readFileSync(setting_path).toString());
 
 function createWindow() {
 
@@ -42,7 +41,9 @@ function createWindow() {
     //隱藏工具列
     electron.Menu.setApplicationMenu(null);
 
-    if (setting.value.debug.value) {
+    appInit();
+
+    if (pageStatus.setting.value.debug.value) {
         mainWindow.webContents.openDevTools();
     }
 
@@ -85,7 +86,7 @@ let pageStatus = {
     })(),
     setting: (() => {
         try {
-            return JSON.parse(fs.readFileSync(setting_json).toString());
+            return JSON.parse(fs.readFileSync(setting_path).toString());
         } catch (err) {
             throw err;
         }
@@ -388,7 +389,15 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         bookHotkeys: pageStatus.setting.value.keyboard_setting.value.book.value,
         viewHotkeys: pageStatus.setting.value.keyboard_setting.value.view.value,
         historyList: pageStatus.historyList.sort((a, b) => a.order - b.order),
+        setting: pageStatus.setting
     });
+});
+
+ipcMain.on('put-settingStatus', (event, arg) => {
+    pageStatus.setting = arg.setting;
+    //console.log(arg.setting);
+    fs.writeFileSync(setting_path, JSON.stringify(pageStatus.setting));
+    event.reply('put-settingStatus-reply');
 });
 
 ipcMain.on('put-homeStatus', (event, arg) => {

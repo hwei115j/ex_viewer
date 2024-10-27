@@ -1,3 +1,5 @@
+const { ipcRenderer, clipboard } = require("electron");
+const { webFrame } = require('electron');
 
 var json = {
     "//": "這是用來設定的JSON檔案",
@@ -240,6 +242,10 @@ var json = {
 }
 var r_json = JSON.parse(JSON.stringify(json));
 
+let book_id;
+let uiLanguage;
+let keyboardEventHome;
+let setting;
 const settingDiv = document.getElementById("setting-div");
 
 const keyNames = {
@@ -441,10 +447,10 @@ function parse(jsonInput, currentLevel = 1) {
 
             addBtn.addEventListener("click", () => {
                 console.log(addPressedKeys);
-                if(addPressedKeys.length == 0  || !keyNames.hasOwnProperty(addPressedKeys[0])) {
+                if (addPressedKeys.length == 0 || !keyNames.hasOwnProperty(addPressedKeys[0])) {
                     inputBox.value = "";
                     addPressedKeys = [];
-                    return ;
+                    return;
                 }
                 let op = document.createElement("option");
                 if (addPressedKeys.length == 1) {
@@ -460,12 +466,12 @@ function parse(jsonInput, currentLevel = 1) {
             });
 
             delBtn.addEventListener("click", () => {
-                if(select.length == 0) {
-                    return ;
-                } 
+                if (select.length == 0) {
+                    return;
+                }
                 // get the currently selected option in the dropdown
                 const selectedOption = select.options[select.selectedIndex];
-                console.log(selectedOption.value+" , "+ jsonInput.value[select.selectedIndex]);
+                console.log(selectedOption.value + " , " + jsonInput.value[select.selectedIndex]);
                 jsonInput.value.splice(select.selectedIndex, 1);
                 // remove the selected option from the dropdown
                 select.removeChild(selectedOption);
@@ -484,10 +490,49 @@ function parse(jsonInput, currentLevel = 1) {
     }
 }
 
-parse(r_json);
 
 let saveBtn = document.getElementById("saveBtn");
 saveBtn.addEventListener("click", () => {
     console.log("SAVE");
-    json  = JSON.parse(JSON.stringify(r_json));
+    let newJson = JSON.parse(JSON.stringify(setting));
+    let zoom = newJson.value.zoom.value;
+    let home_max = newJson.value.home_max.value;
+    let page_max = newJson.value.page_max.value;
+    let cache = newJson.value.cache.value;
+
+    console.log(zoom, home_max, page_max, cache);
+    if (!Number.isInteger(zoom) || zoom < 50 || zoom > 200) {
+        console.log("zoom = " + zoom);
+        newJson.value.zoom.value = 110;
+    }
+    if (!Number.isInteger(home_max) || home_max < 20 || home_max > 200) {
+        console.log("home_max = " + home_max);
+        newJson.value.home_max.value = 50;
+    }
+    if (!Number.isInteger(page_max) || page_max < 10 || page_max > 200) {
+        console.log("page_max = " + page_max);
+        newJson.value.home_max.value = 20;
+    }
+    if (!Number.isInteger(cache) || cache < 1 || cache > 200) {
+        console.log("cache = "+ cache);
+        newJson.value.home_max.value = 20;
+    }
+    ipcRenderer.send('put-settingStatus', { setting: newJson });
+    ipcRenderer.on('put-settingStatus-reply', (event) => {
+        window.location.href = "home.html"
+    });
+});
+document.getElementById("GoBackBtn").addEventListener("click", () => {
+    window.location.href = "home.html"
+});
+ipcRenderer.send('get-pageStatus');
+ipcRenderer.on('get-pageStatus-reply', (event, data) => {
+    console.log("setting.js");
+    book_id = data.book_id;
+    uiLanguage = data.uiLanguage;
+    keyboardEventHome = data.keyboardEventHome;
+    setting = data.setting;
+
+    webFrame.setZoomFactor(setting.value.zoom.value/100);
+    parse(setting);
 });
