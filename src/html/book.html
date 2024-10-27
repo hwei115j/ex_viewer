@@ -301,6 +301,28 @@
         .ehs-introduce-box::-webkit-scrollbar {
             width: 2px;
         }
+                /* WebKit browsers (Chrome, Safari) */
+        #taglist::-webkit-scrollbar {
+            width: 5px;
+            /* 滾輪條的寬度 */
+        }
+
+        #taglist::-webkit-scrollbar-track {
+            background: transparent;
+            /* 滾輪條的背景色 */
+        }
+
+        #taglist::-webkit-scrollbar-thumb {
+            background: #888;
+            /* 滾輪條的顏色 */
+            border-radius: 10px;
+            /* 圓角 */
+        }
+
+        #taglist::-webkit-scrollbar-thumb:hover {
+            background: #555;
+            /* 滾輪條懸停時的顏色 */
+        }
     </style>
 </head>
 
