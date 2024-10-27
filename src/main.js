@@ -701,7 +701,7 @@ ipcMain.on('show-context-menu', (event, arg) => {
 
     if (arg.isInput) {
         template.push({
-            label: getTranslation('Paste'),
+            label: getTranslation('paste'),
             click: () => { event.sender.send('context-menu-command', 'Paste'); }
         });
     }
