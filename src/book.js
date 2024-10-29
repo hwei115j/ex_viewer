@@ -16,6 +16,7 @@ let img_id = 0;
 let search_str = [];
 let globalHotkeys;
 let bookHotkeys;
+let historyList;
 
 let page = 0;
 //let img;
@@ -289,7 +290,19 @@ function createInformation() {
             ];
             ipcRenderer.send("put-search", { str: search_str.join(" "), category: category });
             ipcRenderer.on("put-search-reply", (event, data) => {
-                window.location.href = "home.html";
+                if (!historyList.some(item => item.text === search_str.join(" "))) {
+                    const newItem = {
+                        text: search_str.join(" "),
+                        pinned: false,
+                        order: 2434
+                    }
+                    historyList.push(newItem);
+                    ipcRenderer.send("put-historyList", historyList);
+                    ipcRenderer.once("put-historyList-reply", () => {
+                        console.log("update");
+                        window.location.href = "home.html";
+                    });
+                }
             });
 
         };
@@ -326,7 +339,7 @@ function createInformation() {
                 e.preventDefault();
                 e.stopPropagation();
                 //console.log(gt[i].title);
-                ipcRenderer.send('show-context-menu', { 
+                ipcRenderer.send('show-context-menu', {
                     selectedText: gt[i].title,
                 });
             });
@@ -351,7 +364,7 @@ function updataBook() {
     window.addEventListener('contextmenu', (e) => {
         e.preventDefault()
         const selectedText = window.getSelection().toString();
-        ipcRenderer.send('show-context-menu', { 
+        ipcRenderer.send('show-context-menu', {
             selectedText: selectedText,
             previousPage: !!!selectedText
         });
@@ -497,6 +510,7 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     bookHotkeys = data.bookHotkeys;
+    historyList = data.historyList;
     document.addEventListener('keydown', hotkeyHandle);
     image.init(group[book_id].local_path).then(e => {
         imageArray = e;

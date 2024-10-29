@@ -97,7 +97,7 @@ let pageStatus = {
         } catch (err) {
             fs.writeFileSync(
                 dir_path,
-                JSON.stringify(JSON.parse('{"dir":[], "layers":[]}'))
+                JSON.stringify(JSON.parse('{"dir":[], "layers":[]}'), null, 4)
             );
             return JSON.parse('{"dir":[], "layers":[]}');
         }
@@ -108,7 +108,7 @@ let pageStatus = {
         } catch (err) {
             fs.writeFileSync(
                 historyList_json,
-                JSON.stringify(JSON.parse('[]'))
+                JSON.stringify(JSON.parse('[]'), null, 4)
             );
             return JSON.parse('[]');
         }
@@ -396,7 +396,7 @@ ipcMain.on('get-pageStatus', (event, arg) => {
 ipcMain.on('put-settingStatus', (event, arg) => {
     pageStatus.setting = arg.setting;
     //console.log(arg.setting);
-    fs.writeFileSync(setting_path, JSON.stringify(pageStatus.setting));
+    fs.writeFileSync(setting_path, JSON.stringify(pageStatus.setting, null, 4));
     event.reply('put-settingStatus-reply');
 });
 
@@ -420,7 +420,7 @@ ipcMain.on('put-img_id', (event, arg) => {
 
 ipcMain.on('put-historyList', (event, list) => {
     pageStatus.historyList = list;
-    const updatedData = JSON.stringify(pageStatus.historyList);
+    const updatedData = JSON.stringify(pageStatus.historyList, null, 4);
     fs.writeFile(historyList_json, updatedData, 'utf8', (err) => {
         event.reply('put-historyList-reply');
         if (err) {
@@ -643,7 +643,7 @@ ipcMain.on('put-match', (event, arg) => {
 
     console.log(path_list);
     console.log(layers_list);
-    fs.writeFileSync(dir_path, JSON.stringify(pageStatus.dir));
+    fs.writeFileSync(dir_path, JSON.stringify(pageStatus.dir, null, 4));
 });
 ipcMain.on("sort", (event, arg) => {
     let id = pageStatus.group[pageStatus.book_id].local_id;

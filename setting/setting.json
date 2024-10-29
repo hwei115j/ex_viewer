@@ -1,1 +1,403 @@
-{"//1":"這是用來設定的JSON檔案","//2":"然後因為技術力不足加上JSON的格式蠻嚴格的，容易寫錯，如果修改設定後程式當掉，可以從壓縮檔中恢復setting.json","//3":"鍵盤設定","//4":"鍵盤定義可以從這個網站上得知https://keycode.info/","text":"設定","type":"list","value":{"keyboard_setting":{"text":"鍵盤設定","type":"list","value":{"global":{"text":"全域設定","type":"list","value":{"full_screen":{"text":"全螢幕, 預設值是Enter","type":"key","value":[13]},"back":{"text":"回到上一頁，預設值是Backspace","type":"key","value":[8]},"name_sort":{"text":"按照名稱排序","type":"key","value":[96,48]},"random_sort":{"text":"隨機排序","type":"key","value":[97,49]},"chronology":{"text":"按照時間排序，由新到舊","type":"key","value":[98,50]},"exit":{"text":"關閉程式","type":"key","value":[27]}}},"home":{"text":"home設定","type":"list","value":{"prev":{"text":"上一頁，預設值是方向鍵←","type":"key","value":[37,33]},"next":{"text":"下一頁，預設值是方向鍵→","type":"key","value":[39,34]},"full_screen":{"text":"全螢幕, 預設值是Enter","type":"key","value":[13]},"name_sort":{"text":"按照名稱排序","type":"key","value":[96,48]},"random_sort":{"text":"隨機排序","type":"key","value":[97,49]},"chronology":{"text":"按照時間排序，由新到舊","type":"key","value":[98,50]},"exit":{"text":"關閉程式","type":"key","value":[27]}}},"book":{"text":"book設定","type":"list","value":{"prev":{"text":"上一頁，預設值是方向鍵←","type":"key","value":[37]},"next":{"text":"下一頁，預設值是方向鍵→","type":"key","value":[39]},"full_screen":{"text":"全螢幕, 預設值是Enter","type":"key","value":[13]},"back":{"text":"回到home，預設值是Backspace","type":"key","value":[8]},"name_sort":{"text":"按照名稱排序","type":"key","value":[96,48]},"random_sort":{"text":"隨機排序","type":"key","value":[97,49]},"chronology":{"text":"按照時間排序，由新到舊","type":"key","value":[98,50]},"exit":{"text":"關閉程式","type":"key","value":[27]},"prev_book":{"text":"跳到上一本，預設值是ctrl + 方向鍵←和[","type":"key","value":[[17,37],219]},"next_book":{"text":"跳到下一本，預設值是ctrl + 方向鍵→和]","type":"key","value":[[17,39],221]}}},"view":{"text":"view設定","type":"list","value":{"full_screen":{"text":"全螢幕, 預設值是Enter","type":"key","value":[13]},"back":{"text":"回到book，預設值是Backspace","type":"key","value":[8]},"name_sort":{"text":"按照名稱排序","type":"key","value":[96,48]},"random_sort":{"text":"隨機排序","type":"key","value":[97,49]},"chronology":{"text":"按照時間排序，由新到舊","type":"key","value":[98,50]},"exit":{"text":"關閉程式","type":"key","value":[27]},"prev_book":{"text":"跳到上一本，預設值是ctrl + 方向鍵←和[","value":[[17,37],219]},"next_book":{"text":"跳到下一本，預設值是ctrl + 方向鍵→和]","type":"key","value":[[17,39],221]},"prev":{"text":"上一頁，預設值是方向鍵←，與pageup（除了veiw頁面外無法使用）","type":"key","value":[37,33]},"next":{"text":"下一頁，預設值是方向鍵→，與pagedown（除了veiw頁面外無法使用）","type":"key","value":[39,34]},"home":{"text":"跳到第一頁，預設值是home（除了veiw頁面外無法使用）","type":"key","value":[36]},"end":{"text":"跳到最尾頁，預設值是end（除了veiw頁面外無法使用）","type":"key","value":[35]},"move_up":{"text":"放大之後往上移動","type":"key","value":[38]},"move_down":{"text":"放大之後往下移動","type":"key","value":[40]},"move_left":{"text":"放大之後往左移動","type":"key","value":[37]},"move_right":{"text":"放大之後往右移動","type":"key","value":[39]},"zoom_in":{"text":"放大","type":"key","value":[107,187]},"zoom_out":{"text":"縮小","type":"key","value":[109,189]},"zoom":{"text":"恢復為預設大小","type":"key","value":[111,191]}}}}},"update":{"text":"是否每次開啟時都更新資料庫","type":"bool","value":false},"debug":{"text":"是否開啟「開發人員工具」","type":"bool","value":true},"full_page":{"text":"是否開啟整頁瀏覽","type":"bool","value":false},"zoom":{"text":"頁面放大倍率，預設是110%","type":"number","value":100},"home_max":{"text":"首頁最多顯示圖片數量","type":"number","value":50},"page_max":{"text":"本子頁最多顯示圖片數量","type":"number","value":20},"cache":{"text":"快取圖片數量","type":"number","value":20}}}
+{
+    "//1": "這是用來設定的JSON檔案",
+    "//2": "然後因為技術力不足加上JSON的格式蠻嚴格的，容易寫錯，如果修改設定後程式當掉，可以從壓縮檔中恢復setting.json",
+    "//3": "鍵盤設定",
+    "//4": "鍵盤定義可以從這個網站上得知https://keycode.info/",
+    "text": "設定",
+    "type": "list",
+    "value": {
+        "keyboard_setting": {
+            "text": "鍵盤設定",
+            "type": "list",
+            "value": {
+                "global": {
+                    "text": "全域設定",
+                    "type": "list",
+                    "value": {
+                        "full_screen": {
+                            "text": "全螢幕, 預設值是Enter",
+                            "type": "key",
+                            "value": [
+                                13
+                            ]
+                        },
+                        "back": {
+                            "text": "回到上一頁，預設值是Backspace",
+                            "type": "key",
+                            "value": [
+                                8
+                            ]
+                        },
+                        "name_sort": {
+                            "text": "按照名稱排序",
+                            "type": "key",
+                            "value": [
+                                96,
+                                48
+                            ]
+                        },
+                        "random_sort": {
+                            "text": "隨機排序",
+                            "type": "key",
+                            "value": [
+                                97,
+                                49
+                            ]
+                        },
+                        "chronology": {
+                            "text": "按照時間排序，由新到舊",
+                            "type": "key",
+                            "value": [
+                                98,
+                                50
+                            ]
+                        },
+                        "exit": {
+                            "text": "關閉程式",
+                            "type": "key",
+                            "value": [
+                                27
+                            ]
+                        }
+                    }
+                },
+                "home": {
+                    "text": "home設定",
+                    "type": "list",
+                    "value": {
+                        "prev": {
+                            "text": "上一頁，預設值是方向鍵←",
+                            "type": "key",
+                            "value": [
+                                37,
+                                33
+                            ]
+                        },
+                        "next": {
+                            "text": "下一頁，預設值是方向鍵→",
+                            "type": "key",
+                            "value": [
+                                39,
+                                34
+                            ]
+                        },
+                        "full_screen": {
+                            "text": "全螢幕, 預設值是Enter",
+                            "type": "key",
+                            "value": [
+                                13
+                            ]
+                        },
+                        "name_sort": {
+                            "text": "按照名稱排序",
+                            "type": "key",
+                            "value": [
+                                96,
+                                48
+                            ]
+                        },
+                        "random_sort": {
+                            "text": "隨機排序",
+                            "type": "key",
+                            "value": [
+                                97,
+                                49
+                            ]
+                        },
+                        "chronology": {
+                            "text": "按照時間排序，由新到舊",
+                            "type": "key",
+                            "value": [
+                                98,
+                                50
+                            ]
+                        },
+                        "exit": {
+                            "text": "關閉程式",
+                            "type": "key",
+                            "value": [
+                                27
+                            ]
+                        }
+                    }
+                },
+                "book": {
+                    "text": "book設定",
+                    "type": "list",
+                    "value": {
+                        "prev": {
+                            "text": "上一頁，預設值是方向鍵←",
+                            "type": "key",
+                            "value": [
+                                37
+                            ]
+                        },
+                        "next": {
+                            "text": "下一頁，預設值是方向鍵→",
+                            "type": "key",
+                            "value": [
+                                39
+                            ]
+                        },
+                        "full_screen": {
+                            "text": "全螢幕, 預設值是Enter",
+                            "type": "key",
+                            "value": [
+                                13
+                            ]
+                        },
+                        "back": {
+                            "text": "回到home，預設值是Backspace",
+                            "type": "key",
+                            "value": [
+                                8
+                            ]
+                        },
+                        "name_sort": {
+                            "text": "按照名稱排序",
+                            "type": "key",
+                            "value": [
+                                96,
+                                48
+                            ]
+                        },
+                        "random_sort": {
+                            "text": "隨機排序",
+                            "type": "key",
+                            "value": [
+                                97,
+                                49
+                            ]
+                        },
+                        "chronology": {
+                            "text": "按照時間排序，由新到舊",
+                            "type": "key",
+                            "value": [
+                                98,
+                                50
+                            ]
+                        },
+                        "exit": {
+                            "text": "關閉程式",
+                            "type": "key",
+                            "value": [
+                                27
+                            ]
+                        },
+                        "prev_book": {
+                            "text": "跳到上一本，預設值是ctrl + 方向鍵←和[",
+                            "type": "key",
+                            "value": [
+                                [
+                                    17,
+                                    37
+                                ],
+                                219
+                            ]
+                        },
+                        "next_book": {
+                            "text": "跳到下一本，預設值是ctrl + 方向鍵→和]",
+                            "type": "key",
+                            "value": [
+                                [
+                                    17,
+                                    39
+                                ],
+                                221
+                            ]
+                        }
+                    }
+                },
+                "view": {
+                    "text": "view設定",
+                    "type": "list",
+                    "value": {
+                        "full_screen": {
+                            "text": "全螢幕, 預設值是Enter",
+                            "type": "key",
+                            "value": [
+                                13
+                            ]
+                        },
+                        "back": {
+                            "text": "回到book，預設值是Backspace",
+                            "type": "key",
+                            "value": [
+                                8
+                            ]
+                        },
+                        "name_sort": {
+                            "text": "按照名稱排序",
+                            "type": "key",
+                            "value": [
+                                96,
+                                48
+                            ]
+                        },
+                        "random_sort": {
+                            "text": "隨機排序",
+                            "type": "key",
+                            "value": [
+                                97,
+                                49
+                            ]
+                        },
+                        "chronology": {
+                            "text": "按照時間排序，由新到舊",
+                            "type": "key",
+                            "value": [
+                                98,
+                                50
+                            ]
+                        },
+                        "exit": {
+                            "text": "關閉程式",
+                            "type": "key",
+                            "value": [
+                                27
+                            ]
+                        },
+                        "prev_book": {
+                            "text": "跳到上一本，預設值是ctrl + 方向鍵←和[",
+                            "value": [
+                                [
+                                    17,
+                                    37
+                                ],
+                                219
+                            ]
+                        },
+                        "next_book": {
+                            "text": "跳到下一本，預設值是ctrl + 方向鍵→和]",
+                            "type": "key",
+                            "value": [
+                                [
+                                    17,
+                                    39
+                                ],
+                                221
+                            ]
+                        },
+                        "prev": {
+                            "text": "上一頁，預設值是方向鍵←，與pageup（除了veiw頁面外無法使用）",
+                            "type": "key",
+                            "value": [
+                                37,
+                                33
+                            ]
+                        },
+                        "next": {
+                            "text": "下一頁，預設值是方向鍵→，與pagedown（除了veiw頁面外無法使用）",
+                            "type": "key",
+                            "value": [
+                                39,
+                                34
+                            ]
+                        },
+                        "home": {
+                            "text": "跳到第一頁，預設值是home（除了veiw頁面外無法使用）",
+                            "type": "key",
+                            "value": [
+                                36
+                            ]
+                        },
+                        "end": {
+                            "text": "跳到最尾頁，預設值是end（除了veiw頁面外無法使用）",
+                            "type": "key",
+                            "value": [
+                                35
+                            ]
+                        },
+                        "move_up": {
+                            "text": "放大之後往上移動",
+                            "type": "key",
+                            "value": [
+                                38
+                            ]
+                        },
+                        "move_down": {
+                            "text": "放大之後往下移動",
+                            "type": "key",
+                            "value": [
+                                40
+                            ]
+                        },
+                        "move_left": {
+                            "text": "放大之後往左移動",
+                            "type": "key",
+                            "value": [
+                                37
+                            ]
+                        },
+                        "move_right": {
+                            "text": "放大之後往右移動",
+                            "type": "key",
+                            "value": [
+                                39
+                            ]
+                        },
+                        "zoom_in": {
+                            "text": "放大",
+                            "type": "key",
+                            "value": [
+                                107,
+                                187
+                            ]
+                        },
+                        "zoom_out": {
+                            "text": "縮小",
+                            "type": "key",
+                            "value": [
+                                109,
+                                189
+                            ]
+                        },
+                        "zoom": {
+                            "text": "恢復為預設大小",
+                            "type": "key",
+                            "value": [
+                                111,
+                                191
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        "update": {
+            "text": "是否每次開啟時都更新資料庫",
+            "type": "bool",
+            "value": false
+        },
+        "debug": {
+            "text": "是否開啟「開發人員工具」",
+            "type": "bool",
+            "value": true
+        },
+        "full_page": {
+            "text": "是否開啟整頁瀏覽",
+            "type": "bool",
+            "value": false
+        },
+        "zoom": {
+            "text": "頁面放大倍率，預設是110%",
+            "type": "number",
+            "value": 100
+        },
+        "home_max": {
+            "text": "首頁最多顯示圖片數量",
+            "type": "number",
+            "value": 50
+        },
+        "page_max": {
+            "text": "本子頁最多顯示圖片數量",
+            "type": "number",
+            "value": 20
+        },
+        "cache": {
+            "text": "快取圖片數量",
+            "type": "number",
+            "value": 20
+        }
+    }
+}
