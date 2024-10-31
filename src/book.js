@@ -481,6 +481,7 @@ function hotkeyHandle(event) {
         console.log("prev_book");
         book_id = (book_id - 1 < 0) ? (group.length - 1) : (book_id - 1);
         img_id = 0;
+        search_str = [];
 
         image.init(group[book_id].local_path).then(e => {
             imageArray = e;
@@ -492,6 +493,8 @@ function hotkeyHandle(event) {
         console.log("next_book");
         book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
         img_id = 0;
+        search_str = [];
+        
         image.init(group[book_id].local_path).then(e => {
             imageArray = e;
             updataBook();
@@ -502,15 +505,17 @@ function hotkeyHandle(event) {
 
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.once('get-pageStatus-reply', (event, data) => {
-    book_id = data.book_id,
-        img_id = data.img_id,
-        page_max = data.page_max;
+    book_id = data.book_id;
+    img_id = data.img_id;
+    page_max = data.page_max;
     group = data.group;
     uiLanguage = data.uiLanguage;
     definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     bookHotkeys = data.bookHotkeys;
     historyList = data.historyList;
+    search_str = [];
+
     document.addEventListener('keydown', hotkeyHandle);
     image.init(group[book_id].local_path).then(e => {
         imageArray = e;
