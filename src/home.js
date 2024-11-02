@@ -221,7 +221,7 @@ function createPtt() {
         //1, ..., 5, ..., len
         strHtml += `<td><a>1</a></td>`;
         strHtml += `<td><a>...</a></td>`;
-        for (let i = page - 2; i <= page + 2; i++) {
+        for (let i = page - 3; i <= page + 3; i++) {
             strHtml += `<td><a>${i + 1}</a></td>`;
         }
         strHtml += `<td><a>...</a></td>`;
