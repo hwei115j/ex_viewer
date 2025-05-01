@@ -1,11 +1,6 @@
-/*jshint esversion: 6 */
-const { ipcRenderer} = require("electron");
-const cache = require("../cache.js");
-const image = require("../image_manager.js");
+/*jshint esversion: 8 */
+const { ipcRenderer } = require("electron");
 const Viewer = require("viewerjs");
-let getElement;
-let img;
-let cacheObj;
 let viewer = null;
 let element = null;
 let sizeWidth = 0;
@@ -16,6 +11,7 @@ let group;
 let uiLanguage;
 let globalHotkeys;
 let viewHotkeys;
+let bookInfo = null; // 存儲當前書本的信息 {length, names, filePaths}
 
 function eventEnable() {
     window.onkeydown = hotkeyHandle;
@@ -42,6 +38,12 @@ function getTranslation(name) {
 }
 
 function create_viewer() {
+    // 檢查 viewer 是否為 null，若為 null 則不執行
+    if (!viewer) {
+        console.log("Viewer is null, skipping create_viewer");
+        return;
+    }
+    
     viewer.show(true);
     let naturalHeight = viewer.imageData.naturalHeight;
     let naturalWidth = viewer.imageData.naturalWidth;
@@ -58,14 +60,51 @@ function create_viewer() {
     viewer.moveTo(viewer.imageData.x, 0);
 }
 
-function image_view() {
-    console.log("book_id = "+book_id);
-    if (viewer) viewer.destroy();
-    if (element) element.onload = null;
-    viewer = element = null;
-    element = getElement(img_id);
+// 獲取當前頁面的圖像元素
+async function getElement(pageId) {
+    const img = new Image();
+    img.id = "pic";
 
-    document.title = "ex_viewer - " + group[book_id].local_name + "【" + img.getname(img_id) + "】";
+    try {
+        const response = await ipcRenderer.invoke('image:getImagePath', {
+            index: book_id,
+            page: pageId
+        });
+
+        if (response && response.type === 'file') {
+            img.src = response.path;
+        } else {
+            console.error("獲取圖片路徑失敗", response);
+            img.src = "?"; // 使用默認空值
+        }
+    } catch (error) {
+        console.error("獲取圖片出錯", error);
+        img.src = "?";
+    }
+
+    return img;
+}
+
+async function image_view() {
+    console.log("book_id = " + book_id);
+    
+    // 保存舊的 viewer 用於後續銷毀，避免銷毀正在使用的新 viewer
+    const oldViewer = viewer;
+    
+    // 取消先前的 onload 事件處理
+    if (element) element.onload = null;
+    
+    // 重置 viewer 和 element，準備創建新的
+    viewer = null;
+    element = null;
+    
+    // 獲取新的圖片元素
+    element = await getElement(img_id);
+
+    // 更新標題，使用書本名稱和文件名
+    const fileName = bookInfo && bookInfo.names ? bookInfo.names[img_id] : `頁面 ${img_id + 1}`;
+    document.title = "ex_viewer - " + group[book_id].local_name + "【" + fileName + "】";
+
     if (img_id == 0) {
         let ttt = document.getElementById("ttt");
         ttt.style =
@@ -81,6 +120,16 @@ function image_view() {
             "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
     }
 
+    // 安全地銷毀舊的 viewer，確保不會影響新建立的 viewer
+    if (oldViewer) {
+        try {
+            oldViewer.destroy();
+        } catch (error) {
+            console.error("銷毀舊 viewer 時出錯:", error);
+        }
+    }
+
+    // 創建新的 viewer
     viewer = new Viewer(element, {
         backdrop: false,
         navbar: false,
@@ -99,9 +148,10 @@ function image_view() {
         }
     });
 
-    if (element.complete) {
+    // 確保 viewer 已經正確創建後才調用 create_viewer
+    if (element.complete && viewer) {
         create_viewer();
-    } else {
+    } else if (viewer) {
         element.onload = create_viewer;
     }
 }
@@ -151,6 +201,7 @@ function hotkeyHandle(event) {
         if (event.altKey) pressedKeys.add(18); // Alt keycode
         if (event.metaKey) pressedKeys.add(91); // Meta keycode (Command on Mac)
         pressedKeys.add(event.keyCode); // 事件的 keycode
+
         // 先檢查組合鍵
         for (const item of list) {
             if (Array.isArray(item)) {
@@ -174,6 +225,7 @@ function hotkeyHandle(event) {
 
         return false;
     }
+
     function isKey(command) {
         for (i in globalHotkeys) {
             if (i === command) {
@@ -228,11 +280,9 @@ function hotkeyHandle(event) {
         book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
         img_id = 0;
         book_scrollTop = 0;
-        image.init(group[book_id].local_path).then(e => {
-            img = e;
-            cacheObj.free();
-            cacheObj = cache.init(img, img_id);
-            getElement = cacheObj.getElement;
+
+        // 使用 IPC 獲取新的書本資訊
+        loadBookInfo().then(() => {
             image_view();
         });
         return;
@@ -244,31 +294,30 @@ function hotkeyHandle(event) {
         img_id = 0;
         book_scrollTop = 0;
 
-        image.init(group[book_id].local_path).then(e => {
-            img = e;
-            cacheObj.free();
-            cacheObj = cache.init(img, img_id);
-            getElement = cacheObj.getElement;
+        // 使用 IPC 獲取新的書本資訊
+        loadBookInfo().then(() => {
             image_view();
         });
         return;
     }
     if (isKey("prev")) {
         //上一頁
-        img_id = img_id < 1 ? img.length - 1 : img_id - 1;
+        if (!bookInfo) return;
+        img_id = img_id < 1 ? bookInfo.length - 1 : img_id - 1;
         image_view();
         return;
     }
     if (isKey("next")) {
         //下一頁
-        img_id = img_id < img.length - 1 ? img_id + 1 : 0;
-
+        if (!bookInfo) return;
+        img_id = img_id < bookInfo.length - 1 ? img_id + 1 : 0;
         image_view();
         return;
     }
     if (isKey("end")) {
         //END
-        img_id = img.length - 1;
+        if (!bookInfo) return;
+        img_id = bookInfo.length - 1;
         image_view();
         return;
     }
@@ -306,7 +355,7 @@ function hotkeyHandle(event) {
             console.log("name_sort");
             let ttt = document.getElementById("ttt");
             ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             ttt.value = "Name";
             setTimeout(() => {
                 ttt.style =
@@ -323,7 +372,7 @@ function hotkeyHandle(event) {
             console.log("random_sort");
             let ttt = document.getElementById("ttt");
             ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             ttt.value = "Random";
             setTimeout(() => {
                 ttt.style =
@@ -340,7 +389,7 @@ function hotkeyHandle(event) {
             console.log("chronology");
             let ttt = document.getElementById("ttt");
             ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             ttt.value = "Chronology";
             setTimeout(() => {
                 ttt.style =
@@ -357,48 +406,70 @@ function hotkeyHandle(event) {
     }
 }
 
+// 修改滑鼠滾輪事件處理，防止快速連續觸發
+let wheelTimeout = null;
 function mouse(e) {
-    if (e.deltaY < 0) {
-        //上一頁
-        img_id = img_id < 1 ? img.length - 1 : img_id - 1;
-        image_view();
-    } else if (e.deltaY > 0) {
-        //下一頁
-        img_id = img_id < img.length - 1 ? img_id + 1 : 0;
-        image_view();
+    if (!bookInfo) return;
+
+    // 如果已經有正在處理的滾動事件，則忽略當前滾動
+    if (wheelTimeout) return;
+
+    wheelTimeout = setTimeout(() => {
+        if (e.deltaY < 0) {
+            //上一頁
+            img_id = img_id < 1 ? bookInfo.length - 1 : img_id - 1;
+            image_view();
+        } else if (e.deltaY > 0) {
+            //下一頁
+            img_id = img_id < bookInfo.length - 1 ? img_id + 1 : 0;
+            image_view();
+        }
+        wheelTimeout = null;
+    }, 50); // 50毫秒的節流
+}
+
+// 通過 IPC 加載書本資訊
+async function loadBookInfo() {
+    try {
+        bookInfo = await ipcRenderer.invoke('image:getBookInfo', { index: book_id });
+        console.log(`書本 ${book_id} 載入完成，共 ${bookInfo ? bookInfo.length : 0} 頁`);
+        return bookInfo;
+    } catch (error) {
+        console.error("載入書本資訊失敗:", error);
+        bookInfo = null;
+        return null;
     }
 }
 
-
 function load_viewer() {
-    eventEnable();    
+    eventEnable();
     let body = document.getElementsByTagName("body");
     body[0].innerHTML =
         `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
         `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
         <input  type="button" id="ttt" style="display:none" value="第一頁" ></div>`;
     html = document.getElementById("im");
-    image_view();
-}
 
+    // 設定 group 資訊到 imageManager
+    ipcRenderer.invoke('image:setGroup', { group }).then(() => {
+        // 加載書本資訊
+        loadBookInfo().then(() => {
+            image_view();
+        });
+    });
+}
 
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
-    book_id = data.book_id,
-        img_id = data.img_id,
-        page_max = data.page_max;
+    book_id = data.book_id;
+    img_id = data.img_id;
+    page_max = data.page_max;
     group = data.group;
     uiLanguage = data.uiLanguage;
-    //definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     viewHotkeys = data.viewHotkeys;
 
-    image.init(group[book_id].local_path).then(e => {
-        img = e;
-        cacheObj = cache.init(img, img_id);
-        getElement = cacheObj.getElement;
-        load_viewer();
-    });
+    load_viewer();
 });
 
 ipcRenderer.on('context-menu-command', (e, command, text) => {

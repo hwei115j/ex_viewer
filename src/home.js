@@ -1,6 +1,5 @@
 /*jshint esversion: 8 */
 const dialogs = require("dialogs")();
-const image = require("../image_manager");
 const { webFrame } = require('electron');
 const { ipcRenderer, clipboard } = require("electron");
 //window.$ = window.jQuery = require('jquery');
@@ -168,8 +167,20 @@ function createPage() {
         gl1tLink.addEventListener('contextmenu', contextmenu);
         gl3tLink.addEventListener('contextmenu', contextmenu);
 
-        image.getheadAsync(group[page * page_max + i].local_path).then(url => {
-            pageDiv.getElementsByTagName("img")[i].src = url;
+        // image.getheadAsync(group[page * page_max + i].local_path).then(url => {
+        //     pageDiv.getElementsByTagName("img")[i].src = url;
+        // });
+        ipcRenderer.invoke('image:getFirstImagePath', { index: page * page_max + i }).then(imageData => {
+            if (imageData && imageData.type === 'file') {
+                pageDiv.getElementsByTagName("img")[i].src = imageData.path;
+            } else {
+                // 處理錯誤情況 - 例如設定一個預設圖片或顯示錯誤訊息
+                console.error(`無法載入索引 ${page * page_max + i} 的封面圖片`);
+                pageDiv.getElementsByTagName("img")[i].src = ''; // 或設定一個預設的錯誤圖片
+            }
+        }).catch(error => {
+            console.error(`獲取索引 ${page * page_max + i} 的封面時出錯:`, error);
+            pageDiv.getElementsByTagName("img")[i].src = ''; // 或設定一個預設的錯誤圖片
         });
     }
 }
