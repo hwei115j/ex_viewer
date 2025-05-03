@@ -84,74 +84,98 @@ async function getElement(pageId) {
     }
 }
 
+let viewerUpdateInProgress = false;
+let pendingImgId = null;
+
 async function image_view() {
-    console.log("book_id = " + book_id);
-    
-    // 保存舊的 viewer 用於後續銷毀，避免銷毀正在使用的新 viewer
-    const oldViewer = viewer;
-    
-    // 取消先前的 onload 事件處理
-    if (element) element.onload = null;
-    
-    // 重置 viewer 和 element，準備創建新的
-    viewer = null;
-    element = null;
-    
-    // 獲取新的圖片元素
-    element = await getElement(img_id);
-
-    // 更新標題，使用書本名稱和文件名
-    const fileName = bookInfo && bookInfo.names ? bookInfo.names[img_id] : `頁面 ${img_id + 1}`;
-    document.title = "ex_viewer - " + group[book_id].local_name + "【" + fileName + "】";
-
-    if (img_id == 0) {
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = getTranslation("first page");
-        setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 700);
-    } else {
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+    // 如果有更新正在進行中，記錄最新的請求並退出
+    if (viewerUpdateInProgress) {
+        pendingImgId = img_id;
+        return;
     }
-
-    // 安全地銷毀舊的 viewer，確保不會影響新建立的 viewer
-    if (oldViewer) {
+    
+    viewerUpdateInProgress = true;
+    
+    // 現有的清理及初始化程式碼
+    if (element) {
+        element.onload = null;
+    }
+    
+    if(viewer) {
         try {
-            oldViewer.destroy();
+            viewer.destroy();
         } catch (error) {
             console.error("銷毀舊 viewer 時出錯:", error);
         }
     }
+    
+    // 重置 viewer 和 element
+    viewer = null;
+    element = null;
+    
+    // 捕獲當前的 img_id，避免在等待期間被改變
+    const currentImgId = img_id;
+    
+    try {
+        // 獲取新的圖片元素
+        element = await getElement(currentImgId);
+        
+        // 更新標題，使用書本名稱和文件名
+        const fileName = bookInfo && bookInfo.names ? bookInfo.names[img_id] : `頁面 ${img_id + 1}`;
+        document.title = "ex_viewer - " + group[book_id].local_name + "【" + fileName + "】";
 
-    // 創建新的 viewer
-    viewer = new Viewer(element, {
-        backdrop: false,
-        navbar: false,
-        title: false,
-        toolbar: false,
-        fullscreen: true,
-        transition: false,
-        button: false,
-        loading: false,
-        keyboard: false,
-        zoomOnWheel: false,
-        toggleOnDblclick: false,
-        viewed() {
-            window.removeEventListener("resize", viewer.onResize);
-            document.removeEventListener("pointermove", viewer.onPointerMove);
+        if (img_id == 0) {
+            let ttt = document.getElementById("ttt");
+            ttt.style =
+                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+            ttt.value = getTranslation("first page");
+            setTimeout(() => {
+                ttt.style =
+                    "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+            }, 700);
+        } else {
+            let ttt = document.getElementById("ttt");
+            ttt.style =
+                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
         }
-    });
 
-    // 確保 viewer 已經正確創建後才調用 create_viewer
-    if (element.complete && viewer) {
-        create_viewer();
-    } else if (viewer) {
-        element.onload = create_viewer;
+        // 創建新的 viewer
+        viewer = new Viewer(element, {
+            backdrop: false,
+            navbar: false,
+            title: false,
+            toolbar: false,
+            fullscreen: true,
+            transition: false,
+            button: false,
+            loading: false,
+            keyboard: false,
+            zoomOnWheel: false,
+            toggleOnDblclick: false,
+            viewed() {
+                window.removeEventListener("resize", viewer.onResize);
+                document.removeEventListener("pointermove", viewer.onPointerMove);
+            }
+        });
+
+        // 確保 viewer 已經正確創建後才調用 create_viewer
+        if (element.complete && viewer) {
+            create_viewer();
+        } else if (viewer) {
+            console.log("element is not complete, waiting for load event");
+            element.onload = create_viewer;
+        }
+        
+    } finally {
+        // 完成後檢查是否有待處理的請求
+        viewerUpdateInProgress = false;
+        if (pendingImgId !== null && pendingImgId !== currentImgId) {
+            console.log("有待處理的請求，將 img_id 更新為:", pendingImgId);
+            const nextImgId = pendingImgId;
+            pendingImgId = null;
+            img_id = nextImgId; // 更新全域 img_id
+            setTimeout(() => image_view(), 0); // 使用 setTimeout 避免遞迴調用堆疊過深
+        }
     }
 }
 
