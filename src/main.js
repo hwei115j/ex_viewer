@@ -646,6 +646,7 @@ ipcMain.on('put-match', (event, arg) => {
     console.log(layers_list);
     fs.writeFileSync(dir_path, JSON.stringify(pageStatus.dir, null, 4));
 });
+
 ipcMain.on("sort", (event, arg) => {
     let id = pageStatus.group[pageStatus.book_id].local_id;
     if (arg == "name") {
@@ -662,6 +663,8 @@ ipcMain.on("sort", (event, arg) => {
         });
     }
     //pageStatus.book_id = pageStatus.group.findIndex(element => element.local_id === id);
+
+    imageManagerInstance.setGroup(pageStatus.group);
     event.reply("sort-reply", {
         group: pageStatus.group,
         book_id: pageStatus.book_id

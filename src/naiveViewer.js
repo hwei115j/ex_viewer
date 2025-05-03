@@ -1,6 +1,8 @@
 /*jshint esversion: 8 */
 const { ipcRenderer } = require("electron");
 const Viewer = require("viewerjs");
+const ImageCache = require("../cache.js"); // 修正快取模組路徑
+
 let viewer = null;
 let element = null;
 let sizeWidth = 0;
@@ -12,6 +14,15 @@ let uiLanguage;
 let globalHotkeys;
 let viewHotkeys;
 let bookInfo = null; // 存儲當前書本的信息 {length, names, filePaths}
+
+// 初始化快取
+let imageCache = new ImageCache({
+    sameGroupPreloadCount: 3,  // 同一資料夾往前往後快取3張
+    otherGroupPreloadCount: 5,  // 其他資料夾往前往後快取1個
+    firstPageWindowSize: 1,     // 第一頁時的窗口大小
+    maxRetries: 3,              // 最大重試次數
+    retryDelay: 1000            // 重試間隔
+});
 
 function eventEnable() {
     window.onkeydown = hotkeyHandle;
@@ -60,29 +71,17 @@ function create_viewer() {
     viewer.moveTo(viewer.imageData.x, 0);
 }
 
-// 獲取當前頁面的圖像元素
+// 使用快取獲取當前頁面的圖像元素
 async function getElement(pageId) {
-    const img = new Image();
-    img.id = "pic";
-
     try {
-        const response = await ipcRenderer.invoke('image:getImagePath', {
-            index: book_id,
-            page: pageId
-        });
-
-        if (response && response.type === 'file') {
-            img.src = response.path;
-        } else {
-            console.error("獲取圖片路徑失敗", response);
-            img.src = "?"; // 使用默認空值
-        }
+        return await imageCache.getImageElement(book_id, pageId);
     } catch (error) {
-        console.error("獲取圖片出錯", error);
+        console.error("透過快取獲取圖片時出錯", error);
+        const img = new Image();
+        img.id = "pic";
         img.src = "?";
+        return img;
     }
-
-    return img;
 }
 
 async function image_view() {
@@ -433,6 +432,10 @@ async function loadBookInfo() {
     try {
         bookInfo = await ipcRenderer.invoke('image:getBookInfo', { index: book_id });
         console.log(`書本 ${book_id} 載入完成，共 ${bookInfo ? bookInfo.length : 0} 頁`);
+        
+        // 更新快取中的書本信息
+        imageCache.setCurrentBookInfo(bookInfo, book_id);
+        console.log(bookInfo);
         return bookInfo;
     } catch (error) {
         console.error("載入書本資訊失敗:", error);
@@ -450,12 +453,8 @@ function load_viewer() {
         <input  type="button" id="ttt" style="display:none" value="第一頁" ></div>`;
     html = document.getElementById("im");
 
-    // 設定 group 資訊到 imageManager
-    ipcRenderer.invoke('image:setGroup', { group }).then(() => {
-        // 加載書本資訊
-        loadBookInfo().then(() => {
-            image_view();
-        });
+    loadBookInfo().then(() => {
+        image_view();
     });
 }
 
@@ -469,6 +468,9 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     globalHotkeys = data.globalHotkeys;
     viewHotkeys = data.viewHotkeys;
 
+    // 初始化快取，僅設置資料夾數量
+    imageCache.initialize(group.length);
+    
     load_viewer();
 });
 
