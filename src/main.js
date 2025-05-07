@@ -2,7 +2,7 @@
 const electron = require("electron");
 const join = require("path").join;
 const { ipcMain, dialog } = require("electron");
-const image = require("./image_manager.js");
+const imageManager = require("./imageManager.js");
 const levenshtein = require("fast-levenshtein");
 
 // 聲明一個BrowserWindow對象實例
@@ -25,7 +25,7 @@ const setting_path = join(".", "setting", "setting.json");
 const historyList_json = join(".", "setting", "historyList.json");
 let db;
 let setting = JSON.parse(fs.readFileSync(setting_path).toString());
-
+let imageManagerInstance = new imageManager();
 function createWindow() {
 
     // 創建一個瀏覽器窗口對象，並指定窗口的大小
@@ -326,6 +326,7 @@ function search(input, func_cb) {
                 pageStatus.group.sort((a, b) =>
                     a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
                 );
+                imageManagerInstance.setGroup(pageStatus.group);
                 func_cb();
             });
         });
@@ -486,7 +487,7 @@ ipcMain.on('put-match', (event, arg) => {
             let title = files[i];
             let bookPath = join(path, title);
 
-            if (image.isbook(bookPath)) {
+            if (imageManagerInstance.isBook(bookPath)) {
                 list.push([title, max_string(files[i]), path]);
             }
             if (layers != 1) {
@@ -645,6 +646,7 @@ ipcMain.on('put-match', (event, arg) => {
     console.log(layers_list);
     fs.writeFileSync(dir_path, JSON.stringify(pageStatus.dir, null, 4));
 });
+
 ipcMain.on("sort", (event, arg) => {
     let id = pageStatus.group[pageStatus.book_id].local_id;
     if (arg == "name") {
@@ -661,6 +663,8 @@ ipcMain.on("sort", (event, arg) => {
         });
     }
     //pageStatus.book_id = pageStatus.group.findIndex(element => element.local_id === id);
+
+    imageManagerInstance.setGroup(pageStatus.group);
     event.reply("sort-reply", {
         group: pageStatus.group,
         book_id: pageStatus.book_id

@@ -3,7 +3,6 @@
 const { remote, ipcRenderer, clipboard } = require("electron");
 //const global = remote.getGlobal("sharedObject");
 const dialogs = require("dialogs")();
-const image = require("../image_manager");
 
 let book_id;
 let group;
@@ -11,12 +10,12 @@ let uiLanguage;
 let definition;
 let page_max;
 //@TODO 修改imageArray名稱
-let imageArray;
 let img_id = 0;
 let search_str = [];
 let globalHotkeys;
 let bookHotkeys;
 let historyList;
+let bookInfo = []
 
 let page = 0;
 //let img;
@@ -24,7 +23,7 @@ let page = 0;
 
 function goto_page(str) {
     let p = parseInt(str);
-    let len = Math.floor(imageArray.length / page_max) + 1;
+    let len = Math.floor(bookInfo.length / page_max) + 1;
 
     return () => {
         if (isNaN(p)) {
@@ -43,7 +42,7 @@ function goto_page(str) {
         }
         if (p == -1 && page != 0) {
             img_id = (page - 1) * page_max;
-        } else if (p == -2 && page < imageArray.length / page_max - 1) {
+        } else if (p == -2 && page < bookInfo.length / page_max - 1) {
             img_id = (page + 1) * page_max;
         } else if (p >= 0) {
             img_id = (p - 1) * page_max;
@@ -73,7 +72,7 @@ function createPtt() {
     }
 
     let ptt = document.getElementsByClassName("ptt");
-    let len = Math.floor(imageArray.length / page_max) + 1;
+    let len = Math.floor(bookInfo.length / page_max) + 1;
     let strHtml = "";
 
     if (len <= 7) {
@@ -127,12 +126,12 @@ function createPtt() {
 function createFrom() {
     let gdt = document.getElementById("gdt");
     let strHtml = "";
-    let thisPageMax = ((page + 1) * page_max < imageArray.length) ? page_max : (imageArray.length - page * page_max);
+    let thisPageMax = ((page + 1) * page_max < bookInfo.length) ? page_max : (bookInfo.length - page * page_max);
 
     for (let i = 0; i < thisPageMax; i++) {
         let gCount = page * page_max + i;
         strHtml += `<div class="gdtl" style="height: 306px;"><a>` +
-            `<img loading="lazy" title="Page ${gCount}: ${imageArray.getname(gCount)}" src="" style="height: auto; width: auto; max-width: 100%; max-height: 100%;">` +
+            `<img loading="lazy" title="Page ${gCount}: ${bookInfo.names[gCount]}" src="" style="height: auto; width: auto; max-width: 100%; max-height: 100%;">` +
             `</a></div>`;
     }
     strHtml += `<div class="c"></div>`;
@@ -140,10 +139,7 @@ function createFrom() {
 
     for (let i = 0; i < thisPageMax; i++) {
         let gCount = page * page_max + i;
-
-        imageArray.getimg_async(gCount).then(url => {
-            gdt.getElementsByTagName("img")[i].src = url;
-        });
+        gdt.getElementsByTagName("img")[i].src = bookInfo.filePaths[gCount];
         gdt.getElementsByTagName("a")[i].addEventListener("click", () => {
             ipcRenderer.send('put-bookStatus', { img_id: gCount, book_id: book_id });
             ipcRenderer.once('put-bookStatus-reply', (event, data) => {
@@ -174,10 +170,8 @@ function createInformation() {
 
     (() => {
         let gleft = document.getElementById("gleft");
-        imageArray.gethead_async().then(url => {
-            gleft.innerHTML =
-                `<div id="gd1"><div style="width: 250px; height: 351px; background: url(&quot;${url}&quot;) 0px 0px / contain no-repeat transparent;"></div></div>`;
-        });
+        gleft.innerHTML =
+            `<div id="gd1"><div style="width: 250px; height: 351px; background: url(&quot;${bookInfo.filePaths[0]}&quot;) 0px 0px / contain no-repeat transparent;"></div></div>`;
     })();
 
     (() => {
@@ -353,9 +347,9 @@ function updataBook() {
     document.title = "ex_viewer - " + group[book_id].local_name;
 
     document.getElementById("gpc").textContent =
-        `Showing ${page * page_max + 1} - ${((page + 1) * page_max < imageArray.length)
+        `Showing ${page * page_max + 1} - ${((page + 1) * page_max < bookInfo.length)
             ? ((page + 1) * page_max)
-            : imageArray.length} of ${imageArray.length} images`;
+            : bookInfo.length} of ${bookInfo.length} images`;
     createPtt();
     createInformation();
     createFrom();
@@ -482,11 +476,10 @@ function hotkeyHandle(event) {
         book_id = (book_id - 1 < 0) ? (group.length - 1) : (book_id - 1);
         img_id = 0;
         search_str = [];
-
-        image.init(group[book_id].local_path).then(e => {
-            imageArray = e;
+        ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
+            bookInfo = data;
             updataBook();
-        });
+        })
         return;
     }
     if (isKey("next_book")) {
@@ -495,10 +488,10 @@ function hotkeyHandle(event) {
         img_id = 0;
         search_str = [];
         
-        image.init(group[book_id].local_path).then(e => {
-            imageArray = e;
+        ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
+            bookInfo = data;
             updataBook();
-        });
+        })
         return;
     }
 }
@@ -517,10 +510,10 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     search_str = [];
 
     document.addEventListener('keydown', hotkeyHandle);
-    image.init(group[book_id].local_path).then(e => {
-        imageArray = e;
+    ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
+        bookInfo = data;
         updataBook();
-    });
+    })
 });
 ipcRenderer.on('context-menu-command', (e, command, text) => {
     if (command === 'copy') {

@@ -1,11 +1,8 @@
-/*jshint esversion: 6 */
-const { ipcRenderer} = require("electron");
-const cache = require("../cache.js");
-const image = require("../image_manager.js");
+/*jshint esversion: 8 */
+const { ipcRenderer } = require("electron");
 const Viewer = require("viewerjs");
-let getElement;
-let img;
-let cacheObj;
+const ImageCache = require("../cache.js"); // 修正快取模組路徑
+
 let viewer = null;
 let element = null;
 let sizeWidth = 0;
@@ -16,6 +13,16 @@ let group;
 let uiLanguage;
 let globalHotkeys;
 let viewHotkeys;
+let bookInfo = null; // 存儲當前書本的信息 {length, names, filePaths}
+
+// 初始化快取
+let imageCache = new ImageCache({
+    sameGroupPreloadCount: 3,  // 同一資料夾往前往後快取3張
+    otherGroupPreloadCount: 2,  // 其他資料夾往前往後快取1個
+    firstPageWindowSize: 1,     // 第一頁時的窗口大小
+    maxRetries: 3,              // 最大重試次數
+    retryDelay: 1000            // 重試間隔
+});
 
 function eventEnable() {
     window.onkeydown = hotkeyHandle;
@@ -42,6 +49,12 @@ function getTranslation(name) {
 }
 
 function create_viewer() {
+    // 檢查 viewer 是否為 null，若為 null 則不執行
+    if (!viewer) {
+        console.log("Viewer is null, skipping create_viewer");
+        return;
+    }
+    
     viewer.show(true);
     let naturalHeight = viewer.imageData.naturalHeight;
     let naturalWidth = viewer.imageData.naturalWidth;
@@ -58,55 +71,115 @@ function create_viewer() {
     viewer.moveTo(viewer.imageData.x, 0);
 }
 
-function image_view() {
-    console.log("book_id = "+book_id);
-    if (viewer) viewer.destroy();
-    if (element) element.onload = null;
-    viewer = element = null;
-    element = getElement(img_id);
-
-    document.title = "ex_viewer - " + group[book_id].local_name + "【" + img.getname(img_id) + "】";
-    if (img_id == 0) {
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = getTranslation("first page");
-        setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 700);
-    } else {
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-    }
-
-    viewer = new Viewer(element, {
-        backdrop: false,
-        navbar: false,
-        title: false,
-        toolbar: false,
-        fullscreen: true,
-        transition: false,
-        button: false,
-        loading: false,
-        keyboard: false,
-        zoomOnWheel: false,
-        toggleOnDblclick: false,
-        viewed() {
-            window.removeEventListener("resize", viewer.onResize);
-            document.removeEventListener("pointermove", viewer.onPointerMove);
-        }
-    });
-
-    if (element.complete) {
-        create_viewer();
-    } else {
-        element.onload = create_viewer;
+// 使用快取獲取當前頁面的圖像元素
+async function getElement(pageId) {
+    try {
+        return await imageCache.getImageElement(book_id, pageId);
+    } catch (error) {
+        console.error("透過快取獲取圖片時出錯", error);
+        const img = new Image();
+        img.id = "pic";
+        img.src = "?";
+        return img;
     }
 }
 
-function hotkeyHandle(event) {
+let viewerUpdateInProgress = false;
+let pendingImgId = null;
+
+async function image_view() {
+    // 如果有更新正在進行中，記錄最新的請求並退出
+    if (viewerUpdateInProgress) {
+        pendingImgId = img_id;
+        return;
+    }
+    
+    viewerUpdateInProgress = true;
+    
+    // 現有的清理及初始化程式碼
+    if (element) {
+        element.onload = null;
+    }
+    
+    if(viewer) {
+        try {
+            viewer.destroy();
+        } catch (error) {
+            console.error("銷毀舊 viewer 時出錯:", error);
+        }
+    }
+    
+    // 重置 viewer 和 element
+    viewer = null;
+    element = null;
+    
+    // 捕獲當前的 img_id，避免在等待期間被改變
+    const currentImgId = img_id;
+    
+    try {
+        // 獲取新的圖片元素
+        element = await getElement(currentImgId);
+        
+        // 更新標題，使用書本名稱和文件名
+        const fileName = bookInfo && bookInfo.names ? bookInfo.names[img_id] : `頁面 ${img_id + 1}`;
+        document.title = "ex_viewer - " + group[book_id].local_name + "【" + fileName + "】";
+
+        if (img_id == 0) {
+            let ttt = document.getElementById("ttt");
+            ttt.style =
+                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+            ttt.value = getTranslation("first page");
+            setTimeout(() => {
+                ttt.style =
+                    "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+            }, 700);
+        } else {
+            let ttt = document.getElementById("ttt");
+            ttt.style =
+                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+        }
+
+        // 創建新的 viewer
+        viewer = new Viewer(element, {
+            backdrop: false,
+            navbar: false,
+            title: false,
+            toolbar: false,
+            fullscreen: true,
+            transition: false,
+            button: false,
+            loading: false,
+            keyboard: false,
+            zoomOnWheel: false,
+            toggleOnDblclick: false,
+            viewed() {
+                window.removeEventListener("resize", viewer.onResize);
+                document.removeEventListener("pointermove", viewer.onPointerMove);
+            }
+        });
+
+        // 確保 viewer 已經正確創建後才調用 create_viewer
+        if (element.complete && viewer) {
+            create_viewer();
+        } else if (viewer) {
+            console.log("element is not complete, waiting for load event");
+            element.onload = create_viewer;
+        }
+        
+    } finally {
+        // 完成後檢查是否有待處理的請求
+        viewerUpdateInProgress = false;
+        if (pendingImgId !== null && pendingImgId !== currentImgId) {
+            console.log("有待處理的請求，將 img_id 更新為:", pendingImgId);
+            const nextImgId = pendingImgId;
+            pendingImgId = null;
+            img_id = nextImgId; // 更新全域 img_id
+            setTimeout(() => image_view(), 0); // 使用 setTimeout 避免遞迴調用堆疊過深
+        }
+    }
+}
+
+async function hotkeyHandle(event) {
     event.preventDefault();
     function move(x, y) {
         let clienWidth = document.documentElement.clientWidth;
@@ -151,6 +224,7 @@ function hotkeyHandle(event) {
         if (event.altKey) pressedKeys.add(18); // Alt keycode
         if (event.metaKey) pressedKeys.add(91); // Meta keycode (Command on Mac)
         pressedKeys.add(event.keyCode); // 事件的 keycode
+
         // 先檢查組合鍵
         for (const item of list) {
             if (Array.isArray(item)) {
@@ -174,6 +248,7 @@ function hotkeyHandle(event) {
 
         return false;
     }
+
     function isKey(command) {
         for (i in globalHotkeys) {
             if (i === command) {
@@ -218,7 +293,7 @@ function hotkeyHandle(event) {
     }
     if (isKey("zoom")) {
         window.onresize = image_view;
-        setTimeout(() => image_view(), 50);
+        //setTimeout(() => image_view(), 50);
         sizeWidth = 0;
         return;
     }
@@ -228,11 +303,9 @@ function hotkeyHandle(event) {
         book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
         img_id = 0;
         book_scrollTop = 0;
-        image.init(group[book_id].local_path).then(e => {
-            img = e;
-            cacheObj.free();
-            cacheObj = cache.init(img, img_id);
-            getElement = cacheObj.getElement;
+
+        // 使用 IPC 獲取新的書本資訊
+        await loadBookInfo().then(() => {
             image_view();
         });
         return;
@@ -244,45 +317,44 @@ function hotkeyHandle(event) {
         img_id = 0;
         book_scrollTop = 0;
 
-        image.init(group[book_id].local_path).then(e => {
-            img = e;
-            cacheObj.free();
-            cacheObj = cache.init(img, img_id);
-            getElement = cacheObj.getElement;
+        // 使用 IPC 獲取新的書本資訊
+        await loadBookInfo().then(() => {
             image_view();
         });
         return;
     }
     if (isKey("prev")) {
         //上一頁
-        img_id = img_id < 1 ? img.length - 1 : img_id - 1;
-        image_view();
+        if (!bookInfo) return;
+        img_id = img_id < 1 ? bookInfo.length - 1 : img_id - 1;
+        await image_view();
         return;
     }
     if (isKey("next")) {
         //下一頁
-        img_id = img_id < img.length - 1 ? img_id + 1 : 0;
-
-        image_view();
+        if (!bookInfo) return;
+        img_id = img_id < bookInfo.length - 1 ? img_id + 1 : 0;
+        await image_view();
         return;
     }
     if (isKey("end")) {
         //END
-        img_id = img.length - 1;
-        image_view();
+        if (!bookInfo) return;
+        img_id = bookInfo.length - 1;
+        await image_view();
         return;
     }
     if (isKey("home")) {
         //HOME
         img_id = 0;
-        image_view();
+        await image_view();
         return;
     }
     if (isKey("full_screen")) {
         //全螢幕
         console.log("full_screen");
         window.onresize = image_view;
-        setTimeout(() => image_view(), 50);
+        //setTimeout(() => image_view(), 50);
         sizeWidth = 0;
         ipcRenderer.send('toggle-fullscreen');
         return;
@@ -306,7 +378,7 @@ function hotkeyHandle(event) {
             console.log("name_sort");
             let ttt = document.getElementById("ttt");
             ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             ttt.value = "Name";
             setTimeout(() => {
                 ttt.style =
@@ -323,7 +395,7 @@ function hotkeyHandle(event) {
             console.log("random_sort");
             let ttt = document.getElementById("ttt");
             ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             ttt.value = "Random";
             setTimeout(() => {
                 ttt.style =
@@ -340,7 +412,7 @@ function hotkeyHandle(event) {
             console.log("chronology");
             let ttt = document.getElementById("ttt");
             ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+                "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             ttt.value = "Chronology";
             setTimeout(() => {
                 ttt.style =
@@ -357,48 +429,73 @@ function hotkeyHandle(event) {
     }
 }
 
+// 修改滑鼠滾輪事件處理，防止快速連續觸發
+let wheelTimeout = null;
 function mouse(e) {
-    if (e.deltaY < 0) {
-        //上一頁
-        img_id = img_id < 1 ? img.length - 1 : img_id - 1;
-        image_view();
-    } else if (e.deltaY > 0) {
-        //下一頁
-        img_id = img_id < img.length - 1 ? img_id + 1 : 0;
-        image_view();
+    if (!bookInfo) return;
+
+    // 如果已經有正在處理的滾動事件，則忽略當前滾動
+    if (wheelTimeout) return;
+
+    wheelTimeout = setTimeout(() => {
+        if (e.deltaY < 0) {
+            //上一頁
+            img_id = img_id < 1 ? bookInfo.length - 1 : img_id - 1;
+            image_view();
+        } else if (e.deltaY > 0) {
+            //下一頁
+            img_id = img_id < bookInfo.length - 1 ? img_id + 1 : 0;
+            image_view();
+        }
+        wheelTimeout = null;
+    }, 50); // 50毫秒的節流
+}
+
+// 通過 IPC 加載書本資訊
+async function loadBookInfo() {
+    try {
+        bookInfo = await ipcRenderer.invoke('image:getBookInfo', { index: book_id });
+        console.log(`書本 ${book_id} 載入完成，共 ${bookInfo ? bookInfo.length : 0} 頁`);
+        
+        // 更新快取中的書本信息
+        imageCache.setCurrentBookInfo(bookInfo, book_id);
+        console.log(bookInfo);
+        return bookInfo;
+    } catch (error) {
+        console.error("載入書本資訊失敗:", error);
+        bookInfo = null;
+        return null;
     }
 }
 
-
 function load_viewer() {
-    eventEnable();    
+    eventEnable();
     let body = document.getElementsByTagName("body");
     body[0].innerHTML =
         `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
         `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
         <input  type="button" id="ttt" style="display:none" value="第一頁" ></div>`;
     html = document.getElementById("im");
-    image_view();
-}
 
+    loadBookInfo().then(() => {
+        image_view();
+    });
+}
 
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
-    book_id = data.book_id,
-        img_id = data.img_id,
-        page_max = data.page_max;
+    book_id = data.book_id;
+    img_id = data.img_id;
+    page_max = data.page_max;
     group = data.group;
     uiLanguage = data.uiLanguage;
-    //definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     viewHotkeys = data.viewHotkeys;
 
-    image.init(group[book_id].local_path).then(e => {
-        img = e;
-        cacheObj = cache.init(img, img_id);
-        getElement = cacheObj.getElement;
-        load_viewer();
-    });
+    // 初始化快取，僅設置資料夾數量
+    imageCache.initialize(group.length);
+    
+    load_viewer();
 });
 
 ipcRenderer.on('context-menu-command', (e, command, text) => {
