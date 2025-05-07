@@ -18,7 +18,7 @@ let bookInfo = null; // 存儲當前書本的信息 {length, names, filePaths}
 // 初始化快取
 let imageCache = new ImageCache({
     sameGroupPreloadCount: 3,  // 同一資料夾往前往後快取3張
-    otherGroupPreloadCount: 5,  // 其他資料夾往前往後快取1個
+    otherGroupPreloadCount: 2,  // 其他資料夾往前往後快取1個
     firstPageWindowSize: 1,     // 第一頁時的窗口大小
     maxRetries: 3,              // 最大重試次數
     retryDelay: 1000            // 重試間隔
@@ -179,7 +179,7 @@ async function image_view() {
     }
 }
 
-function hotkeyHandle(event) {
+async function hotkeyHandle(event) {
     event.preventDefault();
     function move(x, y) {
         let clienWidth = document.documentElement.clientWidth;
@@ -293,7 +293,7 @@ function hotkeyHandle(event) {
     }
     if (isKey("zoom")) {
         window.onresize = image_view;
-        setTimeout(() => image_view(), 50);
+        //setTimeout(() => image_view(), 50);
         sizeWidth = 0;
         return;
     }
@@ -305,7 +305,7 @@ function hotkeyHandle(event) {
         book_scrollTop = 0;
 
         // 使用 IPC 獲取新的書本資訊
-        loadBookInfo().then(() => {
+        await loadBookInfo().then(() => {
             image_view();
         });
         return;
@@ -318,7 +318,7 @@ function hotkeyHandle(event) {
         book_scrollTop = 0;
 
         // 使用 IPC 獲取新的書本資訊
-        loadBookInfo().then(() => {
+        await loadBookInfo().then(() => {
             image_view();
         });
         return;
@@ -327,34 +327,34 @@ function hotkeyHandle(event) {
         //上一頁
         if (!bookInfo) return;
         img_id = img_id < 1 ? bookInfo.length - 1 : img_id - 1;
-        image_view();
+        await image_view();
         return;
     }
     if (isKey("next")) {
         //下一頁
         if (!bookInfo) return;
         img_id = img_id < bookInfo.length - 1 ? img_id + 1 : 0;
-        image_view();
+        await image_view();
         return;
     }
     if (isKey("end")) {
         //END
         if (!bookInfo) return;
         img_id = bookInfo.length - 1;
-        image_view();
+        await image_view();
         return;
     }
     if (isKey("home")) {
         //HOME
         img_id = 0;
-        image_view();
+        await image_view();
         return;
     }
     if (isKey("full_screen")) {
         //全螢幕
         console.log("full_screen");
         window.onresize = image_view;
-        setTimeout(() => image_view(), 50);
+        //setTimeout(() => image_view(), 50);
         sizeWidth = 0;
         ipcRenderer.send('toggle-fullscreen');
         return;
