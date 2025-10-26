@@ -14,7 +14,7 @@
 		"viewerjs": "^1.10.3"
 	},
 	"devDependencies": {
-		"electron": "^32.0.1",
+		"electron": "^38.4.0",
 		"electron-builder": "^24.13.3"
 	},
 	"scripts": {

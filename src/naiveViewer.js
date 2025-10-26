@@ -293,7 +293,7 @@ async function hotkeyHandle(event) {
     }
     if (isKey("zoom")) {
         window.onresize = image_view;
-        //setTimeout(() => image_view(), 50);
+        setTimeout(() => image_view(), 50);
         sizeWidth = 0;
         return;
     }
