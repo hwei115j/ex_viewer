@@ -93,9 +93,11 @@
 // ------------------------------------------------------------
 // 1. 多個 term 預設為 AND 關係
 // 2. 帶有 ~ 前綴的 term 會組成 OR 群組
-// 3. OR 群組中的所有項目必須一致地全用或全不用 weak:
-// 4. weak: 不可與 - (排除) 前綴併用
-// 5. -namespace:* 表示排除該命名空間的所有標籤
+// 3. 可使用 "or" 關鍵字代替 ~ 前綴 (如: a or b 等同於 ~a ~b)
+// 4. 可使用 "and" 關鍵字明確表示 AND 關係 (如: a and b 等同於 a b)
+// 5. OR 群組中的所有項目必須一致地全用或全不用 weak:
+// 6. weak: 不可與 - (排除) 前綴併用
+// 7. -namespace:* 表示排除該命名空間的所有標籤
 //
 // ------------------------------------------------------------
 // Examples (範例)
@@ -103,9 +105,12 @@
 // f:vtuber                     → female:vtuber 標籤
 // -m:*                         → 排除所有 male 標籤
 // ~l:chinese ~l:japanese       → 語言為中文或日文
+// l:chinese or l:japanese      → 語言為中文或日文 (使用 or 關鍵字)
+// f:vtuber and l:chinese       → VTuber 且 中文 (and 為顯式寫法)
 // c:sasaki_saku$               → 精確匹配角色 "sasaki saku"
 // title:"comic aun"            → 標題包含 "comic aun"
 // f:vtuber l:chinese -m:*      → VTuber + 中文 + 排除男性標籤
+// a:artist1 or a:artist2       → 藝術家1 或 藝術家2
 // weak:f:vtuber                → 搜尋 weak 標籤
 //
 // ============================================================
@@ -137,6 +142,8 @@ const TokenType = {
     MINUS: 'MINUS',
     DOLLAR: 'DOLLAR',
     WILDCARD: 'WILDCARD',
+    AND: 'AND',
+    OR: 'OR',
     EOF: 'EOF'
 };
 
@@ -206,6 +213,15 @@ class Lexer {
             }
             value += this.advance();
         }
+        
+        // Check for AND/OR keywords (case-insensitive)
+        const lowerValue = value.toLowerCase();
+        if (lowerValue === 'and') {
+            return { type: TokenType.AND, value };
+        } else if (lowerValue === 'or') {
+            return { type: TokenType.OR, value };
+        }
+        
         return { type: TokenType.BARE, value };
     }
 
@@ -271,10 +287,45 @@ class Parser {
 
     parse() {
         const terms = [];
+        let pendingOr = false;
+        const maxIterations = this.tokens.length * 2; // 防止無限循環的保護
+        let iterations = 0;
+        
         while (this.peek().type !== TokenType.EOF) {
+            // 防止無限循環
+            if (++iterations > maxIterations) {
+                throw new Error('解析錯誤：輸入語法可能有誤');
+            }
+            
+            // Skip AND keyword (it's implicit)
+            if (this.peek().type === TokenType.AND) {
+                this.advance();
+                continue;
+            }
+            
+            // Handle OR keyword
+            if (this.peek().type === TokenType.OR) {
+                this.advance();
+                // Mark the previous term as OR if it exists and isn't already
+                if (terms.length > 0 && terms[terms.length - 1].prefix !== 'or') {
+                    terms[terms.length - 1].prefix = 'or';
+                }
+                pendingOr = true;
+                continue;
+            }
+            
+            const posBefore = this.pos;
             const term = this.parseTerm();
             if (term) {
+                // If there was an OR before this term, mark it as OR
+                if (pendingOr) {
+                    term.prefix = 'or';
+                    pendingOr = false;
+                }
                 terms.push(term);
+            } else if (this.pos === posBefore) {
+                // parseTerm 回傳 null 且沒有消耗任何 token，跳過當前 token 避免無限循環
+                this.advance();
             }
         }
         return { type: 'Query', terms };
