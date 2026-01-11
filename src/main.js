@@ -4,6 +4,7 @@ const join = require("path").join;
 const { ipcMain, dialog } = require("electron");
 const imageManager = require("./imageManager.js");
 const levenshtein = require("fast-levenshtein");
+const {convertQuery} = require('./eh-search-parser.js');
 
 // 聲明一個BrowserWindow對象實例
 let mainWindow;
@@ -134,6 +135,7 @@ function appInit() {
 }
 
 function search(input, func_cb) {
+    console.log(convertQuery(input));
     pageStatus.book_id = 0;
     //global.key_flag = false;
     //let token = input.trim().split(/\s+/);
