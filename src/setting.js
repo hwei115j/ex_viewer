@@ -395,97 +395,128 @@ function parse(jsonInput, currentLevel = 1) {
             let div = document.createElement("div");
             let pressedKeys = [];
             let addPressedKeys = [];
-            settingDiv.appendChild(div)
-            div.style.marginLeft = `${(currentLevel - 1) * 20}px`; // Add an extra indentation based on parentLevel
+            div.style.marginLeft = `${(currentLevel - 1) * 20}px`;
+            div.classList.add("key-setting");
+
+            // 標題
+            let label = document.createElement("label");
+            label.textContent = jsonInput.text;
+            div.appendChild(label);
+            div.appendChild(document.createElement("br"));
+
+            // 輸入區域容器
+            let inputContainer = document.createElement("div");
+            inputContainer.classList.add("key-input-container");
 
             let inputBox = document.createElement("input");
+            inputBox.placeholder = "按下快捷鍵...";
+            inputBox.classList.add("key-input");
+
+            // 清除按鈕
+            let clearBtn = document.createElement("button");
+            clearBtn.textContent = "清除";
+            clearBtn.classList.add("clear-button");
+
             let addBtn = document.createElement("button");
-            addBtn.textContent = "Add";
+            addBtn.textContent = "新增";
             addBtn.classList.add("add-button");
-            let delBtn = document.createElement("button");
-            delBtn.textContent = "Delete";
-            let select = document.createElement("select");
 
-            for (i in jsonInput.value) {
-                let op = document.createElement("option");
+            // 改用列表顯示已設定的快捷鍵
+            let keyList = document.createElement("ul");
+            keyList.classList.add("key-list");
 
-                if (jsonInput.value[i].constructor === Array) {
-                    op.textContent = keyNames[parseInt(jsonInput.value[i][0])] + " + " + keyNames[parseInt(jsonInput.value[i][1])];
-                } else {
-                    //op.textContent = parseInt(jsonInput.value[i]);
-                    op.textContent = keyNames[parseInt(jsonInput.value[i])];
-                }
-                select.appendChild(op);
+            // 渲染已有的快捷鍵
+            function renderKeyList() {
+                keyList.innerHTML = "";
+                jsonInput.value.forEach((keyCombo, index) => {
+                    let li = document.createElement("li");
+                    let keyText = Array.isArray(keyCombo)
+                        ? keyCombo.map(k => keyNames[k] || k).join(" + ")
+                        : keyNames[keyCombo] || keyCombo;
+                    
+                    let span = document.createElement("span");
+                    span.textContent = keyText;
+                    
+                    let delBtn = document.createElement("button");
+                    delBtn.textContent = "✕";
+                    delBtn.classList.add("delete-key-btn");
+                    delBtn.addEventListener("click", () => {
+                        jsonInput.value.splice(index, 1);
+                        renderKeyList();
+                    });
+                    
+                    li.appendChild(span);
+                    li.appendChild(delBtn);
+                    keyList.appendChild(li);
+                });
             }
 
-
             inputBox.addEventListener("keydown", function (event) {
-                event.preventDefault(); // prevent the typed text from appearing in the input box
-
+                event.preventDefault();
                 if (pressedKeys.length < 2 && !pressedKeys.includes(event.keyCode)) {
                     pressedKeys.push(event.keyCode);
                 }
-
-                if (pressedKeys.length > 2) {
-                    pressedKeys = pressedKeys.slice(0, 2);
-                }
-
-                let keyName = pressedKeys.map(keyCode => {
-                    return keyNames[parseInt(keyCode)];
-                }).join(" + ");
-
-                addPressedKeys = JSON.parse(JSON.stringify(pressedKeys));
+                let keyName = pressedKeys.map(k => keyNames[k] || k).join(" + ");
+                addPressedKeys = [...pressedKeys];
                 inputBox.value = keyName;
+                inputBox.classList.add("key-captured");
             });
 
             inputBox.addEventListener("keyup", function (event) {
-                let index = pressedKeys.indexOf(event.keyCode);
-                if (index > -1) {
-                    pressedKeys.splice(index, 1);
-                }
+                pressedKeys = pressedKeys.filter(k => k !== event.keyCode);
+            });
+
+            inputBox.addEventListener("blur", function () {
+                pressedKeys = [];
+            });
+
+            clearBtn.addEventListener("click", () => {
+                inputBox.value = "";
+                pressedKeys = [];
+                addPressedKeys = [];
+                inputBox.classList.remove("key-captured");
             });
 
             addBtn.addEventListener("click", () => {
-                console.log(addPressedKeys);
-                if (addPressedKeys.length == 0 || !keyNames.hasOwnProperty(addPressedKeys[0])) {
-                    inputBox.value = "";
-                    addPressedKeys = [];
+                if (addPressedKeys.length === 0 || !keyNames[addPressedKeys[0]]) {
                     return;
                 }
-                let op = document.createElement("option");
-                if (addPressedKeys.length == 1) {
-                    op.textContent = keyNames[addPressedKeys[0]];
-                    jsonInput.value.push(addPressedKeys[0]);
-                } else {
-                    op.textContent = keyNames[addPressedKeys[0]] + " + " + keyNames[addPressedKeys[1]];
-                    jsonInput.value.push(addPressedKeys);
+                
+                // 檢查重複
+                let newKey = addPressedKeys.length === 1 ? addPressedKeys[0] : [...addPressedKeys];
+                let isDuplicate = jsonInput.value.some(existing => {
+                    if (Array.isArray(existing) && Array.isArray(newKey)) {
+                        return existing.length === newKey.length && 
+                               existing.every((v, i) => v === newKey[i]);
+                    }
+                    return existing === newKey;
+                });
+                
+                if (isDuplicate) {
+                    inputBox.classList.add("key-duplicate");
+                    setTimeout(() => inputBox.classList.remove("key-duplicate"), 500);
+                    return;
                 }
+                
+                jsonInput.value.push(newKey);
+                renderKeyList();
+                
+                // 清除輸入
                 inputBox.value = "";
                 addPressedKeys = [];
-                select.appendChild(op);
+                inputBox.classList.remove("key-captured");
             });
 
-            delBtn.addEventListener("click", () => {
-                if (select.length == 0) {
-                    return;
-                }
-                // get the currently selected option in the dropdown
-                const selectedOption = select.options[select.selectedIndex];
-                console.log(selectedOption.value + " , " + jsonInput.value[select.selectedIndex]);
-                jsonInput.value.splice(select.selectedIndex, 1);
-                // remove the selected option from the dropdown
-                select.removeChild(selectedOption);
-            });
-            //div.innerHTML = `<label>${jsonInput.text}</label><br><input type="text"><button>Add</button><select></select><button>Delete</button>`;
-            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
-            div.appendChild(document.createElement("br"));
-            div.appendChild(inputBox);
-            div.appendChild(addBtn);
-            div.appendChild(select);
-            div.appendChild(delBtn);
+            inputContainer.appendChild(inputBox);
+            inputContainer.appendChild(clearBtn);
+            inputContainer.appendChild(addBtn);
+            div.appendChild(inputContainer);
+            div.appendChild(keyList);
+            settingDiv.appendChild(div);
             settingDiv.appendChild(document.createElement("br"));
+            
+            renderKeyList();
             break;
-
         }
     }
 }
