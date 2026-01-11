@@ -296,6 +296,8 @@ function createInformation() {
                         console.log("update");
                         window.location.href = "home.html";
                     });
+                } else {
+                    window.location.href = "home.html";
                 }
             });
 
