@@ -116,7 +116,7 @@ let pageStatus = {
     })(),
 };
 
-let category = [
+let defineCategory = [
     "Doujinshi",
     "Manga",
     "Artist CG",
@@ -131,26 +131,26 @@ let category = [
 
 function appInit() {
     db = new sqlite3.Database(local_db_path);
-    search(pageStatus.search_str, () => { });
+    search(pageStatus.search_str, defineCategory, () => { });
 }
 
-function search(input, func_cb) {
+function search(searchStr, category, func_cb) {
     pageStatus.book_id = 0;
-    
+
     try {
         // 使用 convertQuery 解析搜尋字串
-        const result = convertQuery(input);
-        
+        const result = convertQuery(searchStr);
+
         if (result.error) {
             console.log('Search parse error:', result.error);
             func_cb();
             return;
         }
-        
+
         let sql = result.sql;
-        
+
         // 如果有 category 過濾條件，添加到 SQL
-        if (category.length && category.length != 10) {
+        if (category.length && category.length != defineCategory.length) {
             let categoryCondition = "(";
             for (let i in category) {
                 categoryCondition += `category LIKE '%${category[i]}%'`;
@@ -159,7 +159,7 @@ function search(input, func_cb) {
                 }
             }
             categoryCondition += ")";
-            
+
             // 根據原始 SQL 是否已有 WHERE 來決定連接方式
             if (sql.includes('WHERE')) {
                 sql += ` AND ${categoryCondition}`;
@@ -167,9 +167,9 @@ function search(input, func_cb) {
                 sql += ` WHERE ${categoryCondition}`;
             }
         }
-        
+
         console.log('Search SQL:', sql);
-        
+
         db.serialize(() => {
             db.all(sql, [], (err, rows) => {
                 if (err != null) {
@@ -204,9 +204,8 @@ ipcMain.on("open-file-dialog", event => {
 });
 
 ipcMain.on('put-search', (event, arg) => {
-    category = arg.category;
     pageStatus.search_str = arg.str;
-    search(pageStatus.search_str, () => {
+    search(pageStatus.search_str, arg.category, () => {
         event.reply('put-search-reply', {
             book_id: pageStatus.book_id,
             group: pageStatus.group,
