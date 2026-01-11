@@ -135,196 +135,47 @@ function appInit() {
 }
 
 function search(input, func_cb) {
-    console.log(convertQuery(input));
     pageStatus.book_id = 0;
-    //global.key_flag = false;
-    //let token = input.trim().split(/\s+/);
-    let token;
-    let sql = `SELECT * FROM data` + "\n" + `WHERE `;
-    let scount = 0;
-    let flag = 1;
-
-    //search BNF
-    //
-    //<sear>  ::= <elem> +   <sear>
-    //          | <elem> OR  <sear>
-    //          | <elem> AND <sear>
-    //          | <elem> <sear>
-    //          | <elem>
-    //
-    //<elem>  ::= -<elem>
-    //          | <namespace>:string
-    //          | <namespace>:string$
-    //          | .<sys>
-    //          | string
-    //
-    //<namespace> ::= artist
-    //              | character
-    //              | female
-    //              | group
-    //              | language
-    //              | male
-    //              | parody
-    //              | reclass
-    //
-    //<sys> ::= null
-
-    function lex(input) {
-        let token = [];
-        for (let i = 0; i < input.length; i++) {
-            let str = "";
-            if (input[i] == '"') {
-                let j = i + 1;
-                for (; j < input.length && input[j] != '"'; j++) {
-                    str += input[j];
-                }
-                if (j < input.length || (input[j] == '"' && str != "")) {
-                    token.push(str);
-                    i = j;
-                }
-            } else {
-                for (; /\s/.test(input[i]); i++);
-                for (
-                    ;
-                    i < input.length && !/\s/.test(input[i]) && input[i] != '"';
-                    i++
-                ) {
-                    str += input[i];
-                }
-                if (input[i] == '"') i--;
-                if (str != "") {
-                    token.push(str);
-                }
-            }
-        }
-        if (token.length != 0) return token;
-        return [""];
-    }
-
-    function sear() {
-        if (
-            isnamespace(token[scount]) &&
-            token[scount][token[scount].length - 1] == ":"
-        ) {
-            scount++;
-        }
-        if (scount + 1 == token.length) {
-            return elem();
-        }
-        if (
-            token[scount + 1] == "+" ||
-            token[scount + 1] == "OR" ||
-            token[scount + 1] == "or"
-        ) {
-            let r = elem();
-            scount++;
-            return r + " OR " + sear();
-        } else if (token[scount + 1] == "AND" || token[scount + 1] == "and") {
-            let r = elem();
-            scount++;
-            return r + " AND " + sear();
-        } else {
-            let r = elem();
-            return r + " OR " + sear();
-        }
-    }
-    function isnamespace(input) {
-        let str = input.trim().split(/:/)[0];
-        let namespace = [
-            "artist",
-            "character",
-            "female",
-            "group",
-            "language",
-            "male",
-            "parody",
-            "reclass"
-        ];
-        for (let i in namespace) {
-            if (namespace[i] == str) {
-                return true;
-            }
-        }
-        return false;
-    }
-    function elem() {
-        function sqlstr(str) {
-            return (
-                `(local_name LIKE '%${str}%'` +
-                "\n" +
-                `OR title LIKE '%${str}%'` +
-                "\n" +
-                `OR title_jpn LIKE '%${str}%'` +
-                "\n" +
-                `OR tags LIKE '%${str}%'` +
-                "\n" +
-                `OR category LIKE '%${str}%')` +
-                "\n"
-            );
-        }
-
-        if (token[scount][0] == "-") {
-            token[scount] = token[scount].substring(1, token[scount].length);
-            return "NOT" + elem();
-        } else if (token[scount][0] == ".") {
-            if (token[scount] == ".null" || token[scount] == ".NULL") {
-                scount++;
-                flag = 0;
-                return " gid ISNULL";
-            } else {
-                throw err;
-            }
-        } else if (isnamespace(token[scount])) {
-            let str = token[scount].trim().split(/:/)[1];
-            let r = sqlstr(str.substring(0, str.length - 1));
-            scount++;
-            return r;
-            /*
-            let r;
-            scount++;
-            let tail = token[scount].length - 1;
-            if (token[scount][tail] == "$") {
-                console.log(token[scount].substring(0, tail));
-                r = sqlstr(token[scount].substring(0, tail));
-                scount++;
-            } else {
-                r = sqlstr(token[scount++]);
-            }
-            if (token[scount] == "$") {
-                scount++;
-            }
-            return r;
-            */
-        } else {
-            if (token[scount][token[scount].length - 1] == "$") {
-                let r = sqlstr(
-                    token[scount].substring(0, token[scount].length - 1)
-                );
-                scount++;
-                return r;
-            }
-            return sqlstr(token[scount++]);
-        }
-    }
+    
     try {
-        token = lex(input);
-        sql += sear();
-
-        if (category.length && category.length != 10 && flag) {
-            sql += "AND (";
-            for (let i in category) {
-                sql += `category LIKE '%${category[i]}%'` + "\nOR ";
-            }
-            sql = sql.substring(0, sql.length - 4);
-            sql += ")";
+        // 使用 convertQuery 解析搜尋字串
+        const result = convertQuery(input);
+        
+        if (result.error) {
+            console.log('Search parse error:', result.error);
+            func_cb();
+            return;
         }
-        //console.log(sql);
+        
+        let sql = result.sql;
+        
+        // 如果有 category 過濾條件，添加到 SQL
+        if (category.length && category.length != 10) {
+            let categoryCondition = "(";
+            for (let i in category) {
+                categoryCondition += `category LIKE '%${category[i]}%'`;
+                if (i < category.length - 1) {
+                    categoryCondition += " OR ";
+                }
+            }
+            categoryCondition += ")";
+            
+            // 根據原始 SQL 是否已有 WHERE 來決定連接方式
+            if (sql.includes('WHERE')) {
+                sql += ` AND ${categoryCondition}`;
+            } else {
+                sql += ` WHERE ${categoryCondition}`;
+            }
+        }
+        
+        console.log('Search SQL:', sql);
+        
         db.serialize(() => {
             db.all(sql, [], (err, rows) => {
                 if (err != null) {
                     console.log(err);
                 }
-                pageStatus.group = rows;
+                pageStatus.group = rows || [];
                 pageStatus.group.sort((a, b) =>
                     a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
                 );
@@ -334,7 +185,7 @@ function search(input, func_cb) {
         });
     } catch (err) {
         console.log(err);
-        search_str = input;
+        func_cb();
         return;
     }
 }
