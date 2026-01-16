@@ -29,22 +29,169 @@
 
         button.add-button {
             margin-right: 10px;
-            /* 調整這裡的數值來改變距離 */
         }
 
-        #saveBtn,
-        #GoBackBtn {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin-right: 20px;
+        /* 主要操作按鈕樣式 */
+        .btn-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-container-right {
+            margin-left: auto;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #5865F2, #4752C4);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(88, 101, 242, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6875F5, #5865F2);
+            box-shadow: 0 4px 12px rgba(88, 101, 242, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(88, 101, 242, 0.3);
+        }
+
+        .btn-secondary {
+            background: #4a4d52;
+            color: #f1f1f1;
+            border: 1px solid #5c5f63;
+        }
+
+        .btn-secondary:hover {
+            background: #5c5f63;
+            border-color: #6d7075;
+        }
+
+        .btn-secondary:active {
+            background: #43464a;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f5a623, #e08e0b);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(245, 166, 35, 0.3);
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #f7b84a, #f5a623);
+            box-shadow: 0 4px 12px rgba(245, 166, 35, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-warning:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(245, 166, 35, 0.3);
+        }
+
+        /* 鍵盤快捷鍵設定樣式 */
+        .key-setting {
+            margin-bottom: 15px;
+        }
+
+        .key-input-container {
+            display: flex;
+            gap: 8px;
+            margin: 8px 0;
+            align-items: center;
+        }
+
+        .key-input {
+            width: 200px;
+            padding: 6px 10px !important;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+
+        .key-input.key-captured {
+            border-color: #4CAF50 !important;
+            background-color: #2e4a2e !important;
+        }
+
+        .key-input.key-duplicate {
+            border-color: #f44336 !important;
+            background-color: #4a2e2e !important;
+        }
+
+        .key-list {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .key-list li {
+            display: inline-flex;
+            align-items: center;
+            background: #4a4d52;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .key-list li span {
+            margin-right: 8px;
+        }
+
+        .delete-key-btn {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            color: #aaa;
+            font-size: 14px;
+            padding: 0 4px;
+            line-height: 1;
+        }
+
+        .delete-key-btn:hover {
+            color: #f44336;
+        }
+
+        .clear-button,
+        .add-button {
+            padding: 5px 12px;
+            cursor: pointer;
+            border: 1px solid #8d8d8d;
+            border-radius: 3px;
+            background-color: #3c3f42;
+            color: #f1f1f1;
+        }
+
+        .clear-button:hover,
+        .add-button:hover {
+            background-color: #4a4d52;
         }
     </style>
 </head>
 
 <body id="body" style="padding-right: 2px;" class="viewer-open">
     <div id="setting-div"></div>
-    <button id="GoBackBtn">Go Back</button>
-    <button id="saveBtn">Save Changes</button>
+    <div class="btn-container">
+        <button id="GoBackBtn" class="btn btn-secondary">Cancel</button>
+        <button id="saveBtn" class="btn btn-primary">Save</button>
+        <button id="RematchBtn" class="btn btn-warning btn-container-right">Rematch</button>
+    </div>
     <script type="text/javascript" src="../setting.js"></script>
 </body>
 

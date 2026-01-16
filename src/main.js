@@ -246,6 +246,37 @@ ipcMain.on('get-pageStatus', (event, arg) => {
     });
 });
 
+ipcMain.on('rematch', (event) => {
+    const deleteAndNavigate = () => {
+        try {
+            if (fs.existsSync(local_db_path)) {
+                fs.unlinkSync(local_db_path);
+                console.log('已删除本地数据库: ' + local_db_path);
+            }
+        } catch (err) {
+            console.error('删除数据库文件时发生错误:', err);
+        }
+        
+        pageStatus.book_id = 0;
+        pageStatus.img_id = 0;
+        pageStatus.group = [];
+        
+        mainWindow.loadURL("file://" + join(__dirname, "html", "match.html"));
+    };
+    
+    if (db) {
+        db.close((err) => {
+            if (err) {
+                console.error('关闭数据库时发生错误:', err);
+            }
+            db = null;
+            deleteAndNavigate();
+        });
+    } else {
+        deleteAndNavigate();
+    }
+});
+
 ipcMain.on('put-settingStatus', (event, arg) => {
     pageStatus.setting = arg.setting;
     //console.log(arg.setting);
@@ -491,7 +522,7 @@ ipcMain.on('put-match', (event, arg) => {
             create_book_list(path_list[i], layers_list[i])
         );
     }
-    book_list = [...new Set(book_list)]; //消除重複
+    book_list = [...new Set(book_list.map(JSON.stringify))].map(JSON.parse);
     sql_where();
 
     console.log(path_list);
