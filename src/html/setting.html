@@ -38,6 +38,10 @@
             gap: 15px;
         }
 
+        .btn-container-right {
+            margin-left: auto;
+        }
+
         .btn {
             padding: 12px 28px;
             font-size: 14px;
@@ -81,6 +85,23 @@
 
         .btn-secondary:active {
             background: #43464a;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f5a623, #e08e0b);
+            color: #ffffff;
+            box-shadow: 0 2px 8px rgba(245, 166, 35, 0.3);
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #f7b84a, #f5a623);
+            box-shadow: 0 4px 12px rgba(245, 166, 35, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .btn-warning:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(245, 166, 35, 0.3);
         }
 
         /* 鍵盤快捷鍵設定樣式 */
@@ -169,6 +190,7 @@
     <div class="btn-container">
         <button id="GoBackBtn" class="btn btn-secondary">Cancel</button>
         <button id="saveBtn" class="btn btn-primary">Save</button>
+        <button id="RematchBtn" class="btn btn-warning btn-container-right">Rematch</button>
     </div>
     <script type="text/javascript" src="../setting.js"></script>
 </body>

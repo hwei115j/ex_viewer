@@ -312,6 +312,9 @@ saveBtn.addEventListener("click", () => {
 document.getElementById("GoBackBtn").addEventListener("click", () => {
     window.location.href = "home.html"
 });
+document.getElementById("RematchBtn").addEventListener("click", () => {
+    ipcRenderer.send('rematch');
+});
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     console.log("setting.js");
