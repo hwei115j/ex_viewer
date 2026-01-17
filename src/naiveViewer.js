@@ -68,7 +68,12 @@ function create_viewer() {
     } else {
         viewer.zoomTo(clientHeight / naturalHeight);
     }
-    viewer.moveTo(viewer.imageData.x, 0);
+    
+    if(clientHeight - viewer.imageData.height > 0) {
+        viewer.moveTo(viewer.imageData.x, (clientHeight - viewer.imageData.height) / 2);
+    } else {
+        viewer.moveTo(viewer.imageData.x, 0);
+    }
 }
 
 // 使用快取獲取當前頁面的圖像元素
