@@ -16,6 +16,7 @@ let globalHotkeys;
 let bookHotkeys;
 let historyList;
 let bookInfo = []
+let setting; // 設定資料，用於判斷瀏覽模式
 
 let page = 0;
 //let img;
@@ -144,7 +145,13 @@ function createFrom() {
             ipcRenderer.send('put-bookStatus', { img_id: gCount, book_id: book_id });
             ipcRenderer.once('put-bookStatus-reply', (event, data) => {
                 console.log(gCount);
-                window.location.href = "naiveViewer.html";
+                // 根據 full_page 設定決定使用哪種瀏覽模式
+                const useScrollViewer = setting && setting.value && setting.value.full_page && setting.value.full_page.value;
+                if (useScrollViewer) {
+                    window.location.href = "scrollViewer.html";
+                } else {
+                    window.location.href = "naiveViewer.html";
+                }
             });
         });
     }
@@ -509,6 +516,7 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     globalHotkeys = data.globalHotkeys;
     bookHotkeys = data.bookHotkeys;
     historyList = data.historyList;
+    setting = data.setting; // 讀取設定以判斷瀏覽模式
     search_str = [];
 
     document.addEventListener('keydown', hotkeyHandle);

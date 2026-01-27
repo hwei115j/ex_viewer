@@ -2,343 +2,188 @@
 
 <head>
     <meta charset="utf-8">
-    <title>ex_viewer</title>
+    <title>ex_viewer - 直頁瀏覽</title>
     <link rel="stylesheet" type="text/css" href="exhentai.css">
-    <script type="text/javascript" src="../view.js"></script>
+    <script type="text/javascript" src="../scrollViewer.js"></script>
     <style type="text/css">
-        .dialog-widget.background {
-            position: fixed;
-            left: 0;
-            top: 0;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 9999;
+        /* scrollViewer 直頁瀏覽模式樣式 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background-color: #34353b;
+            color: #f1f1f1;
+            overflow: hidden;
+        }
+
+        #scroll-container {
             width: 100%;
             height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: auto;
         }
 
-        .dialog-widget.alert,
-        .dialog-widget.confirm,
-        .dialog-widget.prompt {
-            position: fixed;
-            left: calc(50% - 160px);
-            width: 300px;
-            top: calc(50% - 115px);
-            border: solid 1px #ddd;
-            background: whitesmoke;
-            z-index: 10000;
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-            color: black;
-            padding: 15px 10px 15px 10px;
-            font-family: arial;
-        }
-
-        .dialog-widget img {
-            width: 40px;
-            height: 40px;
-            position: fixed;
-        }
-
-        .dialog-widget img[src=""] {
-            display: none;
-        }
-
-        .dialog-widget.alert .divider,
-        .dialog-widget.alert input,
-        .dialog-widget.alert .cancel {
-            display: none;
-        }
-
-        .dialog-widget.confirm input {
-            display: none;
-        }
-
-        .dialog-widget.alert .ok {
-            margin-top: 15px;
-            float: right;
-        }
-
-        .dialog-widget input {
-            padding: 8px;
-            -webkit-appearance: none;
-            border: solid 1px #ccc;
-            border-radius: 5px;
-            margin: 15px 5px 5px 5px;
-            width: calc(100% - 16px - 2px - 10px);
-            font-size: 12px;
-        }
-
-        .dialog-widget .url {
-            text-align: center;
-            font-size: 18px;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
-            font-weight: bold;
-        }
-
-        .dialog-widget[data-icon="true"] .url {
-            margin-left: 40px;
-        }
-
-        .dialog-widget .title {
-            text-align: center;
-            display: block;
-            font-size: 14px;
-        }
-
-        .dialog-widget .divider {
-            border-top: solid 1px #ddd;
+        #image-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             padding: 0;
-            margin: 15px 0 15px -10px;
-            width: calc(100% + 20px);
+            min-height: 100%;
         }
 
-        .dialog-widget .ok,
-        .dialog-widget .cancel {
-            color: #005AFF;
-            padding: 8px;
-            width: calc(50% - 5px);
-            font-size: 13px;
-            background-color: #EBEBF1;
-            border: none;
-            border-radius: 5px;
-        }
-
-        .dialog-widget .ok {
-            margin-left: 5px;
-        }
-
-        .dialog-widget.background {
-            position: fixed;
-            left: 0;
-            top: 0;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 9999;
+        .image-wrapper {
             width: 100%;
-            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100px;
+            position: relative;
         }
 
-        .dialog-widget.alert,
-        .dialog-widget.confirm,
-        .dialog-widget.prompt {
-            position: fixed;
-            left: calc(50% - 160px);
-            width: 300px;
-            top: calc(50% - 115px);
-            border: solid 1px #ddd;
-            background: whitesmoke;
-            z-index: 10000;
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
-            color: black;
-            padding: 15px 10px 15px 10px;
-            font-family: arial;
-        }
-
-        .dialog-widget img {
-            width: 40px;
-            height: 40px;
-            position: fixed;
-        }
-
-        .dialog-widget img[src=""] {
-            display: none;
-        }
-
-        .dialog-widget.alert .divider,
-        .dialog-widget.alert input,
-        .dialog-widget.alert .cancel {
-            display: none;
-        }
-
-        .dialog-widget.confirm input {
-            display: none;
-        }
-
-        .dialog-widget.alert .ok {
-            margin-top: 15px;
-            float: right;
-        }
-
-        .dialog-widget input {
-            padding: 8px;
-            -webkit-appearance: none;
-            border: solid 1px #ccc;
-            border-radius: 5px;
-            margin: 15px 5px 5px 5px;
-            width: calc(100% - 16px - 2px - 10px);
-            font-size: 12px;
-        }
-
-        .dialog-widget .url {
-            text-align: center;
-            font-size: 18px;
-            text-overflow: ellipsis;
-            overflow: hidden;
-            white-space: nowrap;
-            font-weight: bold;
-        }
-
-        .dialog-widget[data-icon="true"] .url {
-            margin-left: 40px;
-        }
-
-        .dialog-widget .title {
-            text-align: center;
+        .image-wrapper img {
+            max-width: 100%;
+            width: var(--image-width, 100%);
+            height: auto;
             display: block;
-            font-size: 14px;
-        }
-
-        .dialog-widget .divider {
-            border-top: solid 1px #ddd;
-            padding: 0;
-            margin: 15px 0 15px -10px;
-            width: calc(100% + 20px);
-        }
-
-        .dialog-widget .ok,
-        .dialog-widget .cancel {
-            color: #005AFF;
-            padding: 8px;
-            width: calc(50% - 5px);
-            font-size: 13px;
-            background-color: #EBEBF1;
             border: none;
-            border-radius: 5px;
+            margin: 0;
+            padding: 0;
         }
 
-        .dialog-widget .ok {
-            margin-left: 5px;
-        }
-    </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/viewerjs/1.9.0/viewer.css"
-        integrity="sha512-HHYZlJVYgHVdz/pMWo63/ya7zc22sdXeqtNzv4Oz76V3gh7R+xPqbjNUp/NRmf0R85J++Yg6R0Kkmz+TGYHz8g=="
-        crossorigin="anonymous">
-    <style type="text/css">
-        @supports (display: grid) {
-            .gld {
-                display: grid;
-                grid-template-columns: repeat(5, 1fr);
-            }
-
-            .gl1t {
-                min-width: 250px;
-                max-width: 400px;
-            }
-
-            @media screen and (max-width: 1360px) {
-                .gld {
-                    grid-template-columns: repeat(4, 1fr);
-                }
-
-                .gl1t:nth-child(8n + 1),
-                .gl1t:nth-child(8n + 3),
-                .gl1t:nth-child(8n + 6),
-                .gl1t:nth-child(8n + 8) {
-                    background: #363940;
-                }
-
-                .gl1t:nth-child(8n + 2),
-                .gl1t:nth-child(8n + 4),
-                .gl1t:nth-child(8n + 5),
-                .gl1t:nth-child(8n + 7) {
-                    background: #3c414b;
-                }
-            }
-
-            @media screen and (max-width: 1090px) {
-                .gld {
-                    grid-template-columns: repeat(3, 1fr);
-                }
-
-                .gl1t:nth-child(2n + 1) {
-                    background: #363940;
-                }
-
-                .gl1t:nth-child(2n + 2) {
-                    background: #3c414b;
-                }
-            }
-
-            @media screen and (max-width: 820px) {
-                .gld {
-                    grid-template-columns: repeat(2, 1fr);
-                }
-
-                .gl1t:nth-child(4n + 1),
-                .gl1t:nth-child(4n + 4) {
-                    background: #363940;
-                }
-
-                .gl1t:nth-child(4n + 2),
-                .gl1t:nth-child(4n + 3) {
-                    background: #3c414b;
-                }
-            }
+        .image-wrapper.loading {
+            background-color: #2a2b30;
+            min-height: 100vh;
         }
 
-        .ehs-introduce-box {
-            font-size: 10pt;
+        .image-wrapper.loading::after {
+            content: "載入中...";
             position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #888;
+            font-size: 14px;
+        }
+
+        .image-wrapper.error {
+            background-color: #3a2a2a;
+            min-height: 200px;
+        }
+
+        .image-wrapper.error::after {
+            content: "載入失敗";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6666;
+            font-size: 14px;
+        }
+
+        /* 頂部提示 */
+        #toast-container {
+            position: fixed;
+            top: 0;
             left: 0;
+            padding: 5px;
+            margin: 10px;
+            z-index: 9999999999;
+        }
+
+        #toast-container input[type="button"] {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            border: 1px solid #555;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: default;
+        }
+
+        /* 頁面指示器 */
+        #page-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 9999;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+
+        #page-indicator:hover {
+            opacity: 1;
+        }
+
+        /* 導航按鈕通用樣式 */
+        .nav-btn {
+            position: fixed;
             top: 0;
             bottom: 0;
-            right: -5px;
-            overflow: auto;
-            background: #edebdf;
-            text-align: left;
-            -webkit-box-orient: vertical;
-            -webkit-flex-direction: column;
-            -moz-box-orient: vertical;
-            -ms-flex-direction: column;
-            flex-direction: column;
-            -webkit-border-radius: 0 0 5px 0;
-            -moz-border-radius: 0 0 5px 0;
-            border-radius: 0 0 5px 0;
+            width: 60px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 28px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease, background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .ehs-introduce-box::-webkit-scrollbar {
-            width: 2px;
+        .nav-btn:hover {
+            opacity: 1;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-btn:active {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        #prev-book-btn {
+            left: 0;
+        }
+
+        #next-book-btn {
+            right: 12px; /* 留出空間給滾動條 (8px + 緩衝) */
+        }
+
+
+
+        /* 隱藏指示器的動畫 */
+        .indicator-hidden {
+            opacity: 0 !important;
+            pointer-events: none;
         }
     </style>
 </head>
 
-<body id="body" style="padding-right: 2px;" class="viewer-open">
-    <div id="imup" style="overflow:hidden"></div>
-    <div id="im">
-        <div id="div" style="position: relative;margin:0px auto"><img id="pic"></div>
-    </div>
-    <div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
-        <input type="button" id="ttt"
-            style="display: none; position: fixed; top: 0px; left: 0px; padding: 5px; margin: 10px; z-index: 2147483647;"
-            value="第一頁">
-    </div>
-    <div class="viewer-container viewer-fixed viewer-fade viewer-in" tabindex="-1" touch-action="none" id="viewer0"
-        style="z-index: 2015;" role="dialog" aria-labelledby="viewerTitle0" aria-modal="true">
-        <div class="viewer-canvas"><img
-                src="file:///C:/pc_work/ex_test/(%23%E3%81%AB%E3%81%98%E3%81%9D%E3%81%86%E3%81%95%E3%81%8F4)%20[HDML%20(lolowv)]%20%E3%81%95%E3%81%95%E3%81%8D%E3%81%8C%E3%82%A2%E3%83%9B%E3%81%99%E3%81%8E%E3%81%A6%E3%83%9E%E3%82%B8%E3%81%A7%E3%81%8B%E3%82%8F%E3%81%84%E3%81%84%20(%E3%81%AB%E3%81%98%E3%81%95%E3%82%93%E3%81%98)%20[%E4%B8%AD%E5%9B%BD%E7%BF%BB%E8%A8%B3]-1280x/01_CE_1655_001.jpg"
-                alt="01_CE_1655_001.jpg" class="viewer-move"
-                style="height: 914px; margin-left: 282.093px; margin-top: 0px; position: relative; width: 642.813px; max-width: none !important; transform: none;">
+<body id="body">
+    <div id="scroll-container">
+        <div id="image-container">
+            <!-- 圖片將動態插入此處 -->
         </div>
-        <div class="viewer-footer">
-            <div class="viewer-title viewer-hide" id="viewerTitle0">01_CE_1655_001.jpg (1280 × 1820)</div>
-            <div class="viewer-toolbar viewer-hide"></div>
-            <div class="viewer-navbar viewer-hide">
-                <ul class="viewer-list" role="navigation" style="width: 0px; transform: translateX(603.5px);">
-                    <li data-index="0" data-viewer-action="view" role="button" class="viewer-active"
-                        aria-selected="true"><img
-                            src="file:///C:/pc_work/ex_test/(%23%E3%81%AB%E3%81%98%E3%81%9D%E3%81%86%E3%81%95%E3%81%8F4)%20[HDML%20(lolowv)]%20%E3%81%95%E3%81%95%E3%81%8D%E3%81%8C%E3%82%A2%E3%83%9B%E3%81%99%E3%81%8E%E3%81%A6%E3%83%9E%E3%82%B8%E3%81%A7%E3%81%8B%E3%82%8F%E3%81%84%E3%81%84%20(%E3%81%AB%E3%81%98%E3%81%95%E3%82%93%E3%81%98)%20[%E4%B8%AD%E5%9B%BD%E7%BF%BB%E8%A8%B3]-1280x/01_CE_1655_001.jpg"
-                            alt="01_CE_1655_001.jpg"
-                            data-original-url="file:///C:/pc_work/ex_test/(%23%E3%81%AB%E3%81%98%E3%81%9D%E3%81%86%E3%81%95%E3%81%8F4)%20[HDML%20(lolowv)]%20%E3%81%95%E3%81%95%E3%81%8D%E3%81%8C%E3%82%A2%E3%83%9B%E3%81%99%E3%81%8E%E3%81%A6%E3%83%9E%E3%82%B8%E3%81%A7%E3%81%8B%E3%82%8F%E3%81%84%E3%81%84%20(%E3%81%AB%E3%81%98%E3%81%95%E3%82%93%E3%81%98)%20[%E4%B8%AD%E5%9B%BD%E7%BF%BB%E8%A8%B3]-1280x/01_CE_1655_001.jpg"
-                            data-filled="true"
-                            style="width: 35.1648px; height: 50px; transform: translateX(-2.58242px);"></li>
-                </ul>
-            </div>
-        </div>
-        <div class="viewer-tooltip" role="alert" aria-hidden="true"></div>
-        <div class="viewer-button viewer-hide viewer-close" data-viewer-action="mix" role="button"></div>
-        <div class="viewer-player"></div>
+    </div>
+    
+    <!-- 頂部提示 -->
+    <div id="toast-container">
+        <input type="button" id="ttt" style="display:none" value="提示">
+    </div>
+    
+    <!-- 導航按鈕 -->
+    <button id="prev-book-btn" class="nav-btn">◀</button>
+    <button id="next-book-btn" class="nav-btn">▶</button>
+    
+    <!-- 頁面指示器 -->
+    <div id="page-indicator">
+        <span id="current-page">1</span> / <span id="total-pages">1</span>
     </div>
 </body>
 

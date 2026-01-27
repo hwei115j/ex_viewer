@@ -1,346 +1,547 @@
-/*jshint esversion: 6 */
-const { ipcRenderer, remote } = require("electron");
-const global = remote.getGlobal("sharedObject");
-const { Menu, MenuItem } = remote;
-const cache = require("./cache.js");
-const image = require("./image_manager.js");
-const Viewer = require("viewerjs");
-let getElement;
-let img;
-let cacheObj;
-let viewer = null;
-let element = null;
-let sizeWidth = 0;
+/*jshint esversion: 8 */
+const { ipcRenderer, clipboard } = require("electron");
 
-function eventEnable() {
-    window.onkeydown = key_word;
-    window.onwheel = mouse;
-    window.onresize = image_view;
+// 狀態變數
+let book_id;
+let img_id;
+let group;
+let uiLanguage;
+let globalHotkeys;
+let viewHotkeys;
+let bookInfo = null;
+let imageWidthPercent = 100; // 圖片寬度佔螢幕比例 (1-100%)
+let baseImageWidthPercent = 100; // 從設定讀取的基礎值
+
+// DOM 元素
+let scrollContainer;
+let imageContainer;
+let currentPageSpan;
+let totalPagesSpan;
+let pageIndicator;
+
+// 圖片元素陣列
+let imageElements = [];
+
+// 頁面指示器隱藏計時器
+let indicatorTimeout = null;
+
+/**
+ * 上一本書
+ */
+async function gotoPrevBook() {
+    console.log("prev_book");
+    book_id = (book_id - 1 < 0) ? (group.length - 1) : (book_id - 1);
+    img_id = 0;
+    await initializeViewer();
 }
 
+/**
+ * 下一本書
+ */
+async function gotoNextBook() {
+    console.log("next_book");
+    book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
+    img_id = 0;
+    await initializeViewer();
+}
+
+/**
+ * 初始化事件監聽器
+ */
+function eventEnable() {
+    window.onkeydown = hotkeyHandle;
+    scrollContainer.addEventListener('scroll', handleScroll);
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const selectedText = window.getSelection().toString();
+        ipcRenderer.send('show-context-menu', {
+            selectedText: selectedText,
+            previousPage: true
+        });
+    });
+}
+
+/**
+ * 禁用事件監聽器
+ */
 function eventDisable() {
     window.onkeydown = null;
-    window.onwheel = null;
-    window.onresize = null;
-}
-function replace(name, text) {
-    //語言替換、如果沒有找到name，就用text代替，沒有text的情況下用name代替
-    if (text) {
-        return global.ui[name] ? global.ui[name] : text;
+    if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleScroll);
     }
-    return global.ui[name] ? global.ui[name] : name;
 }
-function create_viewer() {
-    viewer.show(true);
-    let naturalHeight = viewer.imageData.naturalHeight;
-    let naturalWidth = viewer.imageData.naturalWidth;
-    let clientHeight = document.documentElement.clientHeight - 3;
-    let clientWidth = document.documentElement.clientWidth - 3;
 
-    if (sizeWidth) {
-        viewer.zoomTo(sizeWidth / naturalWidth);
-    } else if (clientHeight / clientWidth >= naturalHeight / naturalWidth) {
-        viewer.zoomTo(clientWidth / naturalWidth);
-    } else {
-        viewer.zoomTo(clientHeight / naturalHeight);
+/**
+ * 取得翻譯文字
+ */
+function getTranslation(name) {
+    return uiLanguage[name] ? uiLanguage[name] : name;
+}
+
+/**
+ * 顯示提示訊息
+ */
+function showToast(message, duration = 700) {
+    let ttt = document.getElementById("ttt");
+    ttt.style.display = "block";
+    ttt.value = message;
+    setTimeout(() => {
+        ttt.style.display = "none";
+    }, duration);
+}
+
+/**
+ * 更新圖片寬度
+ */
+function updateImageWidth() {
+    document.documentElement.style.setProperty('--image-width', imageWidthPercent + '%');
+    showToast(`圖片寬度: ${imageWidthPercent}%`, 1000);
+}
+
+/**
+ * 增加圖片寬度
+ */
+function increaseImageWidth() {
+    if (imageWidthPercent < 100) {
+        imageWidthPercent = Math.min(100, imageWidthPercent + 5);
+        updateImageWidth();
     }
-    viewer.moveTo(viewer.imageData.x, 0);
 }
 
-function image_view() {
-    if (viewer) viewer.destroy();
-    if (element) element.onload = null;
-    viewer = element = null;
-    element = getElement(global.img_id);
+/**
+ * 減少圖片寬度
+ */
+function decreaseImageWidth() {
+    if (imageWidthPercent > 5) {
+        imageWidthPercent = Math.max(5, imageWidthPercent - 5);
+        updateImageWidth();
+    }
+}
 
-    document.title = "ex_viewer - " + global.group[global.book_id].local_name + "【" + img.getname(global.img_id) + "】";
-    if (global.img_id == 0) {
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = replace("first page");
+/**
+ * 更新頁面指示器
+ */
+function updatePageIndicator() {
+    if (!bookInfo || !scrollContainer) return;
+    
+    // 找出目前可見的圖片索引
+    let currentIndex = 0;
+    for (let i = 0; i < imageElements.length; i++) {
+        const wrapper = imageElements[i];
+        if (!wrapper) continue;
+        
+        const rect = wrapper.getBoundingClientRect();
+        const containerRect = scrollContainer.getBoundingClientRect();
+        
+        // 如果圖片的中心點在視窗內，則認為是當前頁面
+        const imageCenterY = rect.top + rect.height / 2;
+        if (imageCenterY >= containerRect.top && imageCenterY <= containerRect.bottom) {
+            currentIndex = i;
+            break;
+        }
+        // 如果圖片頂部在視窗內
+        if (rect.top >= containerRect.top && rect.top <= containerRect.bottom) {
+            currentIndex = i;
+            break;
+        }
+    }
+    
+    currentPageSpan.textContent = currentIndex + 1;
+    totalPagesSpan.textContent = bookInfo.length;
+    
+    // 更新全局 img_id，以便返回時能記住當前位置
+    img_id = currentIndex;
+    
+    // 顯示指示器
+    pageIndicator.classList.remove('indicator-hidden');
+    
+    // 重設隱藏計時器
+    if (indicatorTimeout) {
+        clearTimeout(indicatorTimeout);
+    }
+    indicatorTimeout = setTimeout(() => {
+        pageIndicator.classList.add('indicator-hidden');
+    }, 2000);
+}
+
+/**
+ * 取得目前可見的圖片索引
+ */
+function getCurrentVisibleIndex() {
+    if (!scrollContainer || !imageElements.length) return 0;
+    
+    for (let i = 0; i < imageElements.length; i++) {
+        const wrapper = imageElements[i];
+        if (!wrapper) continue;
+        
+        const rect = wrapper.getBoundingClientRect();
+        const containerRect = scrollContainer.getBoundingClientRect();
+        
+        if (rect.top >= containerRect.top - scrollContainer.clientHeight / 2) {
+            return i;
+        }
+    }
+    
+    return 0;
+}
+
+/**
+ * 處理滾動事件
+ */
+function handleScroll() {
+    updatePageIndicator();
+}
+
+/**
+ * 建立所有圖片
+ * 使用原生 <img> + loading="lazy" 讓瀏覽器自動處理延遲載入
+ */
+async function createImages() {
+    if (!bookInfo || !imageContainer) return;
+    
+    imageContainer.innerHTML = '';
+    imageElements = [];
+    
+    const totalPages = bookInfo.length;
+    const filePaths = bookInfo.filePaths;
+    
+    // 建立所有圖片元素
+    for (let i = 0; i < totalPages; i++) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'image-wrapper loading';
+        wrapper.dataset.index = i;
+        wrapper.id = `image-${i}`;
+        
+        if (filePaths[i]) {
+            const img = document.createElement('img');
+            img.src = filePaths[i];
+            img.alt = `頁面 ${i + 1}`;
+            img.loading = 'lazy'; // 瀏覽器原生延遲載入
+            img.dataset.index = i;
+            
+            img.onload = () => {
+                wrapper.classList.remove('loading');
+            };
+            
+            img.onerror = () => {
+                wrapper.classList.remove('loading');
+                wrapper.classList.add('error');
+                console.error(`圖片載入失敗: ${i}`);
+            };
+            
+            wrapper.appendChild(img);
+        } else {
+            wrapper.classList.remove('loading');
+            wrapper.classList.add('error');
+        }
+        
+        imageElements.push(wrapper);
+        imageContainer.appendChild(wrapper);
+    }
+    
+    // 更新頁面標題和指示器
+    document.title = "ex_viewer - " + group[book_id].local_name;
+    totalPagesSpan.textContent = totalPages;
+}
+
+/**
+ * 滾動到指定圖片
+ * 混合方案：先強制載入目標圖片確認高度，再進行跳轉
+ */
+async function scrollToImage(index, behavior = 'auto') {
+    console.log(`Scrolling to image index: ${index}`);
+    if (index < 0 || index >= imageElements.length) return;
+   
+    const wrapper = imageElements[index];
+    if (!wrapper) return;
+    
+    // 1. 取得該層的圖片元素
+    const img = wrapper.querySelector('img');
+    
+    // 2. 如果圖片存在且尚未載入完成
+    if (img && !img.complete) {
+        // 顯示載入提示
+        showToast("正在載入...", 2000);
+        
+        try {
+            // 將 loading 改為 eager，強迫瀏覽器優先下載
+            img.loading = 'eager';
+            
+            // 等待圖片載入完畢
+            await new Promise((resolve) => {
+                if (img.complete) return resolve();
+                img.addEventListener('load', resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true });
+            });
+        } catch(e) {
+            console.error("預載入失敗", e);
+        }
+    }
+    
+    // 3. 執行跳轉
+    // 如果圖片在遠處（>3頁），強制使用瞬間跳轉 (auto) 以避免載入過程中的佈局變動導致位置偏移
+    // 如果在附近，則尊重傳入的 behavior設定 (通常是 smooth)
+    const current = getCurrentVisibleIndex();
+    const isLongJump = Math.abs(index - current) > 3;
+    const finalBehavior = isLongJump ? 'auto' : behavior;
+    
+    wrapper.scrollIntoView({ behavior: finalBehavior, block: 'start' });
+    
+    console.log(`Scrolled to image: ${index}`);
+}
+
+/**
+ * 初始化載入
+ */
+async function initializeViewer() {
+    // 載入書本資訊
+    try {
+        bookInfo = await ipcRenderer.invoke('image:getBookInfo', { index: book_id });
+        console.log(`書本 ${book_id} 載入完成，共 ${bookInfo ? bookInfo.length : 0} 頁`);
+    } catch (error) {
+        console.error("載入書本資訊失敗:", error);
+        bookInfo = null;
+        return;
+    }
+    
+    if (!bookInfo || bookInfo.length === 0) {
+        console.error("書本資訊為空");
+        return;
+    }
+    
+    // 建立所有圖片
+    await createImages();
+    
+    // 如果有指定初始頁面，滾動到該頁面
+    if (img_id >= 0 && img_id < bookInfo.length) {
         setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 700);
-    } else {
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-    }
-
-    viewer = new Viewer(element, {
-        backdrop: false,
-        navbar: false,
-        title: false,
-        toolbar: false,
-        fullscreen: true,
-        transition: false,
-        button: false,
-        loading: false,
-        keyboard: false,
-        zoomOnWheel: false,
-        toggleOnDblclick: false,
-        viewed() {
-            window.removeEventListener("resize", viewer.onResize);
-            document.removeEventListener("pointermove", viewer.onPointerMove);
-        }
-    });
-
-    if (element.complete) {
-        create_viewer();
-    } else {
-        element.onload = create_viewer;
+            scrollToImage(img_id);
+            if (img_id === 0) {
+                showToast(getTranslation("first page"));
+            }
+        }, 100);
     }
 }
 
-function key_word(e) {
-    e.preventDefault();
-    function move(x, y) {
-        let clienWidth = document.documentElement.clientWidth;
-        let clienHeight = document.documentElement.clientHeight;
-        let width = viewer.imageData.width;
-        let height = viewer.imageData.height;
-        let min_x = clienWidth - width;
-        let max_x = 0;
-        let min_y = clienHeight - height;
-        let max_y = 0;
-        let img_x = viewer.imageData.x;
-        let img_y = viewer.imageData.y;
-
-        if (max_x <= min_x) {
-        } else if (img_x + x >= min_x && img_x + x <= max_x) {
-            viewer.move(x, 0);
-        } else if (img_x + x < min_x) {
-            viewer.moveTo(min_x, img_y);
-        } else if (img_x + x > max_x) {
-            viewer.moveTo(max_x, img_y);
-        }
-        if (max_y <= min_y) {
-        } else if (img_y + y >= min_y && img_y + y <= max_y) {
-            viewer.move(0, y);
-        } else if (img_y + y < min_y) {
-            viewer.moveTo(img_x, min_y);
-        } else if (img_y + y > max_y) {
-            viewer.moveTo(img_x, max_y);
-        }
-    }
-    function is_key(str) {
-        let arr = global.setting.keyboard[str];
-        let key = e.keyCode;
-
-        for (let i in arr) {
-            if (typeof arr[i] == "number" && !e.ctrlKey) {
-                if (key == arr[i]) {
-                    return true;
-                }
-            } else {
-                if (arr[i].length == 1 && key == arr[i][0]) {
-                    return true;
-                }
-                if (key == arr[i][1] && e[arr[i][0]]) {
+/**
+ * 熱鍵處理
+ */
+async function hotkeyHandle(event) {
+    event.preventDefault();
+    
+    function isSame(list) {
+        const pressedKeys = new Set();
+        
+        if (event.ctrlKey) pressedKeys.add(17);
+        if (event.shiftKey) pressedKeys.add(16);
+        if (event.altKey) pressedKeys.add(18);
+        if (event.metaKey) pressedKeys.add(91);
+        pressedKeys.add(event.keyCode);
+        
+        // 先檢查組合鍵
+        for (const item of list) {
+            if (Array.isArray(item)) {
+                if (pressedKeys.has(item[0]) && pressedKeys.has(item[1])) {
                     return true;
                 }
             }
         }
+        
+        if (pressedKeys.size == 2) {
+            return false;
+        }
+        
+        // 再檢查單一按鍵
+        for (const item of list) {
+            if (!Array.isArray(item)) {
+                if (pressedKeys.has(item)) {
+                    return true;
+                }
+            }
+        }
+        
         return false;
     }
-
-    const xMove = viewer.imageData.width / 10;
-    const yMove = viewer.imageData.height / 10;
-    const MF = viewer.imageData.width > document.documentElement.clientWidth;
-
-    if (is_key("move_up")) {
-        move(0, yMove);
-    } else if (is_key("move_down")) {
-        move(0, -yMove);
-    } else if (is_key("move_left") && MF) {
-        move(xMove, 0);
-    } else if (is_key("move_right") && MF) {
-        move(-xMove, 0);
-    } else if (is_key("zoom_in")) {
-        window.onresize = null;
-        viewer.zoom(0.1, true);
-        sizeWidth = viewer.imageData.width;
-    } else if (is_key("zoom_out")) {
-        window.onresize = null;
-        viewer.zoom(-0.1, true);
-        sizeWidth = viewer.imageData.width;
-    } else if (is_key("zoom")) {
-        window.onresize = image_view;
-        setTimeout(() => image_view(), 50);
-        sizeWidth = 0;
-    } else if (is_key("next_book")) {
-        //路徑清單的下一個路徑
-        global.book_id =
-            global.book_id + 1 < global.group.length ? global.book_id + 1 : 0;
-        global.group[global.book_id] = global.group[global.book_id];
-        global.img_id = 0;
-        global.book_scrollTop = 0;
-        image.init(global.group[global.book_id].local_path).then(e => {
-            img = e;
-            cacheObj.free();
-            cacheObj = cache.init(img, global.img_id);
-            getElement = cacheObj.getElement;
-            image_view();
-        });
-    } else if (is_key("prev_book")) {
-        //路徑清單的上一個路徑
-        global.book_id =
-            global.book_id - 1 >= 0
-                ? global.book_id - 1
-                : global.group.length - 1;
-        global.group[global.book_id] = global.group[global.book_id];
-        global.img_id = 0;
-        global.book_scrollTop = 0;
-        image.init(global.group[global.book_id].local_path).then(e => {
-            img = e;
-            cacheObj.free();
-            cacheObj = cache.init(img, global.img_id);
-            getElement = cacheObj.getElement;
-            image_view();
-        });
-    } else if (is_key("prev")) {
-        //上一頁
-        global.img_id = global.img_id < 1 ? img.length - 1 : global.img_id - 1;
-        image_view();
-    } else if (is_key("next")) {
-        //下一頁
-        global.img_id = global.img_id < img.length - 1 ? global.img_id + 1 : 0;
-        image_view();
-    } else if (is_key("end")) {
-        //END
-        global.img_id = img.length - 1;
-        image_view();
-    } else if (is_key("home")) {
-        //HOME
-        global.img_id = 0;
-        image_view();
-    } else if (is_key("full_screen")) {
-        //全螢幕
-        global.full = !global.full;
-        window.onresize = image_view;
-        global.mainWindow.setFullScreen(global.full);
-        setTimeout(() => image_view(), 50);
-        sizeWidth = 0;
-    } else if (is_key("back")) {
+    
+    function isKey(command) {
+        for (let i in globalHotkeys) {
+            if (i === command) {
+                return isSame(globalHotkeys[i].value);
+            }
+        }
+        for (let i in viewHotkeys) {
+            if (i === command) {
+                return isSame(viewHotkeys[i].value);
+            }
+        }
+        return null;
+    }
+    
+    if (isKey("next_book")) {
+        await gotoNextBook();
+        return;
+    }
+    
+    if (isKey("prev_book")) {
+        await gotoPrevBook();
+        return;
+    }
+    
+    if (isKey("prev")) {
+        // 上一頁 - 向上滾動一段距離
+        scrollContainer.scrollBy({ top: -300, behavior: 'auto' });
+        return;
+    }
+    
+    if (isKey("next")) {
+        // 下一頁 - 向下滾動一段距離
+        scrollContainer.scrollBy({ top: 300, behavior: 'auto' });
+        return;
+    }
+    
+    if (isKey("end")) {
+        // 跳到最後一頁
+        scrollToImage(bookInfo.length - 1, 'smooth');
+        return;
+    }
+    
+    if (isKey("home")) {
+        // 跳到第一頁
+        scrollToImage(0, 'smooth');
+        return;
+    }
+    
+    if (isKey("full_screen")) {
+        console.log("full_screen");
+        ipcRenderer.send('toggle-fullscreen');
+        return;
+    }
+    
+    if (isKey("back")) {
         //back
-        if (viewer) viewer.destroy();
-        eventDisable();
-        module.exports.back();
-    } else if (is_key("name_sort")) {
-        let id = global.group[global.book_id].local_id;
-
-        console.log(global.group);
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "Name";
-        setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 2000);
-
-        global.group.sort((a, b) =>
-            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", {numeric: true})
-        );
-
-        for (let i in global.group) {
-            if (id == global.group[i].local_id) {
-                global.book_id = parseInt(i, 10);
-                break;
-            }
-        }
-    } else if (is_key("random_sort")) {
-        //切換排序
-        let id = global.group[global.book_id].local_id;
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "Random";
-        setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 2000);
-        global.group.sort(() => Math.random() - 0.5);
-
-        for (let i in global.group) {
-            if (id == global.group[i].local_id) {
-                global.book_id = parseInt(i, 10);
-                break;
-            }
-        }
-    } else if (is_key("chronology")) {
-        let id = global.group[global.book_id].local_id;
-
-        let ttt = document.getElementById("ttt");
-        ttt.style =
-            "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        ttt.value = "Chronology";
-        setTimeout(() => {
-            ttt.style =
-                "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-        }, 2000);
-        global.group.sort((a, b) => {
-            return b.posted - a.posted;
+        ipcRenderer.send('put-bookStatus', { img_id: img_id, book_id: book_id });
+        ipcRenderer.once('put-bookStatus-reply', (e) => {
+            console.log("back");
+            eventDisable();
+            window.location.href = "book.html";
         });
-
-        for (let i in global.group) {
-            if (id == global.group[i].local_id) {
-                global.book_id = parseInt(i, 10);
-                break;
-            }
-        }
-    } else if (is_key("exit")) {
+        return;
+    }
+    
+    if (isKey("name_sort")) {
+        ipcRenderer.send("sort", "name");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("name_sort");
+            showToast("Name", 2000);
+            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
+            group = data.group;
+        });
+        return;
+    }
+    
+    if (isKey("random_sort")) {
+        ipcRenderer.send("sort", "random");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("random_sort");
+            showToast("Random", 2000);
+            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
+            group = data.group;
+        });
+        return;
+    }
+    
+    if (isKey("chronology")) {
+        ipcRenderer.send("sort", "chronology");
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("chronology");
+            showToast("Chronology", 2000);
+            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
+            group = data.group;
+        });
+        return;
+    }
+    
+    if (isKey("exit")) {
         ipcRenderer.send("exit");
+        return;
+    }
+    
+    // 圖片寬度調整 (+/-)
+    if (isKey("zoom_in")) {
+        increaseImageWidth();
+        return;
+    }
+    
+    if (isKey("zoom_out")) {
+        decreaseImageWidth();
+        return;
     }
 }
 
-function mouse(e) {
-    if (e.deltaY < 0) {
-        //上一頁
-        global.img_id = global.img_id < 1 ? img.length - 1 : global.img_id - 1;
-        image_view();
-    } else if (e.deltaY > 0) {
-        //下一頁
-        global.img_id = global.img_id < img.length - 1 ? global.img_id + 1 : 0;
-        image_view();
+/**
+ * 頁面載入完成後初始化
+ */
+ipcRenderer.send('get-pageStatus');
+ipcRenderer.on('get-pageStatus-reply', (event, data) => {
+    book_id = data.book_id;
+    img_id = data.img_id;
+    group = data.group;
+    uiLanguage = data.uiLanguage;
+    globalHotkeys = data.globalHotkeys;
+    viewHotkeys = data.viewHotkeys;
+    
+    // 讀取圖片寬度設定
+    if (data.setting && data.setting.value && data.setting.value.image_width) {
+        let width = data.setting.value.image_width.value;
+        width = Math.max(1, Math.min(100, width));
+        baseImageWidthPercent = width;
+        imageWidthPercent = width;
     }
-}
-
-function create_html_view(document) {
+    
+    // 初始化 CSS 變數
+    document.documentElement.style.setProperty('--image-width', imageWidthPercent + '%');
+    
+    // 初始化 DOM 元素
+    scrollContainer = document.getElementById('scroll-container');
+    imageContainer = document.getElementById('image-container');
+    currentPageSpan = document.getElementById('current-page');
+    totalPagesSpan = document.getElementById('total-pages');
+    pageIndicator = document.getElementById('page-indicator');
+    
+    // 綁定上一本/下一本按鈕事件
+    const prevBookBtn = document.getElementById('prev-book-btn');
+    const nextBookBtn = document.getElementById('next-book-btn');
+    if (prevBookBtn) {
+        prevBookBtn.addEventListener('click', gotoPrevBook);
+    }
+    if (nextBookBtn) {
+        nextBookBtn.addEventListener('click', gotoNextBook);
+    }
+    
+    // 啟用事件
     eventEnable();
-    //window.onresize = create_viewer;
-    let body = document.getElementsByTagName("body");
-    //body[0].style = "overflow:hidden";
-    body[0].innerHTML =
-        `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
-        `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
-        <input  type="button" id="ttt" style="display:none" value="第一頁" ></div>`;
-    html = document.getElementById("im");
-    image.init(global.group[global.book_id].local_path).then(e => {
-        img = e;
-        cacheObj = cache.init(img, global.img_id);
-        getElement = cacheObj.getElement;
-        const menu = new Menu();
-        menu.append(
-            new MenuItem({
-                label: "上一頁",
-                click: function() {
-                    if (viewer) viewer.destroy();
-                    module.exports.back();
-                }
-            })
-        );
-        document.oncontextmenu = e => {
-            e.stopPropagation();
-            menu.popup({ window: remote.getCurrentWindow() });
-        };
-        image_view();
-    });
-}
+    
+    // 初始化瀏覽器
+    initializeViewer();
+});
 
-module.exports = {
-    create_html_view: create_html_view,
-    back: null
-};
+/**
+ * 右鍵選單處理
+ */
+ipcRenderer.on('context-menu-command', (e, command, text) => {
+    if (command === 'copy') {
+        try {
+            clipboard.writeText(text);
+            console.log('Text copied to clipboard');
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+    } else if (command === 'previousPage') {
+        ipcRenderer.send('put-bookStatus', { img_id: img_id, book_id: book_id });
+        ipcRenderer.once('put-bookStatus-reply', (e) => {
+            console.log("back");
+            eventDisable();
+            window.location.href = "book.html";
+        });
+    }
+});
