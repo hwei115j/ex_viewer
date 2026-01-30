@@ -364,11 +364,6 @@
                 }
             }
         },
-        "update": {
-            "text": "是否每次開啟時都更新資料庫",
-            "type": "bool",
-            "value": false
-        },
         "debug": {
             "text": "是否開啟「開發人員工具」",
             "type": "bool",
@@ -377,7 +372,7 @@
         "full_page": {
             "text": "是否開啟整頁瀏覽",
             "type": "bool",
-            "value": true
+            "value": false
         },
         "zoom": {
             "text": "頁面放大倍率，預設是110%",

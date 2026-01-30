@@ -532,7 +532,6 @@ ipcMain.on('put-match', (event, arg) => {
 });
 
 ipcMain.on("sort", (event, arg) => {
-    let id = pageStatus.group[pageStatus.book_id].local_id;
     if (arg == "name") {
         pageStatus.group.sort((a, b) =>
             a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
@@ -596,30 +595,32 @@ ipcMain.on('show-context-menu', (event, arg) => {
         });
     }
     
-    // 添加排序子菜單
-    template.push({
-        label: getTranslation('Sort'),
-        submenu: [
-            {
-                label: getTranslation('Name'),
-                type: 'checkbox',
-                checked: pageStatus.currentSort === 'name',
-                click: () => { event.sender.send('context-menu-command', 'sort', 'name'); }
-            },
-            {
-                label: getTranslation('Random'),
-                type: 'checkbox',
-                checked: pageStatus.currentSort === 'random',
-                click: () => { event.sender.send('context-menu-command', 'sort', 'random'); }
-            },
-            {
-                label: getTranslation('Chronology'),
-                type: 'checkbox',
-                checked: pageStatus.currentSort === 'chronology',
-                click: () => { event.sender.send('context-menu-command', 'sort', 'chronology'); }
-            }
-        ]
-    });
+    if (!arg.isInput && !arg.selectedText) {
+        // 添加排序子菜單
+        template.push({
+            label: getTranslation('Sort'),
+            submenu: [
+                {
+                    label: getTranslation('Name'),
+                    type: 'checkbox',
+                    checked: pageStatus.currentSort === 'name',
+                    click: () => { event.sender.send('context-menu-command', 'sort', 'name'); }
+                },
+                {
+                    label: getTranslation('Random'),
+                    type: 'checkbox',
+                    checked: pageStatus.currentSort === 'random',
+                    click: () => { event.sender.send('context-menu-command', 'sort', 'random'); }
+                },
+                {
+                    label: getTranslation('Chronology'),
+                    type: 'checkbox',
+                    checked: pageStatus.currentSort === 'chronology',
+                    click: () => { event.sender.send('context-menu-command', 'sort', 'chronology'); }
+                }
+            ]
+        });
+    }
     
     const menu = Menu.buildFromTemplate(template)
     menu.popup({ window: BrowserWindow.fromWebContents(event.sender) })
