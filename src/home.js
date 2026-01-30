@@ -645,4 +645,13 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
         inputElement.setSelectionRange(newPosition, newPosition);
         inputElement.focus();
     }
+    if (command === 'sort') {
+        ipcRenderer.send("sort", text);
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("sort:", text);
+            book_id = 0;
+            group = data.group;
+            updateHome();
+        });
+    }
 });

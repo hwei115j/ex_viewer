@@ -70,6 +70,7 @@ let pageStatus = {
     home_scrollTop: 0,
     book_scrollTop: 0,
     search_str: "",
+    currentSort: "name",  // 追蹤當前排序模式: "name", "random", "chronology"
     group: [],
     definition_db: (() => {
         try {
@@ -251,10 +252,10 @@ ipcMain.on('rematch', (event) => {
         try {
             if (fs.existsSync(local_db_path)) {
                 fs.unlinkSync(local_db_path);
-                console.log('已删除本地数据库: ' + local_db_path);
+                console.log('已刪除本地資料庫: ' + local_db_path);
             }
         } catch (err) {
-            console.error('删除数据库文件时发生错误:', err);
+            console.error('刪除資料庫文件時發生錯誤:', err);
         }
         
         pageStatus.book_id = 0;
@@ -267,7 +268,7 @@ ipcMain.on('rematch', (event) => {
     if (db) {
         db.close((err) => {
             if (err) {
-                console.error('关闭数据库时发生错误:', err);
+                console.error('關閉資料庫時發生錯誤:', err);
             }
             db = null;
             deleteAndNavigate();
@@ -545,6 +546,8 @@ ipcMain.on("sort", (event, arg) => {
             return b.posted - a.posted;
         });
     }
+    // 更新當前排序模式
+    pageStatus.currentSort = arg; 
     //pageStatus.book_id = pageStatus.group.findIndex(element => element.local_id === id);
 
     imageManagerInstance.setGroup(pageStatus.group);
@@ -592,6 +595,32 @@ ipcMain.on('show-context-menu', (event, arg) => {
             click: () => { event.sender.send('context-menu-command', 'Paste'); }
         });
     }
+    
+    // 添加排序子菜單
+    template.push({
+        label: getTranslation('Sort'),
+        submenu: [
+            {
+                label: getTranslation('Name'),
+                type: 'checkbox',
+                checked: pageStatus.currentSort === 'name',
+                click: () => { event.sender.send('context-menu-command', 'sort', 'name'); }
+            },
+            {
+                label: getTranslation('Random'),
+                type: 'checkbox',
+                checked: pageStatus.currentSort === 'random',
+                click: () => { event.sender.send('context-menu-command', 'sort', 'random'); }
+            },
+            {
+                label: getTranslation('Chronology'),
+                type: 'checkbox',
+                checked: pageStatus.currentSort === 'chronology',
+                click: () => { event.sender.send('context-menu-command', 'sort', 'chronology'); }
+            }
+        ]
+    });
+    
     const menu = Menu.buildFromTemplate(template)
     menu.popup({ window: BrowserWindow.fromWebContents(event.sender) })
 })
