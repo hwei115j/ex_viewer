@@ -521,5 +521,18 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
             eventDisable();
             window.location.href = "book.html";
         });
+    } else if (command === 'sort') {
+        ipcRenderer.send("sort", text);
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("sort:", text);
+            let ttt = document.getElementById("ttt");
+            ttt.style = "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+            ttt.value = text.charAt(0).toUpperCase() + text.slice(1);
+            setTimeout(() => {
+                ttt.style = "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
+            }, 2000);
+            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
+            group = data.group;
+        });
     }
 });

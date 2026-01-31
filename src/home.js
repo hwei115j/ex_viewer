@@ -365,7 +365,7 @@ function createSearch() {
         from_onsubmit.onsubmit();
     }
     searchClear.onclick = () => {
-        f_search.value = "";
+        f_search.value = null;
         from_onsubmit.onsubmit();
     }
     //document.getElementById("updateMatch").innerText = "update match"
@@ -481,16 +481,6 @@ function updateHome() {
     createPtt();
     createPage();
     createSidebar();
-
-    window.addEventListener('contextmenu', (e) => {
-        e.preventDefault()
-        const selectedText = window.getSelection().toString();
-        if (!selectedText) {
-            return;
-        }
-        ipcRenderer.send('show-context-menu', { selectedText: selectedText });
-    });
-
 }
 
 function hotkeyHandle(event) {
@@ -610,6 +600,13 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
 
     webFrame.setZoomFactor(setting.value.zoom.value / 100);
     document.addEventListener('keydown', hotkeyHandle);
+    
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const selectedText = window.getSelection().toString();
+        ipcRenderer.send('show-context-menu', { selectedText: selectedText });
+    });
+    
     createSearch();
     //console.log(search_str);
     document.getElementById("f_search").value = search_str;
@@ -644,5 +641,14 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
         const newPosition = start + text.length;
         inputElement.setSelectionRange(newPosition, newPosition);
         inputElement.focus();
+    }
+    if (command === 'sort') {
+        ipcRenderer.send("sort", text);
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("sort:", text);
+            book_id = 0;
+            group = data.group;
+            updateHome();
+        });
     }
 });

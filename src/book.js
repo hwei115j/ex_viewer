@@ -539,5 +539,13 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
             console.log("back");
             window.location.href = "home.html";
         });
+    } else if (command === 'sort') {
+        ipcRenderer.send("sort", text);
+        ipcRenderer.once("sort-reply", (e, data) => {
+            console.log("sort:", text);
+            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
+            group = data.group;
+            updataBook();
+        });
     }
 });
