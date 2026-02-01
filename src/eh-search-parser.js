@@ -20,6 +20,7 @@
 //                    | <text-query>
 //                    | <user-query>
 //                    | <integer-query>
+//                    | <special-command>
 //
 // ------------------------------------------------------------
 // Tag Query (標籤查詢)
@@ -78,6 +79,14 @@
 // <integer>        ::= [0-9]+
 //
 // ------------------------------------------------------------
+// Special Command (特殊命令)
+// ------------------------------------------------------------
+// <special-command> ::= "." <command-name>
+//
+// <command-name>   ::= "null"                      // 查詢 gid 為 NULL 的條目 (未匹配)
+//                    | <unknown-command>           // 未知命令，返回 0 條結果
+//
+// ------------------------------------------------------------
 // Lexical Elements (詞法元素)
 // ------------------------------------------------------------
 // <quoted-string>  ::= '"' <any-char-except-quote>* '"'
@@ -112,6 +121,7 @@
 // f:vtuber l:chinese -m:*      → VTuber + 中文 + 排除男性標籤
 // a:artist1 or a:artist2       → 藝術家1 或 藝術家2
 // weak:f:vtuber                → 搜尋 weak 標籤
+// .null                        → 查詢所有未匹配的條目 (gid IS NULL)
 //
 // ============================================================
 
@@ -466,6 +476,14 @@ class Parser {
             return null;
         }
 
+        // Check for special command (starts with '.')
+        if (value.startsWith('.')) {
+            return {
+                type: 'SpecialCommand',
+                command: value.substring(1) // Remove the leading '.'
+            };
+        }
+
         // Check for wildcard
         if (this.peek().type === TokenType.WILDCARD) {
             this.advance();
@@ -721,6 +739,8 @@ class InlineSQLGenerator {
             return this.generateIntegerCondition(term);
         } else if (term.type === 'UserQuery') {
             return this.generateUserCondition(term);
+        } else if (term.type === 'SpecialCommand') {
+            return this.generateSpecialCommand(term);
         }
         return null;
     }
@@ -776,6 +796,16 @@ class InlineSQLGenerator {
             return `uploaduid = ${value}`;
         }
         return null;
+    }
+
+    generateSpecialCommand(term) {
+        const { command } = term;
+        if (command === 'null') {
+            // Return entries where gid is NULL (not matched)
+            return 'gid IS NULL';
+        }
+        // Unknown special command - return no results
+        return '1=0';
     }
 
     generateUserCondition(term) {
