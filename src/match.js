@@ -11,6 +11,30 @@ function replace(name, text) {
     return uiLanguage[name] ? uiLanguage[name] : name;
 }
 
+function renderDirectoryList() {
+    let pathContainer = document.getElementById("path");
+    pathContainer.innerHTML = "";
+    for (let i in path_list) {
+        pathContainer.innerHTML += `
+            <div class="layers">
+            <h1>${path_list[i]}</h1>
+            <select>
+            <option value="1">${replace("init_text2", "1")}</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            </select>
+            <button class="delete-dir-btn" data-index="${i}">✕</button>
+            </div>`;
+    }
+    // 恢復之前的 layers 選擇值
+    let layers = document.getElementsByClassName("layers");
+    for (let i = 0; i < layers.length; i++) {
+        if (dir.layers && dir.layers[i] !== undefined) {
+            layers[i].getElementsByTagName("select")[0].value = dir.layers[i];
+        }
+    }
+}
+
 function create_init_html() {
     function create_book_list(path, layers) {
         let files;
@@ -54,22 +78,20 @@ function create_init_html() {
         let path = document.getElementById("path");
 
         start.style = selectDirBtn.style = "";
-        for (let n in path_list) {
-            path.innerHTML += `
-                <div class="layers">
-                <h1>${path_list[n]}</h1>
-                <select>
-                <option value="1">${replace("init_text2", "1")}</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                </select></div>`;
-        }
+        renderDirectoryList();
 
-        let layers = document.getElementsByClassName("layers");
-        for (let i = 0; i < layers.length; i++) {
-            layers[i].getElementsByTagName("select")[0].value =
-                dir.layers[i];
-        }
+        // 事件委派處理刪除按鈕點擊
+        path.addEventListener("click", event => {
+            if (event.target.classList.contains("delete-dir-btn")) {
+                let index = parseInt(event.target.getAttribute("data-index"));
+                path_list.splice(index, 1);
+                // 同步更新 dir.layers
+                if (dir.layers) {
+                    dir.layers.splice(index, 1);
+                }
+                renderDirectoryList();
+            }
+        });
 
         start.addEventListener("click", event => {
             let layers = document.getElementsByClassName("layers");
@@ -99,21 +121,11 @@ function create_init_html() {
             ipcRenderer.send("open-file-dialog");
         });
 
-        ipcRenderer.on("selected-directory", (event, dir) => {
-            console.log(dir);
-            path_list.push(dir[0]);
+        ipcRenderer.on("selected-directory", (event, selectedDir) => {
+            console.log(selectedDir);
+            path_list.push(selectedDir[0]);
             path_list = [...new Set(path_list)]; //消除重複
-            path.innerHTML = "";
-            for (let i in path_list) {
-                path.innerHTML += `
-                <div class="layers">
-                <h1>${path_list[i]}</h1>
-                <select>
-                <option value="1">${replace("init_text2", "1")}</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                </select></div>`;
-            }
+            renderDirectoryList();
         });
     }
 
