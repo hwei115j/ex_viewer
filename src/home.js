@@ -15,6 +15,7 @@ let keyboardEventHome;
 let globalHotkeys;
 let homeHotkeys;
 let historyList;
+let definition;
 
 let category = [
     "Doujinshi",
@@ -64,6 +65,59 @@ function goto_page(str) {
 
 function replace(name) {
     return uiLanguage[name] ? uiLanguage[name] : name;
+}
+
+function get_chinese_name(namespace, tag) {
+    if (Object.keys(definition).length == 0) {
+        return tag;
+    }
+    let data = definition["data"].find(obj => obj.namespace === namespace);
+    if (data != undefined) {
+        return (data["data"][tag] != undefined) ? data["data"][tag]["name"] : tag;
+    }
+    return tag;
+}
+
+const NAMESPACE_ALIASES = {
+    artist: "artist", a: "artist",
+    character: "character", c: "character", char: "character",
+    cosplayer: "cosplayer", cos: "cosplayer",
+    female: "female", f: "female",
+    group: "group", g: "group", circle: "group",
+    language: "language", l: "language", lang: "language",
+    location: "location", loc: "location",
+    male: "male", m: "male",
+    mixed: "mixed", x: "mixed",
+    other: "other", o: "other",
+    parody: "parody", p: "parody", series: "parody",
+    reclass: "reclass", r: "reclass"
+};
+
+const NAMESPACE_ABBR = {
+    artist: "a",
+    character: "c",
+    cosplayer: "cos",
+    female: "f",
+    group: "g",
+    language: "l",
+    location: "loc",
+    male: "m",
+    mixed: "x",
+    other: "o",
+    parody: "p",
+    reclass: "r"
+};
+
+function translateHistoryText(text) {
+    // 匹配格式：namespace:"tag$"
+    const tagPattern = /([\w]+):"([^"]+)\$"/g;
+    
+    return text.replace(tagPattern, (match, namespace, tag) => {
+        const normalizedNamespace = NAMESPACE_ALIASES[namespace] || namespace;
+        const displayNamespace = NAMESPACE_ABBR[normalizedNamespace] || namespace;
+        const chineseName = get_chinese_name(normalizedNamespace, tag);
+        return `<span style="display:inline-block;font-weight:bold;padding:1px 6px;margin:0;border-radius:5px;border:1px solid #989898;background:#4f535b;color:#f1f1f1;white-space:nowrap;vertical-align:baseline;line-height:1.4;">${displayNamespace}:${chineseName}</span>`;
+    });
 }
 
 function createPage() {
@@ -375,7 +429,8 @@ function updateHistoryList() {
     for (const i in historyList) {
         let star_class = (historyList[i].pinned) ? "bi-star-fill" : "bi-star";
         let button_class = (historyList[i].pinned) ? "pinButton active" : "pinButton";
-        historyHtml += `<li><a class="history-link" title='${historyList[i].text}'>${historyList[i].text}</a><button class="${button_class}"><i class='${star_class}'></i></button></li>`;
+        let displayText = translateHistoryText(historyList[i].text);
+        historyHtml += `<li><a class="history-link" title='${historyList[i].text}'>${displayText}</a><button class="${button_class}"><i class='${star_class}'></i></button></li>`;
     }
 
     document.getElementById('historyList').innerHTML = historyHtml;
@@ -597,6 +652,7 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     homeHotkeys = data.homeHotkeys;
     historyList = data.historyList;
     setting = data.setting;
+    definition = data.definition;
 
     webFrame.setZoomFactor(setting.value.zoom.value / 100);
     document.addEventListener('keydown', hotkeyHandle);
