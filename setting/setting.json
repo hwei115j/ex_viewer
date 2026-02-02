@@ -369,6 +369,11 @@
             "type": "bool",
             "value": true
         },
+        "tag_translate": {
+            "text": "是否開啟標籤翻譯",
+            "type": "bool",
+            "value": false
+        },
         "full_page": {
             "text": "是否開啟整頁瀏覽",
             "type": "bool",

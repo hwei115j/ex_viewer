@@ -68,6 +68,10 @@ function replace(name) {
 }
 
 function get_chinese_name(namespace, tag) {
+    // 檢查標籤翻譯開關
+    if (setting && setting.value && setting.value.tag_translate && !setting.value.tag_translate.value) {
+        return tag;
+    }
     if (Object.keys(definition).length == 0) {
         return tag;
     }
@@ -109,14 +113,19 @@ const NAMESPACE_ABBR = {
 };
 
 function translateHistoryText(text) {
+    // 檢查標籤翻譯開關，關閉時直接返回原始文字
+    if (setting && setting.value && setting.value.tag_translate && !setting.value.tag_translate.value) {
+        return text;
+    }
+    
     // 匹配格式：namespace:"tag$"
     const tagPattern = /([\w]+):"([^"]+)\$"/g;
     
     return text.replace(tagPattern, (match, namespace, tag) => {
         const normalizedNamespace = NAMESPACE_ALIASES[namespace] || namespace;
         const displayNamespace = NAMESPACE_ABBR[normalizedNamespace] || namespace;
-        const chineseName = get_chinese_name(normalizedNamespace, tag);
-        return `<span style="display:inline-block;font-weight:bold;padding:1px 6px;margin:0;border-radius:5px;border:1px solid #989898;background:#4f535b;color:#f1f1f1;white-space:nowrap;vertical-align:baseline;line-height:1.4;">${displayNamespace}:${chineseName}</span>`;
+        const displayName = get_chinese_name(normalizedNamespace, tag);
+        return `<span style="display:inline-block;font-weight:bold;padding:1px 6px;margin:0;border-radius:5px;border:1px solid #989898;background:#4f535b;color:#f1f1f1;white-space:nowrap;vertical-align:baseline;line-height:1.4;">${displayNamespace}:${displayName}</span>`;
     });
 }
 
