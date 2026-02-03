@@ -3,7 +3,6 @@
 	"version": "0.9.1",
 	"main": "src/main.js",
 	"dependencies": {
-		"better-sqlite3": "^12.6.2",
 		"bootstrap-icons": "^1.11.3",
 		"dialogs": "^2.0.1",
 		"fast-levenshtein": "^2.0.6",
