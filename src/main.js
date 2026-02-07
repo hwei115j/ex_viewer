@@ -9,11 +9,8 @@ const {convertQuery} = require('./eh-search-parser.js');
 // 聲明一個BrowserWindow對象實例
 let mainWindow;
 /*jshint esversion: 8 */
-const { group } = require("console");
-const sqlite3 = require("sqlite3").verbose();
+const { DatabaseSync } = require("node:sqlite");
 const fs = require("fs");
-const { event } = require("jquery");
-const url = require("url");
 const { app, BrowserWindow, Menu } = require('electron');
 
 
@@ -131,7 +128,7 @@ let defineCategory = [
 ];
 
 function appInit() {
-    db = new sqlite3.Database(local_db_path);
+    db = new DatabaseSync(local_db_path, { enableDoubleQuotedStringLiterals: true });
     search(pageStatus.search_str, defineCategory, () => { });
 }
 
@@ -171,19 +168,18 @@ function search(searchStr, category, func_cb) {
 
         console.log('Search SQL:', sql);
 
-        db.serialize(() => {
-            db.all(sql, [], (err, rows) => {
-                if (err != null) {
-                    console.log(err);
-                }
-                pageStatus.group = rows || [];
-                pageStatus.group.sort((a, b) =>
-                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
-                );
-                imageManagerInstance.setGroup(pageStatus.group);
-                func_cb();
-            });
-        });
+        try {
+            const rows = db.prepare(sql).all();
+            pageStatus.group = rows || [];
+        } catch (e) {
+            console.log(e);
+            pageStatus.group = [];
+        }
+        pageStatus.group.sort((a, b) =>
+            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
+        );
+        imageManagerInstance.setGroup(pageStatus.group);
+        func_cb();
     } catch (err) {
         console.log(err);
         func_cb();
@@ -266,16 +262,14 @@ ipcMain.on('rematch', (event) => {
     };
     
     if (db) {
-        db.close((err) => {
-            if (err) {
-                console.error('關閉資料庫時發生錯誤:', err);
-            }
-            db = null;
-            deleteAndNavigate();
-        });
-    } else {
-        deleteAndNavigate();
+        try {
+            db.close();
+        } catch (err) {
+            console.error('關閉資料庫時發生錯誤:', err);
+        }
+        db = null;
     }
+    deleteAndNavigate();
 });
 
 ipcMain.on('put-settingStatus', (event, arg) => {
@@ -410,28 +404,12 @@ ipcMain.on('put-match', (event, arg) => {
         for (let i in exdb_row) {
             instr += "," + i;
         }
-        db.serialize(() => {
-            function progressBar() {
-                event.reply("put-match-reply", { totalBooks: book_list.length, currentBooks: book_count });
-            }
-
-            let str = `"${name}", "${join(path, name)}"`;
-            for (let i in exdb_row) {
-                str += `,"${exdb_row[i]}"`;
-            }
-            book_count++;
-            db.run(`INSERT INTO data (${instr}) VALUES (${str});`, [], () => {
-                if (book_count == book_list.length) {
-                    let end = new Date().getTime();
-                    console.log((end - t_start) / 1000 + "sec");
-                    //全部push進local.db結束時執行
-                    db.run("COMMIT");
-                    //console.log(debug);
-                    //console.log(debug1);
-                }
-                progressBar();
-            });
-        });
+        let str = `"${name}", "${join(path, name)}"`;
+        for (let i in exdb_row) {
+            str += `,"${exdb_row[i]}"`;
+        }
+        book_count++;
+        db.exec(`INSERT INTO data (${instr}) VALUES (${str});`);
     }
     function sql_where() {
         function fullwidth(str) {
@@ -448,9 +426,9 @@ ipcMain.on('put-match', (event, arg) => {
             console.log("sql_where");
             return;
         }
-        let meta_db = new sqlite3.Database(ex_db_path);
+        let meta_db = new DatabaseSync(ex_db_path, { readOnly: true, enableDoubleQuotedStringLiterals: true });
 
-        db.run(
+        db.exec(
             "CREATE TABLE IF NOT EXISTS  data(" +
             "local_id INTEGER PRIMARY KEY AUTOINCREMENT," +
             "local_name nvarchar," +
@@ -474,7 +452,7 @@ ipcMain.on('put-match', (event, arg) => {
             "error   nvarchar" +
             ");"
         );
-        db.run("BEGIN TRANSACTION;");
+        db.exec("BEGIN TRANSACTION;");
 
         for (let book of book_list) {
             //console.log(book[1]);
@@ -493,30 +471,34 @@ ipcMain.on('put-match', (event, arg) => {
                 `OR title MATCH "${book[1]}"` +
                 `OR title_jpn MATCH "${fullwidth(book[1])}"` +
                 `OR title MATCH "${fullwidth(book[1])}"`;
-            meta_db.serialize(() => {
-                meta_db.all(sql, [], (err, rows) => {
-                    if (err) {
-                        //console.log(err);
-                        console.log(sql);
-                        push_local_db(null, book[0], book[2]);
-                        return;
-                        throw err;
-                    }
-                    //把候選檔名和原始檔名做比對
-                    let r = levens(rows, book[0]);
-                    if (!Array.isArray(r) || r.length === 0) {
-                        debug.push(sql);
-                        debug1.push(book[2]);
-                    }
-                    push_local_db(r, book[0], book[2]);
-                });
-            });
+            let rows;
+            try {
+                rows = meta_db.prepare(sql).all();
+            } catch (err) {
+                console.log(sql);
+                push_local_db(null, book[0], book[2]);
+                continue;
+            }
+            //把候選檔名和原始檔名做比對
+            let r = levens(rows, book[0]);
+            if (!Array.isArray(r) || r.length === 0) {
+                debug.push(sql);
+                debug1.push(book[2]);
+            }
+            push_local_db(r, book[0], book[2]);
         }
+
+        db.exec("COMMIT");
+        meta_db.close();
+
+        let end = new Date().getTime();
+        console.log((end - t_start) / 1000 + "sec");
+        event.reply("put-match-reply", { totalBooks: book_list.length, currentBooks: book_list.length });
     }
 
     pageStatus.dir.dir = path_list;
     pageStatus.dir.layers = layers_list;
-    db = new sqlite3.Database(local_db_path);
+    db = new DatabaseSync(local_db_path, { enableDoubleQuotedStringLiterals: true });
 
     for (let i in path_list) {
         book_list = book_list.concat(
