@@ -319,10 +319,13 @@ ipcMain.on('get-book', (event, arg) => {
     event.reply('book-data', r);
 });
 
-ipcMain.on('put-match', (event, arg) => {
+ipcMain.on('put-match', async (event, arg) => {
     const path_list = arg.path_list;
     const layers_list = arg.layers_list;
     const t_start = new Date().getTime();
+    if(global.gc) {
+        global.gc();
+    }
     let book_count = 0;
     let book_list = [];
     let debug = [];
@@ -409,7 +412,7 @@ ipcMain.on('put-match', (event, arg) => {
         book_count++;
         db.prepare(`INSERT INTO data (${columns.join(", ")}) VALUES (${placeholders})`).run(...values);
     }
-    function sql_where() {
+    async function sql_where() {
         function fullwidth(str) {
             str = str.replace(/！/g, "!");
             str = str.replace(/？/g, "?");
@@ -426,6 +429,8 @@ ipcMain.on('put-match', (event, arg) => {
             return;
         }
         let meta_db = new DatabaseSync(ex_db_path, { readOnly: true, enableDoubleQuotedStringLiterals: true });
+        meta_db.exec("PRAGMA cache_size = 0;");
+        meta_db.exec("PRAGMA mmap_size = 0;");
 
         db.exec(
             "CREATE TABLE IF NOT EXISTS  data(" +
@@ -453,7 +458,12 @@ ipcMain.on('put-match', (event, arg) => {
         );
         db.exec("BEGIN TRANSACTION;");
 
+        let i = 0;
         for (let book of book_list) {
+            if(++i % 10 === 0) {
+                event.reply("put-match-reply", { totalBooks: book_list.length, currentBooks: i });
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
             //console.log(book[1]);
             //console.log(fullwidth(book[1]));
             /*
@@ -470,14 +480,14 @@ ipcMain.on('put-match', (event, arg) => {
             try {
                 rows = meta_db.prepare(sql).all(...params);
             } catch (err) {
-                console.log(sql);
+                console.log(params);
                 push_local_db(null, book[0], book[2]);
                 continue;
             }
             //把候選檔名和原始檔名做比對
             let r = levens(rows, book[0]);
             if (r === null) {
-                debug.push(sql);
+                debug.push(params);
                 debug1.push(book[2]);
             }
             push_local_db(r, book[0], book[2]);
@@ -495,13 +505,17 @@ ipcMain.on('put-match', (event, arg) => {
     pageStatus.dir.layers = layers_list;
     db = new DatabaseSync(local_db_path, { enableDoubleQuotedStringLiterals: true });
 
+    let j = 0;
     for (let i in path_list) {
+        if (j++ % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
         book_list = book_list.concat(
             create_book_list(path_list[i], layers_list[i])
         );
     }
     book_list = [...new Set(book_list.map(JSON.stringify))].map(JSON.parse);
-    sql_where();
+    await sql_where();
 
     console.log(path_list);
     console.log(layers_list);
