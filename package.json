@@ -10,12 +10,11 @@
 		"jshint": "^2.13.4",
 		"jszip-sync": "^3.2.1-sync",
 		"node-stream-zip": "^1.15.0",
-		"sqlite3": "^5.1.7",
 		"viewerjs": "^1.10.3"
 	},
 	"devDependencies": {
 		"electron": "^38.4.0",
-		"electron-builder": "^24.13.3"
+		"electron-builder": "^26.7.0"
 	},
 	"scripts": {
 		"dist": "electron-builder --x64 --dir"

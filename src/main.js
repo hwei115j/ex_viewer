@@ -9,11 +9,8 @@ const {convertQuery} = require('./eh-search-parser.js');
 // 聲明一個BrowserWindow對象實例
 let mainWindow;
 /*jshint esversion: 8 */
-const { group } = require("console");
-const sqlite3 = require("sqlite3").verbose();
+const { DatabaseSync } = require("node:sqlite");
 const fs = require("fs");
-const { event } = require("jquery");
-const url = require("url");
 const { app, BrowserWindow, Menu } = require('electron');
 
 
@@ -131,7 +128,7 @@ let defineCategory = [
 ];
 
 function appInit() {
-    db = new sqlite3.Database(local_db_path);
+    db = new DatabaseSync(local_db_path, { enableDoubleQuotedStringLiterals: true });
     search(pageStatus.search_str, defineCategory, () => { });
 }
 
@@ -171,19 +168,18 @@ function search(searchStr, category, func_cb) {
 
         console.log('Search SQL:', sql);
 
-        db.serialize(() => {
-            db.all(sql, [], (err, rows) => {
-                if (err != null) {
-                    console.log(err);
-                }
-                pageStatus.group = rows || [];
-                pageStatus.group.sort((a, b) =>
-                    a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
-                );
-                imageManagerInstance.setGroup(pageStatus.group);
-                func_cb();
-            });
-        });
+        try {
+            const rows = db.prepare(sql).all();
+            pageStatus.group = rows || [];
+        } catch (e) {
+            console.log(e);
+            pageStatus.group = [];
+        }
+        pageStatus.group.sort((a, b) =>
+            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
+        );
+        imageManagerInstance.setGroup(pageStatus.group);
+        func_cb();
     } catch (err) {
         console.log(err);
         func_cb();
@@ -266,16 +262,14 @@ ipcMain.on('rematch', (event) => {
     };
     
     if (db) {
-        db.close((err) => {
-            if (err) {
-                console.error('關閉資料庫時發生錯誤:', err);
-            }
-            db = null;
-            deleteAndNavigate();
-        });
-    } else {
-        deleteAndNavigate();
+        try {
+            db.close();
+        } catch (err) {
+            console.error('關閉資料庫時發生錯誤:', err);
+        }
+        db = null;
     }
+    deleteAndNavigate();
 });
 
 ipcMain.on('put-settingStatus', (event, arg) => {
@@ -325,10 +319,13 @@ ipcMain.on('get-book', (event, arg) => {
     event.reply('book-data', r);
 });
 
-ipcMain.on('put-match', (event, arg) => {
+ipcMain.on('put-match', async (event, arg) => {
     const path_list = arg.path_list;
     const layers_list = arg.layers_list;
     const t_start = new Date().getTime();
+    if(global.gc) {
+        global.gc();
+    }
     let book_count = 0;
     let book_list = [];
     let debug = [];
@@ -340,9 +337,8 @@ ipcMain.on('put-match', (event, arg) => {
             str = str.replace(/\[[^\]]*\]/g, "%");
             str = str.replace(/\([^)]*\)/g, "%");
             str = str.replace(/\{[^}]*\}/g, "%");
-
-            str = str.replace(/\【[^}]*\】/g, "%");
-            str = str.replace(/\（[^)]*\）/g, "%");
+            str = str.replace(/\【[^】]*\】/g, "%");
+            str = str.replace(/\（[^）]*\）/g, "%");
 
             let arr = str.split("%");
             let max = 0, maxs;
@@ -406,51 +402,37 @@ ipcMain.on('put-match', (event, arg) => {
     }
     //推入local資料庫
     function push_local_db(exdb_row, name, path) {
-        let instr = "local_name, local_path";
+        let columns = ["local_name", "local_path"];
+        let values = [name, join(path, name)];
         for (let i in exdb_row) {
-            instr += "," + i;
+            columns.push(i);
+            values.push(exdb_row[i]);
         }
-        db.serialize(() => {
-            function progressBar() {
-                event.reply("put-match-reply", { totalBooks: book_list.length, currentBooks: book_count });
-            }
-
-            let str = `"${name}", "${join(path, name)}"`;
-            for (let i in exdb_row) {
-                str += `,"${exdb_row[i]}"`;
-            }
-            book_count++;
-            db.run(`INSERT INTO data (${instr}) VALUES (${str});`, [], () => {
-                if (book_count == book_list.length) {
-                    let end = new Date().getTime();
-                    console.log((end - t_start) / 1000 + "sec");
-                    //全部push進local.db結束時執行
-                    db.run("COMMIT");
-                    //console.log(debug);
-                    //console.log(debug1);
-                }
-                progressBar();
-            });
-        });
+        let placeholders = columns.map(() => "?").join(", ");
+        book_count++;
+        db.prepare(`INSERT INTO data (${columns.join(", ")}) VALUES (${placeholders})`).run(...values);
     }
-    function sql_where() {
+    async function sql_where() {
         function fullwidth(str) {
-            str = str.replace("！", "!");
-            str = str.replace("？", "?");
-            str = str.replace("：", ":");
-            str = str.replace("＆", "&amp;");
-            str = str.replace("&", "&amp;");
-            str = str.replace("　", " ");
-            str = str.replace("-", " ");
+            str = str.replace(/！/g, "!");
+            str = str.replace(/？/g, "?");
+            str = str.replace(/：/g, ":");
+            str = str.replace(/＆/g, "&amp;");
+            str = str.replace(/&/g, "&amp;");
+            str = str.replace(/　/g, " ");
+            str = str.replace(/-/g, " ");
             return str;
         }
         if (book_list.length == 0) {
-            console.log("sql_where");
+            console.log("sql_where: book_list is empty");
+            event.reply("put-match-reply", { totalBooks: 0, currentBooks: 0 });
             return;
         }
-        let meta_db = new sqlite3.Database(ex_db_path);
+        let meta_db = new DatabaseSync(ex_db_path, { readOnly: true, enableDoubleQuotedStringLiterals: true });
+        meta_db.exec("PRAGMA cache_size = 0;");
+        meta_db.exec("PRAGMA mmap_size = 0;");
 
-        db.run(
+        db.exec(
             "CREATE TABLE IF NOT EXISTS  data(" +
             "local_id INTEGER PRIMARY KEY AUTOINCREMENT," +
             "local_name nvarchar," +
@@ -474,9 +456,14 @@ ipcMain.on('put-match', (event, arg) => {
             "error   nvarchar" +
             ");"
         );
-        db.run("BEGIN TRANSACTION;");
+        db.exec("BEGIN TRANSACTION;");
 
+        let i = 0;
         for (let book of book_list) {
+            if(++i % 10 === 0) {
+                event.reply("put-match-reply", { totalBooks: book_list.length, currentBooks: i });
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
             //console.log(book[1]);
             //console.log(fullwidth(book[1]));
             /*
@@ -487,44 +474,48 @@ ipcMain.on('put-match', (event, arg) => {
                 `OR title_jpn LIKE "%${fullwidth(book[1])}"`+
                 `OR title LIKE "%${fullwidth(book[1])}%"`;
             */
-            let sql =
-                "SELECT * FROM data " +
-                `WHERE title_jpn MATCH "${book[1]}"` +
-                `OR title MATCH "${book[1]}"` +
-                `OR title_jpn MATCH "${fullwidth(book[1])}"` +
-                `OR title MATCH "${fullwidth(book[1])}"`;
-            meta_db.serialize(() => {
-                meta_db.all(sql, [], (err, rows) => {
-                    if (err) {
-                        //console.log(err);
-                        console.log(sql);
-                        push_local_db(null, book[0], book[2]);
-                        return;
-                        throw err;
-                    }
-                    //把候選檔名和原始檔名做比對
-                    let r = levens(rows, book[0]);
-                    if (!Array.isArray(r) || r.length === 0) {
-                        debug.push(sql);
-                        debug1.push(book[2]);
-                    }
-                    push_local_db(r, book[0], book[2]);
-                });
-            });
+            let sql = "SELECT * FROM data WHERE title_jpn MATCH ? OR title MATCH ? OR title_jpn MATCH ? OR title MATCH ?";
+            let params = [book[1], book[1], fullwidth(book[1]), fullwidth(book[1])];
+            let rows;
+            try {
+                rows = meta_db.prepare(sql).all(...params);
+            } catch (err) {
+                console.log(params);
+                push_local_db(null, book[0], book[2]);
+                continue;
+            }
+            //把候選檔名和原始檔名做比對
+            let r = levens(rows, book[0]);
+            if (r === null) {
+                debug.push(params);
+                debug1.push(book[2]);
+            }
+            push_local_db(r, book[0], book[2]);
         }
+
+        db.exec("COMMIT");
+        meta_db.close();
+
+        let end = new Date().getTime();
+        console.log((end - t_start) / 1000 + "sec");
+        event.reply("put-match-reply", { totalBooks: book_list.length, currentBooks: book_list.length });
     }
 
     pageStatus.dir.dir = path_list;
     pageStatus.dir.layers = layers_list;
-    db = new sqlite3.Database(local_db_path);
+    db = new DatabaseSync(local_db_path, { enableDoubleQuotedStringLiterals: true });
 
+    let j = 0;
     for (let i in path_list) {
+        if (j++ % 10 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        }
         book_list = book_list.concat(
             create_book_list(path_list[i], layers_list[i])
         );
     }
     book_list = [...new Set(book_list.map(JSON.stringify))].map(JSON.parse);
-    sql_where();
+    await sql_where();
 
     console.log(path_list);
     console.log(layers_list);
