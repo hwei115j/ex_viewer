@@ -334,9 +334,8 @@ ipcMain.on('put-match', (event, arg) => {
             str = str.replace(/\[[^\]]*\]/g, "%");
             str = str.replace(/\([^)]*\)/g, "%");
             str = str.replace(/\{[^}]*\}/g, "%");
-
-            str = str.replace(/\【[^}]*\】/g, "%");
-            str = str.replace(/\（[^)]*\）/g, "%");
+            str = str.replace(/\【[^】]*\】/g, "%");
+            str = str.replace(/\（[^）]*\）/g, "%");
 
             let arr = str.split("%");
             let max = 0, maxs;
@@ -400,30 +399,30 @@ ipcMain.on('put-match', (event, arg) => {
     }
     //推入local資料庫
     function push_local_db(exdb_row, name, path) {
-        let instr = "local_name, local_path";
+        let columns = ["local_name", "local_path"];
+        let values = [name, join(path, name)];
         for (let i in exdb_row) {
-            instr += "," + i;
+            columns.push(i);
+            values.push(exdb_row[i]);
         }
-        let str = `"${name}", "${join(path, name)}"`;
-        for (let i in exdb_row) {
-            str += `,"${exdb_row[i]}"`;
-        }
+        let placeholders = columns.map(() => "?").join(", ");
         book_count++;
-        db.exec(`INSERT INTO data (${instr}) VALUES (${str});`);
+        db.prepare(`INSERT INTO data (${columns.join(", ")}) VALUES (${placeholders})`).run(...values);
     }
     function sql_where() {
         function fullwidth(str) {
-            str = str.replace("！", "!");
-            str = str.replace("？", "?");
-            str = str.replace("：", ":");
-            str = str.replace("＆", "&amp;");
-            str = str.replace("&", "&amp;");
-            str = str.replace("　", " ");
-            str = str.replace("-", " ");
+            str = str.replace(/！/g, "!");
+            str = str.replace(/？/g, "?");
+            str = str.replace(/：/g, ":");
+            str = str.replace(/＆/g, "&amp;");
+            str = str.replace(/&/g, "&amp;");
+            str = str.replace(/　/g, " ");
+            str = str.replace(/-/g, " ");
             return str;
         }
         if (book_list.length == 0) {
-            console.log("sql_where");
+            console.log("sql_where: book_list is empty");
+            event.reply("put-match-reply", { totalBooks: 0, currentBooks: 0 });
             return;
         }
         let meta_db = new DatabaseSync(ex_db_path, { readOnly: true, enableDoubleQuotedStringLiterals: true });
@@ -465,15 +464,11 @@ ipcMain.on('put-match', (event, arg) => {
                 `OR title_jpn LIKE "%${fullwidth(book[1])}"`+
                 `OR title LIKE "%${fullwidth(book[1])}%"`;
             */
-            let sql =
-                "SELECT * FROM data " +
-                `WHERE title_jpn MATCH "${book[1]}"` +
-                `OR title MATCH "${book[1]}"` +
-                `OR title_jpn MATCH "${fullwidth(book[1])}"` +
-                `OR title MATCH "${fullwidth(book[1])}"`;
+            let sql = "SELECT * FROM data WHERE title_jpn MATCH ? OR title MATCH ? OR title_jpn MATCH ? OR title MATCH ?";
+            let params = [book[1], book[1], fullwidth(book[1]), fullwidth(book[1])];
             let rows;
             try {
-                rows = meta_db.prepare(sql).all();
+                rows = meta_db.prepare(sql).all(...params);
             } catch (err) {
                 console.log(sql);
                 push_local_db(null, book[0], book[2]);
@@ -481,7 +476,7 @@ ipcMain.on('put-match', (event, arg) => {
             }
             //把候選檔名和原始檔名做比對
             let r = levens(rows, book[0]);
-            if (!Array.isArray(r) || r.length === 0) {
+            if (r === null) {
                 debug.push(sql);
                 debug1.push(book[2]);
             }
