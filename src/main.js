@@ -2,6 +2,7 @@
 const electron = require("electron");
 const join = require("path").join;
 const { ipcMain, dialog } = require("electron");
+const { protocol } = require("electron");
 const imageManager = require("./imageManager.js");
 const levenshtein = require("fast-levenshtein");
 const {convertQuery} = require('./eh-search-parser.js');
@@ -12,6 +13,20 @@ let mainWindow;
 const { DatabaseSync } = require("node:sqlite");
 const fs = require("fs");
 const { app, BrowserWindow, Menu } = require('electron');
+const StreamZipAsync = require('node-stream-zip').async;
+
+// 註冊自訂協議（必須在 app ready 之前）
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: 'image',
+        privileges: {
+            standard: true,
+            secure: true,
+            supportFetchAPI: true,
+            stream: true
+        }
+    }
+]);
 
 
 const ex_db_path = join(".", "setting", "ex.db");
@@ -25,6 +40,9 @@ let db;
 let setting = JSON.parse(fs.readFileSync(setting_path).toString());
 let imageManagerInstance = new imageManager();
 function createWindow() {
+
+    // 註冊 image 自訂協議處理器
+    registerZipImageProtocol();
 
     // 創建一個瀏覽器窗口對象，並指定窗口的大小
     mainWindow = new BrowserWindow({
@@ -626,6 +644,46 @@ ipcMain.on('toggle-fullscreen', () => {
 });
 
 app.on("ready", createWindow);
+
+/**
+ * 註冊 image:// 自訂協議，用於從壓縮檔中讀取圖片並回傳給渲染進程
+ */
+function registerZipImageProtocol() {
+    const mimeTypes = {
+        '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.jfif': 'image/jpeg',
+        '.pjpeg': 'image/jpeg', '.pjp': 'image/jpeg',
+        '.png': 'image/png', '.webp': 'image/webp',
+        '.gif': 'image/gif', '.svg': 'image/svg+xml'
+    };
+
+    protocol.handle('image', async (request) => {
+        try {
+            const reqUrl = new URL(request.url);
+            const zipPath = decodeURIComponent(reqUrl.searchParams.get('zip'));
+            const fileName = decodeURIComponent(reqUrl.searchParams.get('file'));
+
+            if (!zipPath || !fileName) {
+                return new Response('Missing zip or file parameter', { status: 400 });
+            }
+
+            const zip = new StreamZipAsync({ file: zipPath });
+            try {
+                const buffer = await zip.entryData(fileName);
+                const ext = require('path').extname(fileName).toLowerCase();
+                const contentType = mimeTypes[ext] || 'application/octet-stream';
+                return new Response(buffer, {
+                    status: 200,
+                    headers: { 'Content-Type': contentType }
+                });
+            } finally {
+                await zip.close().catch(() => {});
+            }
+        } catch (error) {
+            console.error('[image] 處理請求時發生錯誤:', error);
+            return new Response('Internal error', { status: 500 });
+        }
+    });
+}
 
 app.on("window-all-closed", function () {
     if (process.platform != "darwin") {

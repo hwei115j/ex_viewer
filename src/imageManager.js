@@ -1,11 +1,54 @@
 /*jshint esversion: 8 */
 const fs = require("fs").promises; // 使用 Promise 版本的 fs
+const fsSync = require("fs"); // 同步版本的 fs
 const { ipcMain } = require('electron');
 const path = require("path"); // 直接使用 path 模組
 const url = require("url");
+const StreamZipAsync = require('node-stream-zip').async;
 
 // 用於匹配常見圖片格式的正規表達式
 const imageExtensionsRegex = /\.(jpg|jpeg|jfif|pjpeg|pjp|png|webp|gif|svg)$/i;
+// 用於匹配支援的壓縮檔格式
+const archiveExtensionsRegex = /\.(zip|cbz)$/i;
+
+/**
+ * 判斷路徑是否為支援的壓縮檔
+ * @param {string} filePath
+ * @returns {boolean}
+ */
+function isArchive(filePath) {
+    return archiveExtensionsRegex.test(filePath);
+}
+
+/**
+ * 為 ZIP 內的圖片產生自訂協議 URL
+ * @param {string} zipPath ZIP 檔案的絕對路徑
+ * @param {string} entryName ZIP 內部的檔案路徑
+ * @returns {string}
+ */
+function buildZipImageUrl(zipPath, entryName) {
+    return `image://host?zip=${encodeURIComponent(zipPath)}&file=${encodeURIComponent(entryName)}`;
+}
+
+/**
+ * 過濾 ZIP entries 中的垃圾目錄（如 __MACOSX）並只保留圖片檔案
+ * @param {Object} entries node-stream-zip entries 物件
+ * @returns {string[]} 排序後的圖片 entry 名稱列表
+ */
+function filterAndSortZipImageEntries(entries) {
+    return Object.values(entries)
+        .filter(entry => !entry.isDirectory
+            && !entry.name.startsWith('__MACOSX')
+            && !entry.name.startsWith('.')
+            && imageExtensionsRegex.test(entry.name))
+        .map(entry => entry.name)
+        .sort((a, b) => {
+            // 使用 basename 進行自然排序，避免子資料夾前綴影響排序
+            const nameA = path.basename(a);
+            const nameB = path.basename(b);
+            return nameA.localeCompare(nameB, 'zh-Hant-TW', { numeric: true });
+        });
+}
 
 class ImageManager {
     // 儲存傳入的書本列表 (group)
@@ -128,10 +171,32 @@ class ImageManager {
                 // 1. 檢查路徑是否存在且可讀
                 await fs.access(targetPath, fs.constants.R_OK);
 
-                // 2. 檢查是否為資料夾
+                // 2. 檢查是否為資料夾或壓縮檔
                 const stats = await fs.stat(targetPath);
+
+                if (stats.isFile() && isArchive(targetPath)) {
+                    // --- ZIP 分支 ---
+                    let zip;
+                    try {
+                        zip = new StreamZipAsync({ file: targetPath });
+                        const entries = await zip.entries();
+                        const hasImage = Object.values(entries).some(entry =>
+                            !entry.isDirectory
+                            && !entry.name.startsWith('__MACOSX')
+                            && imageExtensionsRegex.test(entry.name)
+                        );
+                        this.isBookCache.set(targetPath, hasImage);
+                        return hasImage;
+                    } catch (zipErr) {
+                        console.error(`[isBook] 讀取壓縮檔失敗: ${targetPath}`, zipErr);
+                        this.isBookCache.set(targetPath, false);
+                        return false;
+                    } finally {
+                        if (zip) await zip.close().catch(() => { });
+                    }
+                }
+
                 if (!stats.isDirectory()) {
-                    // console.log(`[isBook] 路徑不是資料夾: ${targetPath}`);
                     this.isBookCache.set(targetPath, false);
                     return false;
                 }
@@ -141,13 +206,11 @@ class ImageManager {
                 for (const dirent of dirents) {
                     // 只檢查檔案，並用正規表達式匹配擴展名
                     if (dirent.isFile() && imageExtensionsRegex.test(dirent.name)) {
-                        // console.log(`[isBook] 找到圖片，判定為書本: ${targetPath}`);
                         this.isBookCache.set(targetPath, true);
                         return true; // 找到至少一張圖片，判定為 true
                     }
                 }
 
-                // console.log(`[isBook] 未找到圖片，判定非書本: ${targetPath}`);
                 this.isBookCache.set(targetPath, false);
                 return false; // 遍歷完畢沒有找到圖片
             } catch (error) {
@@ -200,34 +263,58 @@ class ImageManager {
         }
 
         try {
-            // 2. 讀取資料夾內容
-            const dirents = await fs.readdir(bookPath, { withFileTypes: true });
-
-            // 3. 過濾、排序、產生列表
-            const imageFiles = dirents
-                .filter(dirent => dirent.isFile() && imageExtensionsRegex.test(dirent.name))
-                .map(dirent => dirent.name) // 只取檔名用於排序
-                .sort((a, b) => a.localeCompare(b, 'zh-Hant-TW', { numeric: true })); // 自然排序
-
-            // 4. 產生最終的列表
-            const names = imageFiles; // 檔名列表
-            const filePaths = imageFiles.map(name =>
-                url.pathToFileURL(path.join(bookPath, name)).href // 轉換為 file:// URL
-            );
-            const length = names.length;
-
-            // 5. 存入快取
-            const bookInfo = { names, filePaths, length };
-            this.bookInfoCache.set(bookPath, bookInfo);
-            // console.log(`[_loadBookInfo] 已快取書本資訊: ${bookPath}, 頁數: ${length}`);
-
-            return bookInfo;
-
+            // 判斷是資料夾還是壓縮檔
+            if (isArchive(bookPath)) {
+                return await this._loadBookInfoFromZip(bookPath);
+            }
+            return await this._loadBookInfoFromDir(bookPath);
         } catch (error) {
             console.error(`[_loadBookInfo] 讀取或處理書本 ${bookPath} 時發生錯誤:`, error);
-            // 如果出錯，也將 null 存入快取，避免重複嘗試讀取錯誤的路徑？(可選策略)
-            // this.bookInfoCache.set(bookPath, null);
-            return null; // 返回 null 表示失敗
+            return null;
+        }
+    }
+
+    /**
+     * 從資料夾載入書本資訊
+     */
+    async _loadBookInfoFromDir(bookPath) {
+        const dirents = await fs.readdir(bookPath, { withFileTypes: true });
+
+        const imageFiles = dirents
+            .filter(dirent => dirent.isFile() && imageExtensionsRegex.test(dirent.name))
+            .map(dirent => dirent.name)
+            .sort((a, b) => a.localeCompare(b, 'zh-Hant-TW', { numeric: true }));
+
+        const names = imageFiles;
+        const filePaths = imageFiles.map(name =>
+            url.pathToFileURL(path.join(bookPath, name)).href
+        );
+        const length = names.length;
+
+        const bookInfo = { names, filePaths, length };
+        this.bookInfoCache.set(bookPath, bookInfo);
+        return bookInfo;
+    }
+
+    /**
+     * 從 ZIP 壓縮檔載入書本資訊
+     */
+    async _loadBookInfoFromZip(bookPath) {
+        let zip;
+        try {
+            zip = new StreamZipAsync({ file: bookPath });
+            const entries = await zip.entries();
+            const imageEntries = filterAndSortZipImageEntries(entries);
+
+            const names = imageEntries.map(name => path.basename(name));
+            const filePaths = imageEntries.map(name => buildZipImageUrl(bookPath, name));
+            const length = names.length;
+
+            const bookInfo = { names, filePaths, length };
+            this.bookInfoCache.set(bookPath, bookInfo);
+            return bookInfo;
+        } finally {
+            if (zip) await zip.close().catch(() => { });
         }
     }
 
@@ -271,31 +358,54 @@ class ImageManager {
 
         try {
             // 1. 檢查路徑是否存在且可讀
-            const fs = require('fs'); // 使用同步版本的 fs
-            fs.accessSync(targetPath, fs.constants.R_OK);
+            fsSync.accessSync(targetPath, fsSync.constants.R_OK);
 
-            // 2. 檢查是否為資料夾
-            const stats = fs.statSync(targetPath);
+            // 2. 檢查是否為資料夾或壓縮檔
+            const stats = fsSync.statSync(targetPath);
+
+            if (stats.isFile() && isArchive(targetPath)) {
+                // --- ZIP 分支（使用 jszip-sync 同步讀取） ---
+                const JSZip = require('jszip-sync');
+                const zipInstance = new JSZip();
+                try {
+                    const data = fsSync.readFileSync(targetPath);
+                    const hasImage = zipInstance.sync(function () {
+                        let result = false;
+                        JSZip.loadAsync(data).then(function (zip) {
+                            result = Object.keys(zip.files).some(name =>
+                                !name.endsWith('/')
+                                && !name.startsWith('__MACOSX')
+                                && !name.startsWith('.')
+                                && imageExtensionsRegex.test(name)
+                            );
+                        });
+                        return result;
+                    });
+                    this.isBookCache.set(targetPath, hasImage);
+                    return hasImage;
+                } catch (zipErr) {
+                    console.error(`[isBookSync] 讀取壓縮檔失敗: ${targetPath}`, zipErr);
+                    this.isBookCache.set(targetPath, false);
+                    return false;
+                }
+            }
+
             if (!stats.isDirectory()) {
-                // console.log(`[isBookSync] 路徑不是資料夾: ${targetPath}`);
                 this.isBookCache.set(targetPath, false);
                 return false;
             }
 
             // 3. 讀取資料夾內容，檢查是否有圖片檔案
-            const dirents = fs.readdirSync(targetPath, { withFileTypes: true });
+            const dirents = fsSync.readdirSync(targetPath, { withFileTypes: true });
             for (const dirent of dirents) {
-                // 只檢查檔案，並用正規表達式匹配擴展名
                 if (dirent.isFile() && imageExtensionsRegex.test(dirent.name)) {
-                    // console.log(`[isBookSync] 找到圖片，判定為書本: ${targetPath}`);
                     this.isBookCache.set(targetPath, true);
-                    return true; // 找到至少一張圖片，判定為 true
+                    return true;
                 }
             }
 
-            // console.log(`[isBookSync] 未找到圖片，判定非書本: ${targetPath}`);
             this.isBookCache.set(targetPath, false);
-            return false; // 遍歷完畢沒有找到圖片
+            return false;
         } catch (error) {
             // 如果 fs.accessSync 失敗 (不存在或不可讀) 或其他錯誤
             if (error.code !== 'ENOENT') { // ENOENT (No such file or directory) 通常是正常情況
