@@ -335,6 +335,31 @@ class ImageManager {
     }
 
     /**
+     * 從 ZIP 壓縮檔中讀取指定圖片的資料
+     * @param {string} zipPath ZIP 檔案的絕對路徑
+     * @param {string} fileName ZIP 內部的檔案路徑
+     * @returns {Promise<{ buffer: Buffer, contentType: string }>}
+     */
+    async getZipImageData(zipPath, fileName) {
+        const mimeTypes = {
+            '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.jfif': 'image/jpeg',
+            '.pjpeg': 'image/jpeg', '.pjp': 'image/jpeg',
+            '.png': 'image/png', '.webp': 'image/webp',
+            '.gif': 'image/gif', '.svg': 'image/svg+xml'
+        };
+
+        const zip = new StreamZipAsync({ file: zipPath });
+        try {
+            const buffer = await zip.entryData(fileName);
+            const ext = path.extname(fileName).toLowerCase();
+            const contentType = mimeTypes[ext] || 'application/octet-stream';
+            return { buffer, contentType };
+        } finally {
+            await zip.close().catch(() => {});
+        }
+    }
+
+    /**
      * 同步檢查指定路徑是否為有效的書本資料夾
      * @param {string} targetPath 要檢查的路徑
      * @returns {boolean} 如果路徑是有效的書本資料夾（包含圖片），則返回 true

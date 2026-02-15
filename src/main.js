@@ -13,7 +13,6 @@ let mainWindow;
 const { DatabaseSync } = require("node:sqlite");
 const fs = require("fs");
 const { app, BrowserWindow, Menu } = require('electron');
-const StreamZipAsync = require('node-stream-zip').async;
 
 // 註冊自訂協議（必須在 app ready 之前）
 protocol.registerSchemesAsPrivileged([
@@ -215,13 +214,6 @@ function getTranslation(name) {
  * 註冊 image:// 自訂協議，用於從壓縮檔中讀取圖片並回傳給渲染進程
  */
 function registerZipImageProtocol() {
-    const mimeTypes = {
-        '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.jfif': 'image/jpeg',
-        '.pjpeg': 'image/jpeg', '.pjp': 'image/jpeg',
-        '.png': 'image/png', '.webp': 'image/webp',
-        '.gif': 'image/gif', '.svg': 'image/svg+xml'
-    };
-
     protocol.handle('image', async (request) => {
         try {
             const reqUrl = new URL(request.url);
@@ -232,18 +224,11 @@ function registerZipImageProtocol() {
                 return new Response('Missing zip or file parameter', { status: 400 });
             }
 
-            const zip = new StreamZipAsync({ file: zipPath });
-            try {
-                const buffer = await zip.entryData(fileName);
-                const ext = require('path').extname(fileName).toLowerCase();
-                const contentType = mimeTypes[ext] || 'application/octet-stream';
-                return new Response(buffer, {
-                    status: 200,
-                    headers: { 'Content-Type': contentType }
-                });
-            } finally {
-                await zip.close().catch(() => {});
-            }
+            const { buffer, contentType } = await imageManagerInstance.getZipImageData(zipPath, fileName);
+            return new Response(buffer, {
+                status: 200,
+                headers: { 'Content-Type': contentType }
+            });
         } catch (error) {
             console.error('[image] 處理請求時發生錯誤:', error);
             return new Response('Internal error', { status: 500 });
