@@ -17,13 +17,9 @@ let scrollContainer;
 let imageContainer;
 let currentPageSpan;
 let totalPagesSpan;
-let pageIndicator;
 
 // 圖片元素陣列
 let imageElements = [];
-
-// 頁面指示器隱藏計時器
-let indicatorTimeout = null;
 
 /**
  * 上一本書
@@ -119,52 +115,6 @@ function decreaseImageWidth() {
 }
 
 /**
- * 更新頁面指示器
- */
-function updatePageIndicator() {
-    if (!bookInfo || !scrollContainer) return;
-    
-    // 找出目前可見的圖片索引
-    let currentIndex = 0;
-    for (let i = 0; i < imageElements.length; i++) {
-        const wrapper = imageElements[i];
-        if (!wrapper) continue;
-        
-        const rect = wrapper.getBoundingClientRect();
-        const containerRect = scrollContainer.getBoundingClientRect();
-        
-        // 如果圖片的中心點在視窗內，則認為是當前頁面
-        const imageCenterY = rect.top + rect.height / 2;
-        if (imageCenterY >= containerRect.top && imageCenterY <= containerRect.bottom) {
-            currentIndex = i;
-            break;
-        }
-        // 如果圖片頂部在視窗內
-        if (rect.top >= containerRect.top && rect.top <= containerRect.bottom) {
-            currentIndex = i;
-            break;
-        }
-    }
-    
-    currentPageSpan.textContent = currentIndex + 1;
-    totalPagesSpan.textContent = bookInfo.length;
-    
-    // 更新全局 img_id，以便返回時能記住當前位置
-    img_id = currentIndex;
-    
-    // 顯示指示器
-    pageIndicator.classList.remove('indicator-hidden');
-    
-    // 重設隱藏計時器
-    if (indicatorTimeout) {
-        clearTimeout(indicatorTimeout);
-    }
-    indicatorTimeout = setTimeout(() => {
-        pageIndicator.classList.add('indicator-hidden');
-    }, 2000);
-}
-
-/**
  * 取得目前可見的圖片索引
  */
 function getCurrentVisibleIndex() {
@@ -189,7 +139,7 @@ function getCurrentVisibleIndex() {
  * 處理滾動事件
  */
 function handleScroll() {
-    updatePageIndicator();
+    // updatePageIndicator();
 }
 
 /**
@@ -239,9 +189,8 @@ async function createImages() {
         imageContainer.appendChild(wrapper);
     }
     
-    // 更新頁面標題和指示器
+    // 更新頁面標題
     document.title = "ex_viewer - " + group[book_id].local_name;
-    totalPagesSpan.textContent = totalPages;
 }
 
 /**
@@ -261,7 +210,7 @@ async function scrollToImage(index, behavior = 'auto') {
     // 2. 如果圖片存在且尚未載入完成
     if (img && !img.complete) {
         // 顯示載入提示
-        showToast("正在載入...", 2000);
+        // showToast("正在載入...", 2000);
         
         try {
             // 將 loading 改為 eager，強迫瀏覽器優先下載
@@ -294,6 +243,9 @@ async function scrollToImage(index, behavior = 'auto') {
  * 初始化載入
  */
 async function initializeViewer() {
+    // 保存初始頁面索引，避免被滾動事件覆蓋
+    const targetPage = img_id;
+    
     // 載入書本資訊
     try {
         bookInfo = await ipcRenderer.invoke('image:getBookInfo', { index: book_id });
@@ -313,11 +265,11 @@ async function initializeViewer() {
     await createImages();
     
     // 如果有指定初始頁面，滾動到該頁面
-    if (img_id >= 0 && img_id < bookInfo.length) {
+    if (targetPage >= 0 && targetPage < bookInfo.length) {
         setTimeout(() => {
-            scrollToImage(img_id);
-            if (img_id === 0) {
-                showToast(getTranslation("first page"));
+            scrollToImage(targetPage);
+            if (targetPage === 0) {
+                // showToast(getTranslation("first page"));
             }
         }, 100);
     }
@@ -504,9 +456,6 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     // 初始化 DOM 元素
     scrollContainer = document.getElementById('scroll-container');
     imageContainer = document.getElementById('image-container');
-    currentPageSpan = document.getElementById('current-page');
-    totalPagesSpan = document.getElementById('total-pages');
-    pageIndicator = document.getElementById('page-indicator');
     
     // 綁定上一本/下一本按鈕事件
     const prevBookBtn = document.getElementById('prev-book-btn');
