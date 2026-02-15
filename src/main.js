@@ -425,6 +425,8 @@ ipcMain.on('put-match', async (event, arg) => {
     function levens(rows, str) {
         //去除ex下載&H@H下載時的後綴
         str = str.replace(/\[\d+\]|\[\d+\-\d+x\]|\-\d+x/g, "");
+        //去除副檔名
+        str = str.replace(/\.(zip|cbz|rar|cbr|7z|tar|gz|bz2)$/i, "");
         if (!Array.isArray(rows) || rows.length === 0) {
             return null;
         }
