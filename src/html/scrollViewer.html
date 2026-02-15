@@ -100,25 +100,6 @@
             cursor: default;
         }
 
-        /* 頁面指示器 */
-        #page-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            z-index: 9999;
-            opacity: 0.8;
-            transition: opacity 0.3s ease;
-        }
-
-        #page-indicator:hover {
-            opacity: 1;
-        }
-
         /* 導航按鈕通用樣式 */
         .nav-btn {
             position: fixed;
@@ -157,11 +138,6 @@
 
 
 
-        /* 隱藏指示器的動畫 */
-        .indicator-hidden {
-            opacity: 0 !important;
-            pointer-events: none;
-        }
     </style>
 </head>
 
@@ -180,11 +156,6 @@
     <!-- 導航按鈕 -->
     <button id="prev-book-btn" class="nav-btn">◀</button>
     <button id="next-book-btn" class="nav-btn">▶</button>
-    
-    <!-- 頁面指示器 -->
-    <div id="page-indicator">
-        <span id="current-page">1</span> / <span id="total-pages">1</span>
-    </div>
 </body>
 
 </html>
