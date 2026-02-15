@@ -1,7 +1,6 @@
 /*jshint esversion: 8 */
 const fs = require("fs").promises; // 使用 Promise 版本的 fs
 const fsSync = require("fs"); // 同步版本的 fs
-const { ipcMain } = require('electron');
 const path = require("path"); // 直接使用 path 模組
 const url = require("url");
 const StreamZipAsync = require('node-stream-zip').async;
@@ -62,193 +61,183 @@ class ImageManager {
 
     constructor() {
         console.log("ImageManager init...");
-        // 設置 IPC 監聽器
-        this.setupIpcHandlers();
     }
 
     /**
-     * 設置 IPC 通信的處理程序
-     * 使用 ipcMain.handle 來處理來自 Renderer Process 的非同步請求
+     * 獲取書本資訊 (檔案列表, 路徑列表, 頁數)
+     * @param {number} index 書本在 group 中的索引
+     * @returns {Promise<{ names: string[], filePaths: string[], length: number } | null>}
      */
-    setupIpcHandlers() {
-        // --- 獲取書本資訊 (檔案列表, 路徑列表, 頁數) ---
-        ipcMain.handle('image:getBookInfo', async (event, { index }) => {
-            // 日誌記錄，方便追蹤請求
-            // console.log(`[IPC Recv] image:getBookInfo - index: ${index}`);
-            try {
-                // 檢查索引是否在 group 範圍內
-                if (index < 0 || index >= this.group.length) {
-                    console.error(`[getBookInfo] 無效的索引: ${index}`);
-                    return null; // 索引無效返回 null
-                }
-                const bookPath = this.group[index].local_path;
-                // 調用內部函數獲取或加載書本資訊
-                return await this._loadBookInfo(bookPath);
-            } catch (error) {
-                console.error(`[getBookInfo] 處理索引 ${index} 時發生錯誤:`, error);
-                return null; // 發生錯誤返回 null
-            }
-        });
-
-        // --- 獲取單一圖片的路徑 ---
-        ipcMain.handle('image:getImagePath', async (event, { index, page }) => {
-            // console.log(`[IPC Recv] image:getImagePath - index: ${index}, page: ${page}`);
-            try {
-                if (index < 0 || index >= this.group.length) {
-                    console.error(`[getImagePath] 無效的索引: ${index}`);
-                    return null;
-                }
-                const bookPath = this.group[index].local_path;
-                // 確保書本資訊已載入快取
-                const bookInfo = await this._loadBookInfo(bookPath);
-
-                if (!bookInfo) {
-                    console.error(`[getImagePath] 無法載入書本資訊，路徑: ${bookPath}`);
-                    return null; // 無法加載書本資訊
-                }
-
-                // 檢查頁碼是否有效
-                if (page < 0 || page >= bookInfo.length) {
-                    console.error(`[getImagePath] 無效的頁碼: ${page} (總頁數: ${bookInfo.length}), 路徑: ${bookPath}`);
-                    return null;
-                }
-
-                // 從快取的 filePaths 中獲取路徑
-                const filePath = bookInfo.filePaths[page];
-                // 返回結構化數據
-                return { type: 'file', path: filePath };
-
-            } catch (error) {
-                console.error(`[getImagePath] 處理索引 ${index}, 頁碼 ${page} 時發生錯誤:`, error);
+    async getBookInfo(index) {
+        try {
+            // 檢查索引是否在 group 範圍內
+            if (index < 0 || index >= this.group.length) {
+                console.error(`[getBookInfo] 無效的索引: ${index}`);
                 return null;
             }
-        });
+            const bookPath = this.group[index].local_path;
+            // 調用內部函數獲取或加載書本資訊
+            return await this._loadBookInfo(bookPath);
+        } catch (error) {
+            console.error(`[getBookInfo] 處理索引 ${index} 時發生錯誤:`, error);
+            return null;
+        }
+    }
 
-        // --- 獲取封面圖片路徑 ---
-        ipcMain.handle('image:getFirstImagePath', async (event, { index }) => {
-            // console.log(`[IPC Recv] image:getFirstImagePath - index: ${index}`);
-            try {
-                if (index < 0 || index >= this.group.length) {
-                    console.error(`[getFirstImagePath] 無效的索引: ${index}`);
-                    return null;
-                }
-                const bookPath = this.group[index].local_path;
-
-                // 1. 檢查第一層快取 (封面路徑快取)
-                if (this.firstImagePathCache.has(bookPath)) {
-                    // console.log(`[getFirstImagePath] 命中封面快取: ${bookPath}`);
-                    return { type: 'file', path: this.firstImagePathCache.get(bookPath) };
-                }
-
-                // 2. 若封面快取未命中，則加載書本資訊 (會利用 bookInfoCache)
-                const bookInfo = await this._loadBookInfo(bookPath);
-
-                if (bookInfo && bookInfo.length > 0) {
-                    const firstImagePath = bookInfo.filePaths[0];
-                    // 將結果存入封面快取
-                    this.firstImagePathCache.set(bookPath, firstImagePath);
-                    // console.log(`[getFirstImagePath] 已快取封面: ${bookPath}`);
-                    return { type: 'file', path: firstImagePath };
-                } else {
-                    console.warn(`[getFirstImagePath] 書本不包含圖片或載入失敗: ${bookPath}`);
-                    return null; // 書本沒有圖片或載入失敗
-                }
-            } catch (error) {
-                console.error(`[getFirstImagePath] 處理索引 ${index} 時發生錯誤:`, error);
+    /**
+     * 獲取單一圖片的路徑
+     * @param {number} index 書本在 group 中的索引
+     * @param {number} page 頁碼
+     * @returns {Promise<{ type: string, path: string } | null>}
+     */
+    async getImagePath(index, page) {
+        try {
+            if (index < 0 || index >= this.group.length) {
+                console.error(`[getImagePath] 無效的索引: ${index}`);
                 return null;
             }
-        });
+            const bookPath = this.group[index].local_path;
+            // 確保書本資訊已載入快取
+            const bookInfo = await this._loadBookInfo(bookPath);
 
-        // --- 判斷指定路徑是否為有效的書本資料夾 ---
-        ipcMain.handle('image:isBook', async (event, { path: targetPath }) => {
-            // console.log(`[IPC Recv] image:isBook - path: ${targetPath}`);
-            // 檢查 isBook 快取 (可選優化)
-            if (this.isBookCache.has(targetPath)) {
-                // return this.isBookCache.get(targetPath);
+            if (!bookInfo) {
+                console.error(`[getImagePath] 無法載入書本資訊，路徑: ${bookPath}`);
+                return null;
             }
 
-            try {
-                // 1. 檢查路徑是否存在且可讀
-                await fs.access(targetPath, fs.constants.R_OK);
+            // 檢查頁碼是否有效
+            if (page < 0 || page >= bookInfo.length) {
+                console.error(`[getImagePath] 無效的頁碼: ${page} (總頁數: ${bookInfo.length}), 路徑: ${bookPath}`);
+                return null;
+            }
 
-                // 2. 檢查是否為資料夾或壓縮檔
-                const stats = await fs.stat(targetPath);
+            // 從快取的 filePaths 中獲取路徑
+            const filePath = bookInfo.filePaths[page];
+            // 返回結構化數據
+            return { type: 'file', path: filePath };
+        } catch (error) {
+            console.error(`[getImagePath] 處理索引 ${index}, 頁碼 ${page} 時發生錯誤:`, error);
+            return null;
+        }
+    }
 
-                if (stats.isFile() && isArchive(targetPath)) {
-                    // --- ZIP 分支 ---
-                    let zip;
-                    try {
-                        zip = new StreamZipAsync({ file: targetPath });
-                        const entries = await zip.entries();
-                        const hasImage = Object.values(entries).some(entry =>
-                            !entry.isDirectory
-                            && !entry.name.startsWith('__MACOSX')
-                            && imageExtensionsRegex.test(entry.name)
-                        );
-                        this.isBookCache.set(targetPath, hasImage);
-                        return hasImage;
-                    } catch (zipErr) {
-                        console.error(`[isBook] 讀取壓縮檔失敗: ${targetPath}`, zipErr);
-                        this.isBookCache.set(targetPath, false);
-                        return false;
-                    } finally {
-                        if (zip) await zip.close().catch(() => { });
-                    }
-                }
+    /**
+     * 獲取封面圖片路徑
+     * @param {number} index 書本在 group 中的索引
+     * @returns {Promise<{ type: string, path: string } | null>}
+     */
+    async getFirstImagePath(index) {
+        try {
+            if (index < 0 || index >= this.group.length) {
+                console.error(`[getFirstImagePath] 無效的索引: ${index}`);
+                return null;
+            }
+            const bookPath = this.group[index].local_path;
 
-                if (!stats.isDirectory()) {
+            // 1. 檢查第一層快取 (封面路徑快取)
+            if (this.firstImagePathCache.has(bookPath)) {
+                return { type: 'file', path: this.firstImagePathCache.get(bookPath) };
+            }
+
+            // 2. 若封面快取未命中，則加載書本資訊 (會利用 bookInfoCache)
+            const bookInfo = await this._loadBookInfo(bookPath);
+
+            if (bookInfo && bookInfo.length > 0) {
+                const firstImagePath = bookInfo.filePaths[0];
+                // 將結果存入封面快取
+                this.firstImagePathCache.set(bookPath, firstImagePath);
+                return { type: 'file', path: firstImagePath };
+            } else {
+                console.warn(`[getFirstImagePath] 書本不包含圖片或載入失敗: ${bookPath}`);
+                return null;
+            }
+        } catch (error) {
+            console.error(`[getFirstImagePath] 處理索引 ${index} 時發生錯誤:`, error);
+            return null;
+        }
+    }
+
+    /**
+     * 非同步判斷指定路徑是否為有效的書本資料夾
+     * @param {string} targetPath 要檢查的路徑
+     * @returns {Promise<boolean>}
+     */
+    async isBookAsync(targetPath) {
+        // 檢查 isBook 快取 (可選優化)
+        if (this.isBookCache.has(targetPath)) {
+            // return this.isBookCache.get(targetPath);
+        }
+
+        try {
+            // 1. 檢查路徑是否存在且可讀
+            await fs.access(targetPath, fs.constants.R_OK);
+
+            // 2. 檢查是否為資料夾或壓縮檔
+            const stats = await fs.stat(targetPath);
+
+            if (stats.isFile() && isArchive(targetPath)) {
+                // --- ZIP 分支 ---
+                let zip;
+                try {
+                    zip = new StreamZipAsync({ file: targetPath });
+                    const entries = await zip.entries();
+                    const hasImage = Object.values(entries).some(entry =>
+                        !entry.isDirectory
+                        && !entry.name.startsWith('__MACOSX')
+                        && imageExtensionsRegex.test(entry.name)
+                    );
+                    this.isBookCache.set(targetPath, hasImage);
+                    return hasImage;
+                } catch (zipErr) {
+                    console.error(`[isBookAsync] 讀取壓縮檔失敗: ${targetPath}`, zipErr);
                     this.isBookCache.set(targetPath, false);
                     return false;
+                } finally {
+                    if (zip) await zip.close().catch(() => { });
                 }
-
-                // 3. 讀取資料夾內容，檢查是否有圖片檔案
-                const dirents = await fs.readdir(targetPath, { withFileTypes: true });
-                for (const dirent of dirents) {
-                    // 只檢查檔案，並用正規表達式匹配擴展名
-                    if (dirent.isFile() && imageExtensionsRegex.test(dirent.name)) {
-                        this.isBookCache.set(targetPath, true);
-                        return true; // 找到至少一張圖片，判定為 true
-                    }
-                }
-
-                this.isBookCache.set(targetPath, false);
-                return false; // 遍歷完畢沒有找到圖片
-            } catch (error) {
-                // 如果 fs.access 失敗 (不存在或不可讀) 或其他錯誤
-                if (error.code !== 'ENOENT') { // ENOENT (No such file or directory) 通常是正常情況
-                    console.error(`[isBook] 檢查路徑 ${targetPath} 時發生錯誤:`, error);
-                }
-                this.isBookCache.set(targetPath, false);
-                return false; // 任何錯誤都判定為 false
             }
-        });
 
-        // --- 更新書本列表 ---
-        // 使用 ipcMain.on 因為通常不需要立即回覆，但返回 Promise 確保操作完成
-        ipcMain.handle('image:setGroup', async (event, { group }) => {
-            console.log(`[IPC Recv] image:setGroup - 收到新的 group，數量: ${group ? group.length : 0}`);
-            this.group = Array.isArray(group) ? group : []; // 確保是陣列
-            // 清空所有相關快取，因為索引和路徑的對應關係可能改變
+            if (!stats.isDirectory()) {
+                this.isBookCache.set(targetPath, false);
+                return false;
+            }
+
+            // 3. 讀取資料夾內容，檢查是否有圖片檔案
+            const dirents = await fs.readdir(targetPath, { withFileTypes: true });
+            for (const dirent of dirents) {
+                // 只檢查檔案，並用正規表達式匹配擴展名
+                if (dirent.isFile() && imageExtensionsRegex.test(dirent.name)) {
+                    this.isBookCache.set(targetPath, true);
+                    return true;
+                }
+            }
+
+            this.isBookCache.set(targetPath, false);
+            return false;
+        } catch (error) {
+            if (error.code !== 'ENOENT') {
+                console.error(`[isBookAsync] 檢查路徑 ${targetPath} 時發生錯誤:`, error);
+            }
+            this.isBookCache.set(targetPath, false);
+            return false;
+        }
+    }
+
+    /**
+     * 根據索引清除指定書本的快取，或清除所有快取
+     * @param {number | undefined} index 書本在 group 中的索引，未提供時清除全部
+     * @returns {boolean}
+     */
+    clearCacheByIndex(index) {
+        if (typeof index === 'number' && index >= 0 && index < this.group.length) {
+            const bookPath = this.group[index].local_path;
+            this.clearCache(bookPath);
+            console.log(`[clearCacheByIndex] 已清除索引 ${index} (${bookPath}) 的快取`);
+        } else {
             this.clearCache();
-            console.log('[setGroup] 已更新 group 並清除所有快取');
-            return true; // 表示處理完成
-        });
-
-        // --- 清除快取 ---
-        // 可選 API，用於外部請求清除快取
-        ipcMain.handle('image:clearCache', async (event, { index } = {}) => {
-            if (typeof index === 'number' && index >= 0 && index < this.group.length) {
-                // 清除指定書本的快取
-                const bookPath = this.group[index].local_path;
-                this.clearCache(bookPath);
-                console.log(`[IPC Recv] image:clearCache - 已清除索引 ${index} (${bookPath}) 的快取`);
-            } else {
-                // 清除所有快取
-                this.clearCache();
-                console.log('[IPC Recv] image:clearCache - 已清除所有快取');
-            }
-            return true; // 表示處理完成
-        });
+            console.log('[clearCacheByIndex] 已清除所有快取');
+        }
+        return true;
     }
 
     /**

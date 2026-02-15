@@ -39,6 +39,7 @@ const historyList_json = join(".", "setting", "historyList.json");
 let db;
 let setting = JSON.parse(fs.readFileSync(setting_path).toString());
 let imageManagerInstance = new imageManager();
+
 function createWindow() {
 
     // 註冊 image 自訂協議處理器
@@ -207,6 +208,47 @@ function search(searchStr, category, func_cb) {
 
 function getTranslation(name) {
     return pageStatus.uiLanguage[name] ? pageStatus.uiLanguage[name] : name;
+}
+
+
+/**
+ * 註冊 image:// 自訂協議，用於從壓縮檔中讀取圖片並回傳給渲染進程
+ */
+function registerZipImageProtocol() {
+    const mimeTypes = {
+        '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.jfif': 'image/jpeg',
+        '.pjpeg': 'image/jpeg', '.pjp': 'image/jpeg',
+        '.png': 'image/png', '.webp': 'image/webp',
+        '.gif': 'image/gif', '.svg': 'image/svg+xml'
+    };
+
+    protocol.handle('image', async (request) => {
+        try {
+            const reqUrl = new URL(request.url);
+            const zipPath = decodeURIComponent(reqUrl.searchParams.get('zip'));
+            const fileName = decodeURIComponent(reqUrl.searchParams.get('file'));
+
+            if (!zipPath || !fileName) {
+                return new Response('Missing zip or file parameter', { status: 400 });
+            }
+
+            const zip = new StreamZipAsync({ file: zipPath });
+            try {
+                const buffer = await zip.entryData(fileName);
+                const ext = require('path').extname(fileName).toLowerCase();
+                const contentType = mimeTypes[ext] || 'application/octet-stream';
+                return new Response(buffer, {
+                    status: 200,
+                    headers: { 'Content-Type': contentType }
+                });
+            } finally {
+                await zip.close().catch(() => {});
+            }
+        } catch (error) {
+            console.error('[image] 處理請求時發生錯誤:', error);
+            return new Response('Internal error', { status: 500 });
+        }
+    });
 }
 
 ipcMain.on("open-file-dialog", event => {
@@ -643,47 +685,38 @@ ipcMain.on('toggle-fullscreen', () => {
     mainWindow.setFullScreen(!mainWindow.isFullScreen());
 });
 
+// ========== ImageManager IPC Handlers ==========
+// 獲取書本資訊 (檔案列表, 路徑列表, 頁數)
+ipcMain.handle('image:getBookInfo', async (event, { index }) => {
+    return await imageManagerInstance.getBookInfo(index);
+});
+
+// 獲取單一圖片的路徑
+ipcMain.handle('image:getImagePath', async (event, { index, page }) => {
+    return await imageManagerInstance.getImagePath(index, page);
+});
+
+// 獲取封面圖片路徑
+ipcMain.handle('image:getFirstImagePath', async (event, { index }) => {
+    return await imageManagerInstance.getFirstImagePath(index);
+});
+
+// 判斷指定路徑是否為有效的書本資料夾 (非同步)
+ipcMain.handle('image:isBook', async (event, { path: targetPath }) => {
+    return await imageManagerInstance.isBookAsync(targetPath);
+});
+
+// 更新書本列表
+ipcMain.handle('image:setGroup', async (event, { group }) => {
+    return imageManagerInstance.setGroup(group);
+});
+
+// 清除快取
+ipcMain.handle('image:clearCache', async (event, { index } = {}) => {
+    return imageManagerInstance.clearCacheByIndex(index);
+});
+
 app.on("ready", createWindow);
-
-/**
- * 註冊 image:// 自訂協議，用於從壓縮檔中讀取圖片並回傳給渲染進程
- */
-function registerZipImageProtocol() {
-    const mimeTypes = {
-        '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.jfif': 'image/jpeg',
-        '.pjpeg': 'image/jpeg', '.pjp': 'image/jpeg',
-        '.png': 'image/png', '.webp': 'image/webp',
-        '.gif': 'image/gif', '.svg': 'image/svg+xml'
-    };
-
-    protocol.handle('image', async (request) => {
-        try {
-            const reqUrl = new URL(request.url);
-            const zipPath = decodeURIComponent(reqUrl.searchParams.get('zip'));
-            const fileName = decodeURIComponent(reqUrl.searchParams.get('file'));
-
-            if (!zipPath || !fileName) {
-                return new Response('Missing zip or file parameter', { status: 400 });
-            }
-
-            const zip = new StreamZipAsync({ file: zipPath });
-            try {
-                const buffer = await zip.entryData(fileName);
-                const ext = require('path').extname(fileName).toLowerCase();
-                const contentType = mimeTypes[ext] || 'application/octet-stream';
-                return new Response(buffer, {
-                    status: 200,
-                    headers: { 'Content-Type': contentType }
-                });
-            } finally {
-                await zip.close().catch(() => {});
-            }
-        } catch (error) {
-            console.error('[image] 處理請求時發生錯誤:', error);
-            return new Response('Internal error', { status: 500 });
-        }
-    });
-}
 
 app.on("window-all-closed", function () {
     if (process.platform != "darwin") {
