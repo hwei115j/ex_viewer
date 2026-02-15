@@ -378,7 +378,8 @@ ipcMain.on('put-match', async (event, arg) => {
 
     function create_book_list(path, layers) {
         function max_string(str) {
-            let r = str;
+            str = str.replace(/\.(zip|cbz|rar|cbr|7z|tar|gz|bz2)$/i, "");
+            let r = str; //保留原始檔名以供除錯使用
             str = str.replace(/\[[^\]]*\]/g, "%");
             str = str.replace(/\([^)]*\)/g, "%");
             str = str.replace(/\{[^}]*\}/g, "%");
