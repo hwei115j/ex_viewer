@@ -2,6 +2,7 @@
 const electron = require("electron");
 const join = require("path").join;
 const { ipcMain, dialog } = require("electron");
+const { protocol } = require("electron");
 const imageManager = require("./imageManager.js");
 const levenshtein = require("fast-levenshtein");
 const {convertQuery} = require('./eh-search-parser.js');
@@ -12,6 +13,19 @@ let mainWindow;
 const { DatabaseSync } = require("node:sqlite");
 const fs = require("fs");
 const { app, BrowserWindow, Menu } = require('electron');
+
+// 註冊自訂協議（必須在 app ready 之前）
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: 'image',
+        privileges: {
+            standard: true,
+            secure: true,
+            supportFetchAPI: true,
+            stream: true
+        }
+    }
+]);
 
 
 const ex_db_path = join(".", "setting", "ex.db");
@@ -24,7 +38,11 @@ const historyList_json = join(".", "setting", "historyList.json");
 let db;
 let setting = JSON.parse(fs.readFileSync(setting_path).toString());
 let imageManagerInstance = new imageManager();
+
 function createWindow() {
+
+    // 註冊 image 自訂協議處理器
+    registerZipImageProtocol();
 
     // 創建一個瀏覽器窗口對象，並指定窗口的大小
     mainWindow = new BrowserWindow({
@@ -191,6 +209,33 @@ function getTranslation(name) {
     return pageStatus.uiLanguage[name] ? pageStatus.uiLanguage[name] : name;
 }
 
+
+/**
+ * 註冊 image:// 自訂協議，用於從壓縮檔中讀取圖片並回傳給渲染進程
+ */
+function registerZipImageProtocol() {
+    protocol.handle('image', async (request) => {
+        try {
+            const reqUrl = new URL(request.url);
+            const zipPath = decodeURIComponent(reqUrl.searchParams.get('zip'));
+            const fileName = decodeURIComponent(reqUrl.searchParams.get('file'));
+
+            if (!zipPath || !fileName) {
+                return new Response('Missing zip or file parameter', { status: 400 });
+            }
+
+            const { buffer, contentType } = await imageManagerInstance.getZipImageData(zipPath, fileName);
+            return new Response(buffer, {
+                status: 200,
+                headers: { 'Content-Type': contentType }
+            });
+        } catch (error) {
+            console.error('[image] 處理請求時發生錯誤:', error);
+            return new Response('Internal error', { status: 500 });
+        }
+    });
+}
+
 ipcMain.on("open-file-dialog", event => {
     event.sender.send(
         "selected-directory",
@@ -333,7 +378,8 @@ ipcMain.on('put-match', async (event, arg) => {
 
     function create_book_list(path, layers) {
         function max_string(str) {
-            let r = str;
+            str = str.replace(/\.(zip|cbz|rar|cbr|7z|tar|gz|bz2)$/i, "");
+            let r = str; //保留原始檔名以供除錯使用
             str = str.replace(/\[[^\]]*\]/g, "%");
             str = str.replace(/\([^)]*\)/g, "%");
             str = str.replace(/\{[^}]*\}/g, "%");
@@ -380,6 +426,8 @@ ipcMain.on('put-match', async (event, arg) => {
     function levens(rows, str) {
         //去除ex下載&H@H下載時的後綴
         str = str.replace(/\[\d+\]|\[\d+\-\d+x\]|\-\d+x/g, "");
+        //去除副檔名
+        str = str.replace(/\.(zip|cbz|rar|cbr|7z|tar|gz|bz2)$/i, "");
         if (!Array.isArray(rows) || rows.length === 0) {
             return null;
         }
@@ -623,6 +671,37 @@ ipcMain.on("exit", event => {
 
 ipcMain.on('toggle-fullscreen', () => {
     mainWindow.setFullScreen(!mainWindow.isFullScreen());
+});
+
+// ========== ImageManager IPC Handlers ==========
+// 獲取書本資訊 (檔案列表, 路徑列表, 頁數)
+ipcMain.handle('image:getBookInfo', async (event, { index }) => {
+    return await imageManagerInstance.getBookInfo(index);
+});
+
+// 獲取單一圖片的路徑
+ipcMain.handle('image:getImagePath', async (event, { index, page }) => {
+    return await imageManagerInstance.getImagePath(index, page);
+});
+
+// 獲取封面圖片路徑
+ipcMain.handle('image:getFirstImagePath', async (event, { index }) => {
+    return await imageManagerInstance.getFirstImagePath(index);
+});
+
+// 判斷指定路徑是否為有效的書本資料夾 (非同步)
+ipcMain.handle('image:isBook', async (event, { path: targetPath }) => {
+    return await imageManagerInstance.isBookAsync(targetPath);
+});
+
+// 更新書本列表
+ipcMain.handle('image:setGroup', async (event, { group }) => {
+    return imageManagerInstance.setGroup(group);
+});
+
+// 清除快取
+ipcMain.handle('image:clearCache', async (event, { index } = {}) => {
+    return imageManagerInstance.clearCacheByIndex(index);
 });
 
 app.on("ready", createWindow);
