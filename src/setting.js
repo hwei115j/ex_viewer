@@ -160,6 +160,34 @@ function parse(jsonInput, currentLevel = 1) {
             settingDiv.appendChild(document.createElement("br"));
             break;
         }
+        case "enum": {
+            let div = document.createElement("div");
+            settingDiv.appendChild(div);
+            div.style.marginLeft = `${(currentLevel - 1) * 20}px`;
+
+            let select = document.createElement("select");
+            select.classList.add("enum-select");
+
+            jsonInput.options.forEach(optVal => {
+                let option = document.createElement("option");
+                option.value = optVal;
+                option.textContent = optVal;
+                if (optVal === jsonInput.value) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            select.addEventListener("change", function () {
+                jsonInput.value = parseInt(this.value, 10);
+            });
+
+            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(document.createElement("br"));
+            div.appendChild(select);
+            settingDiv.appendChild(document.createElement("br"));
+            break;
+        }
         case "key": {
             let div = document.createElement("div");
             let pressedKeys = [];
