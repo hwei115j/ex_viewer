@@ -112,7 +112,13 @@ function parse(jsonInput, currentLevel = 1) {
         case "bool": {
             let div = document.createElement("div");
             settingDiv.appendChild(div);
-            div.style.marginLeft = `${(currentLevel - 1) * 20}px`; // Add an extra indentation based on parentLevel
+            div.style.marginLeft = `${(currentLevel - 1) * 20}px`;
+
+            let toggleLabel = document.createElement("label");
+            toggleLabel.classList.add("toggle-label");
+
+            let toggleSwitch = document.createElement("span");
+            toggleSwitch.classList.add("toggle-switch");
 
             let checkbox = document.createElement("input");
             checkbox.type = "checkbox";
@@ -120,9 +126,16 @@ function parse(jsonInput, currentLevel = 1) {
             checkbox.addEventListener("change", function () {
                 jsonInput.value = this.checked;
             });
-            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
-            div.appendChild(document.createElement("br"));
-            div.appendChild(checkbox);
+
+            let track = document.createElement("span");
+            track.classList.add("toggle-track");
+
+            toggleSwitch.appendChild(checkbox);
+            toggleSwitch.appendChild(track);
+
+            toggleLabel.appendChild(toggleSwitch);
+            toggleLabel.appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(toggleLabel);
             settingDiv.appendChild(document.createElement("br"));
             break;
         }
