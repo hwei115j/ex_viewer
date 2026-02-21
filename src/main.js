@@ -86,6 +86,18 @@ let pageStatus = {
     book_scrollTop: 0,
     search_str: "",
     currentSort: "name",  // 追蹤當前排序模式: "name", "random", "chronology"
+    category: [
+        "Doujinshi",
+        "Manga",
+        "Artist CG",
+        "Game CG",
+        "Western",
+        "Non-H",
+        "Image Set",
+        "Cosplay",
+        "Asian Porn",
+        "Misc"
+    ],
     group: [],
     definition_db: (() => {
         try {
@@ -132,7 +144,7 @@ let pageStatus = {
     })(),
 };
 
-let defineCategory = [
+const defineCategory = [
     "Doujinshi",
     "Manga",
     "Artist CG",
@@ -147,7 +159,7 @@ let defineCategory = [
 
 function appInit() {
     db = new DatabaseSync(local_db_path, { enableDoubleQuotedStringLiterals: true });
-    search(pageStatus.search_str, defineCategory, () => { });
+    search(pageStatus.search_str, pageStatus.category, () => { });
 }
 
 function search(searchStr, category, func_cb) {
@@ -165,8 +177,11 @@ function search(searchStr, category, func_cb) {
 
         let sql = result.sql;
 
-        // 如果有 category 過濾條件，添加到 SQL
-        if (category.length && category.length != defineCategory.length) {
+        // 如果搜尋字串以 '.' 開頭（特殊命令如 .null），則忽略 category 過濾條件
+        const isSpecialCommand = searchStr.trim().startsWith('.');
+
+        // 如果有 category 過濾條件，添加到 SQL（特殊命令除外）
+        if (!isSpecialCommand && category.length && category.length != defineCategory.length) {
             let categoryCondition = "(";
             for (let i in category) {
                 categoryCondition += `category LIKE '%${category[i]}%'`;
@@ -245,9 +260,15 @@ ipcMain.on("open-file-dialog", event => {
     );
 });
 
+
 ipcMain.on('put-search', (event, arg) => {
     pageStatus.search_str = arg.str;
-    search(pageStatus.search_str, arg.category, () => {
+    if (arg.category) {
+        pageStatus.category = arg.category;
+    } else {
+        pageStatus.category = defineCategory;
+    }
+    search(pageStatus.search_str, pageStatus.category, () => {
         event.reply('put-search-reply', {
             book_id: pageStatus.book_id,
             group: pageStatus.group,
@@ -284,7 +305,8 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         bookHotkeys: pageStatus.setting.value.keyboard_setting.value.book.value,
         viewHotkeys: pageStatus.setting.value.keyboard_setting.value.view.value,
         historyList: pageStatus.historyList.sort((a, b) => a.order - b.order),
-        setting: pageStatus.setting
+        setting: pageStatus.setting,
+        category: pageStatus.category,
     });
 });
 

@@ -11,13 +11,12 @@ let groupLength;
 let book_id;
 let search_str;
 let group;
-let keyboardEventHome;
 let globalHotkeys;
 let homeHotkeys;
 let historyList;
 let definition;
 
-let category = [
+const defineCategory = [
     "Doujinshi",
     "Manga",
     "Artist CG",
@@ -29,6 +28,7 @@ let category = [
     "Asian Porn",
     "Misc"
 ];
+let category;
 
 function goto_page(str) {
     let p = parseInt(str);
@@ -366,6 +366,25 @@ function createSearch() {
     document.getElementById("cat_512").innerText = replace("Western");
     document.getElementById("cat_512").addEventListener("click", categoryEvent);
 
+    // 根據 category 狀態還原按鈕的 disabled 樣式
+    let catIdMap = {
+        cat_1: "Misc",
+        cat_2: "Doujinshi",
+        cat_4: "Manga",
+        cat_8: "Artist CG",
+        cat_16: "Game CG",
+        cat_32: "Image Set",
+        cat_64: "Cosplay",
+        cat_128: "Asian Porn",
+        cat_256: "Non-H",
+        cat_512: "Western"
+    };
+    for (let id in catIdMap) {
+        if (!category.includes(catIdMap[id])) {
+            document.getElementById(id).setAttribute("data-disabled", 1);
+        }
+    }
+
     let f_search = document.getElementById("f_search");
     let searchClear = document.getElementById("searchClear");
     let from_onsubmit = document.getElementById("from_onsubmit");
@@ -428,6 +447,26 @@ function createSearch() {
         from_onsubmit.onsubmit();
     }
     searchClear.onclick = () => {
+        // 重置 category 為全選狀態
+        category = [...defineCategory];
+        
+        // 更新分類按鈕的 disabled 狀態
+        let catIdMap = {
+            cat_1: "Misc",
+            cat_2: "Doujinshi",
+            cat_4: "Manga",
+            cat_8: "Artist CG",
+            cat_16: "Game CG",
+            cat_32: "Image Set",
+            cat_64: "Cosplay",
+            cat_128: "Asian Porn",
+            cat_256: "Non-H",
+            cat_512: "Western"
+        };
+        for (let id in catIdMap) {
+            document.getElementById(id).removeAttribute("data-disabled");
+        }
+        
         f_search.value = null;
         from_onsubmit.onsubmit();
     }
@@ -662,6 +701,7 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     historyList = data.historyList;
     setting = data.setting;
     definition = data.definition;
+    category = data.category;
 
     webFrame.setZoomFactor(setting.value.zoom.value / 100);
     document.addEventListener('keydown', hotkeyHandle);
