@@ -182,6 +182,77 @@
         .add-button:hover {
             background-color: #4a4d52;
         }
+
+        /* Toggle switch */
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            margin: 0;
+        }
+
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: #555;
+            border-radius: 22px;
+            transition: background 0.2s;
+        }
+
+        .toggle-track::after {
+            content: "";
+            position: absolute;
+            left: 3px;
+            top: 3px;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle-switch input:checked + .toggle-track {
+            background: #5865F2;
+        }
+
+        .toggle-switch input:checked + .toggle-track::after {
+            transform: translateX(18px);
+        }
+
+        /* Enum 下拉選單 */
+        .enum-select {
+            padding: 5px 8px;
+            border: 1px solid #8d8d8d;
+            border-radius: 3px;
+            background-color: #3c3f42;
+            color: #f1f1f1;
+            cursor: pointer;
+            min-width: 120px;
+        }
+
+        .enum-select:hover {
+            border-color: #aaa;
+        }
+
+        .enum-select:focus {
+            outline: none;
+            border-color: #5865F2;
+        }
     </style>
 </head>
 

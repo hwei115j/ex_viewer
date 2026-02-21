@@ -1,8 +1,4 @@
 {
-    "//1": "這是用來設定的JSON檔案",
-    "//2": "然後因為技術力不足加上JSON的格式蠻嚴格的，容易寫錯，如果修改設定後程式當掉，可以從壓縮檔中恢復setting.json",
-    "//3": "鍵盤設定",
-    "//4": "鍵盤定義可以從這個網站上得知https://keycode.info/",
     "text": "設定",
     "type": "list",
     "value": {
@@ -15,14 +11,14 @@
                     "type": "list",
                     "value": {
                         "full_screen": {
-                            "text": "全螢幕, 預設值是Enter",
+                            "text": "全螢幕",
                             "type": "key",
                             "value": [
                                 13
                             ]
                         },
                         "back": {
-                            "text": "回到上一頁，預設值是Backspace",
+                            "text": "回到上一頁",
                             "type": "key",
                             "value": [
                                 8
@@ -66,7 +62,7 @@
                     "type": "list",
                     "value": {
                         "prev": {
-                            "text": "上一頁，預設值是方向鍵←",
+                            "text": "上一頁",
                             "type": "key",
                             "value": [
                                 37,
@@ -74,7 +70,7 @@
                             ]
                         },
                         "next": {
-                            "text": "下一頁，預設值是方向鍵→",
+                            "text": "下一頁",
                             "type": "key",
                             "value": [
                                 39,
@@ -82,7 +78,7 @@
                             ]
                         },
                         "full_screen": {
-                            "text": "全螢幕, 預設值是Enter",
+                            "text": "全螢幕",
                             "type": "key",
                             "value": [
                                 13
@@ -126,28 +122,28 @@
                     "type": "list",
                     "value": {
                         "prev": {
-                            "text": "上一頁，預設值是方向鍵←",
+                            "text": "上一頁",
                             "type": "key",
                             "value": [
                                 37
                             ]
                         },
                         "next": {
-                            "text": "下一頁，預設值是方向鍵→",
+                            "text": "下一頁",
                             "type": "key",
                             "value": [
                                 39
                             ]
                         },
                         "full_screen": {
-                            "text": "全螢幕, 預設值是Enter",
+                            "text": "全螢幕",
                             "type": "key",
                             "value": [
                                 13
                             ]
                         },
                         "back": {
-                            "text": "回到home，預設值是Backspace",
+                            "text": "回到home",
                             "type": "key",
                             "value": [
                                 8
@@ -185,7 +181,7 @@
                             ]
                         },
                         "prev_book": {
-                            "text": "跳到上一本，預設值是ctrl + 方向鍵←和[",
+                            "text": "跳到上一本",
                             "type": "key",
                             "value": [
                                 [
@@ -196,7 +192,7 @@
                             ]
                         },
                         "next_book": {
-                            "text": "跳到下一本，預設值是ctrl + 方向鍵→和]",
+                            "text": "跳到下一本",
                             "type": "key",
                             "value": [
                                 [
@@ -213,14 +209,14 @@
                     "type": "list",
                     "value": {
                         "full_screen": {
-                            "text": "全螢幕, 預設值是Enter",
+                            "text": "全螢幕",
                             "type": "key",
                             "value": [
                                 13
                             ]
                         },
                         "back": {
-                            "text": "回到book，預設值是Backspace",
+                            "text": "回到book",
                             "type": "key",
                             "value": [
                                 8
@@ -258,7 +254,7 @@
                             ]
                         },
                         "prev_book": {
-                            "text": "跳到上一本，預設值是ctrl + 方向鍵←和[",
+                            "text": "跳到上一本",
                             "value": [
                                 [
                                     17,
@@ -268,7 +264,7 @@
                             ]
                         },
                         "next_book": {
-                            "text": "跳到下一本，預設值是ctrl + 方向鍵→和]",
+                            "text": "跳到下一本",
                             "type": "key",
                             "value": [
                                 [
@@ -279,7 +275,7 @@
                             ]
                         },
                         "prev": {
-                            "text": "上一頁，預設值是方向鍵←，與pageup（除了veiw頁面外無法使用）",
+                            "text": "上一頁（除了veiw頁面外無法使用）",
                             "type": "key",
                             "value": [
                                 37,
@@ -287,7 +283,7 @@
                             ]
                         },
                         "next": {
-                            "text": "下一頁，預設值是方向鍵→，與pagedown（除了veiw頁面外無法使用）",
+                            "text": "下一頁（除了veiw頁面外無法使用）",
                             "type": "key",
                             "value": [
                                 39,
@@ -295,14 +291,14 @@
                             ]
                         },
                         "home": {
-                            "text": "跳到第一頁，預設值是home（除了veiw頁面外無法使用）",
+                            "text": "跳到第一頁（除了veiw頁面外無法使用）",
                             "type": "key",
                             "value": [
                                 36
                             ]
                         },
                         "end": {
-                            "text": "跳到最尾頁，預設值是end（除了veiw頁面外無法使用）",
+                            "text": "跳到最尾頁（除了veiw頁面外無法使用）",
                             "type": "key",
                             "value": [
                                 35
@@ -372,36 +368,136 @@
         "tag_translate": {
             "text": "是否開啟標籤翻譯",
             "type": "bool",
-            "value": false
+            "value": true
         },
         "full_page": {
             "text": "是否開啟整頁瀏覽",
             "type": "bool",
-            "value": true
+            "value": false
         },
         "zoom": {
-            "text": "頁面放大倍率，預設是110%",
-            "type": "number",
+            "text": "頁面放大倍率",
+            "type": "enum",
+            "options": [
+                10,
+                20,
+                30,
+                40,
+                50,
+                60,
+                70,
+                80,
+                90,
+                100,
+                110,
+                120,
+                130,
+                140,
+                150,
+                160,
+                170,
+                180,
+                190,
+                200
+            ],
             "value": 100
         },
         "home_max": {
             "text": "首頁最多顯示圖片數量",
-            "type": "number",
+            "type": "enum",
+            "options": [
+                10,
+                20,
+                30,
+                40,
+                50,
+                60,
+                70,
+                80,
+                90,
+                100,
+                110,
+                120,
+                130,
+                140,
+                150,
+                160,
+                170,
+                180,
+                190,
+                200
+            ],
             "value": 50
         },
         "page_max": {
             "text": "本子頁最多顯示圖片數量",
-            "type": "number",
-            "value": 20
+            "type": "enum",
+            "options": [
+                10,
+                20,
+                30,
+                40,
+                50,
+                60,
+                70,
+                80,
+                90,
+                100,
+                110,
+                120,
+                130,
+                140,
+                150,
+                160,
+                170,
+                180,
+                190,
+                200
+            ],
+            "value": 50
         },
         "cache": {
             "text": "快取圖片數量",
-            "type": "number",
+            "type": "enum",
+            "options": [
+                10,
+                20,
+                30,
+                40,
+                50,
+                60,
+                70,
+                80,
+                90,
+                100,
+                110,
+                120,
+                130,
+                140,
+                150,
+                160,
+                170,
+                180,
+                190,
+                200
+            ],
             "value": 20
         },
         "image_width": {
             "text": "圖片寬度佔螢幕比例(1-100%)",
-            "type": "number",
+            "type": "enum",
+            "options": [
+                10,
+                20,
+                30,
+                40,
+                50,
+                60,
+                70,
+                80,
+                90,
+                100
+            ],
             "value": 80
         }
     }
