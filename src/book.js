@@ -277,19 +277,7 @@ function createInformation() {
         //console.log(gmid.getElementById("tagmenu_act-a"));
         gmid.querySelector("#tagmenu_act_a").onclick = () => {
             console.log("1");
-            let category = [
-                "Doujinshi",
-                "Manga",
-                "Artist CG",
-                "Game CG",
-                "Western",
-                "Non-H",
-                "Image Set",
-                "Cosplay",
-                "Asian Porn",
-                "Misc"
-            ];
-            ipcRenderer.send("put-search", { str: search_str.join(" "), category: category });
+            ipcRenderer.send("put-search", { str: search_str.join(" "), category: null });
             ipcRenderer.on("put-search-reply", (event, data) => {
                 if (!historyList.some(item => item.text === search_str.join(" "))) {
                     const newItem = {

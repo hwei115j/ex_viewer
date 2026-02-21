@@ -265,6 +265,8 @@ ipcMain.on('put-search', (event, arg) => {
     pageStatus.search_str = arg.str;
     if (arg.category) {
         pageStatus.category = arg.category;
+    } else {
+        pageStatus.category = defineCategory;
     }
     search(pageStatus.search_str, pageStatus.category, () => {
         event.reply('put-search-reply', {

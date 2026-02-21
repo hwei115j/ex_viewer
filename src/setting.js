@@ -306,6 +306,7 @@ saveBtn.addEventListener("click", () => {
     }
     ipcRenderer.send('put-settingStatus', { setting: newJson });
     ipcRenderer.on('put-settingStatus-reply', (event) => {
+        ipcRenderer.send('put-search', { str: "", category: null});
         window.location.href = "home.html"
     });
 });
