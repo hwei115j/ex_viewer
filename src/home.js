@@ -410,8 +410,8 @@ function createSearch() {
             });
         }
     });
-    document.getElementById("searchSubmit").value = replace("search");
-    searchClear.value = replace("clear");
+    document.getElementById("searchSubmit").value = replace("Search");
+    searchClear.value = replace("Clear");
 
     from_onsubmit.onsubmit = () => {
         if (!historyList.some(item => item.text === f_search.value) && f_search.value !== "") {
@@ -532,7 +532,7 @@ function createSidebar() {
     }
 
     sideMenu.getElementsByTagName('button')[1].textContent = replace("Settings");
-    sideMenu.getElementsByTagName('button')[2].textContent = replace("search");
+    sideMenu.getElementsByTagName('button')[2].textContent = replace("Search");
     sideMenu.getElementsByTagName('button')[3].textContent = replace("Clear list");
     sideMenu.getElementsByTagName('h3')[0].textContent = replace("Search history");
 
