@@ -30,14 +30,47 @@ protocol.registerSchemesAsPrivileged([
 
 const ex_db_path = join(".", "setting", "ex.db");
 const dir_path = join(".", "setting", "local", "dir.json");
-const definition_json = join(".", "setting", "language", "definition.json");
-const ui_json = join(".", "setting", "language", "ui.json");
 const local_db_path = join(".", "setting", "local", "local.db");
 const setting_path = join(".", "setting", "setting.json");
 const historyList_json = join(".", "setting", "historyList.json");
+const language_dir = join(".", "setting", "language");
 let db;
-let setting = JSON.parse(fs.readFileSync(setting_path).toString());
 let imageManagerInstance = new imageManager();
+
+/**
+ * 根據設定載入 UI 語言檔
+ * @param {object} settingObj - setting.json 的解析結果
+ * @returns {object} UI 翻譯物件
+ */
+function loadUiLanguage(settingObj) {
+    const langMap = { '臺灣正體': 'zh-TW', '簡体中文': 'zh-CN' , 'English': 'en-US'};
+    const raw = settingObj.value.ui_language ? settingObj.value.ui_language.value : '臺灣正體';
+    const lang = langMap[raw] || 'zh-TW';
+    const filePath = join(language_dir, `ui_${lang}.json`);
+
+    try {
+        return JSON.parse(fs.readFileSync(filePath).toString());
+    } catch (err) {
+        return {};
+    }
+}
+
+/**
+ * 根據設定載入標籤定義檔
+ * @param {object} settingObj - setting.json 的解析結果
+ * @returns {object} 定義檔物件
+ */
+function loadDefinition(settingObj) {
+    const langMap = { '臺灣正體': 'zh-TW', '簡体中文': 'zh-CN' , 'English': 'en-US'};
+    const raw = settingObj.value.ui_language ? settingObj.value.ui_language.value : '臺灣正體';
+    const lang = langMap[raw] || 'zh-TW';
+    const filePath = join(language_dir, `definition_${lang}.json`);
+    try {
+        return JSON.parse(fs.readFileSync(filePath).toString());
+    } catch (err) {
+        return {};
+    }
+}
 
 function createWindow() {
 
@@ -99,20 +132,6 @@ let pageStatus = {
         "Misc"
     ],
     group: [],
-    definition_db: (() => {
-        try {
-            return JSON.parse(fs.readFileSync(definition_json).toString());
-        } catch (err) {
-            return {};
-        }
-    })(),
-    uiLanguage: (() => {
-        try {
-            return JSON.parse(fs.readFileSync(ui_json).toString());
-        } catch (err) {
-            return {};
-        }
-    })(),
     setting: (() => {
         try {
             return JSON.parse(fs.readFileSync(setting_path).toString());
@@ -120,6 +139,24 @@ let pageStatus = {
             throw err;
         }
     })(),
+    get definition_db() {
+        if (!this._definition_db) {
+            this._definition_db = loadDefinition(this.setting);
+        }
+        return this._definition_db;
+    },
+    set definition_db(val) {
+        this._definition_db = val;
+    },
+    get uiLanguage() {
+        if (!this._uiLanguage) {
+            this._uiLanguage = loadUiLanguage(this.setting);
+        }
+        return this._uiLanguage;
+    },
+    set uiLanguage(val) {
+        this._uiLanguage = val;
+    },
     dir: (() => {
         try {
             return JSON.parse(fs.readFileSync(dir_path).toString());
@@ -343,6 +380,9 @@ ipcMain.on('put-settingStatus', (event, arg) => {
     pageStatus.setting = arg.setting;
     //console.log(arg.setting);
     fs.writeFileSync(setting_path, JSON.stringify(pageStatus.setting, null, 4));
+    // 即時更新語言設定
+    pageStatus.uiLanguage = loadUiLanguage(pageStatus.setting);
+    pageStatus.definition_db = loadDefinition(pageStatus.setting);
     event.reply('put-settingStatus-reply');
 });
 

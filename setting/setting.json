@@ -1,31 +1,31 @@
 {
-    "text": "設定",
+    "text": "Settings",
     "type": "list",
     "value": {
         "keyboard_setting": {
-            "text": "鍵盤設定",
+            "text": "Keyboard Settings",
             "type": "list",
             "value": {
                 "global": {
-                    "text": "全域設定",
+                    "text": "Global Settings",
                     "type": "list",
                     "value": {
                         "full_screen": {
-                            "text": "全螢幕",
+                            "text": "Full Screen",
                             "type": "key",
                             "value": [
                                 13
                             ]
                         },
                         "back": {
-                            "text": "回到上一頁",
+                            "text": "Go Back",
                             "type": "key",
                             "value": [
                                 8
                             ]
                         },
                         "name_sort": {
-                            "text": "按照名稱排序",
+                            "text": "Sort by Name",
                             "type": "key",
                             "value": [
                                 96,
@@ -33,7 +33,7 @@
                             ]
                         },
                         "random_sort": {
-                            "text": "隨機排序",
+                            "text": "Random Sort",
                             "type": "key",
                             "value": [
                                 97,
@@ -41,7 +41,7 @@
                             ]
                         },
                         "chronology": {
-                            "text": "按照時間排序，由新到舊",
+                            "text": "Sort by Date (Newest First)",
                             "type": "key",
                             "value": [
                                 98,
@@ -49,7 +49,7 @@
                             ]
                         },
                         "exit": {
-                            "text": "關閉程式",
+                            "text": "Exit",
                             "type": "key",
                             "value": [
                                 27
@@ -58,11 +58,11 @@
                     }
                 },
                 "home": {
-                    "text": "home設定",
+                    "text": "Home Settings",
                     "type": "list",
                     "value": {
                         "prev": {
-                            "text": "上一頁",
+                            "text": "Previous Page",
                             "type": "key",
                             "value": [
                                 37,
@@ -70,7 +70,7 @@
                             ]
                         },
                         "next": {
-                            "text": "下一頁",
+                            "text": "Next Page",
                             "type": "key",
                             "value": [
                                 39,
@@ -78,14 +78,14 @@
                             ]
                         },
                         "full_screen": {
-                            "text": "全螢幕",
+                            "text": "Full Screen",
                             "type": "key",
                             "value": [
                                 13
                             ]
                         },
                         "name_sort": {
-                            "text": "按照名稱排序",
+                            "text": "Sort by Name",
                             "type": "key",
                             "value": [
                                 96,
@@ -93,7 +93,7 @@
                             ]
                         },
                         "random_sort": {
-                            "text": "隨機排序",
+                            "text": "Random Sort",
                             "type": "key",
                             "value": [
                                 97,
@@ -101,7 +101,7 @@
                             ]
                         },
                         "chronology": {
-                            "text": "按照時間排序，由新到舊",
+                            "text": "Sort by Date (Newest First)",
                             "type": "key",
                             "value": [
                                 98,
@@ -109,7 +109,7 @@
                             ]
                         },
                         "exit": {
-                            "text": "關閉程式",
+                            "text": "Exit",
                             "type": "key",
                             "value": [
                                 27
@@ -118,39 +118,39 @@
                     }
                 },
                 "book": {
-                    "text": "book設定",
+                    "text": "Book Settings",
                     "type": "list",
                     "value": {
                         "prev": {
-                            "text": "上一頁",
+                            "text": "Previous Page",
                             "type": "key",
                             "value": [
                                 37
                             ]
                         },
                         "next": {
-                            "text": "下一頁",
+                            "text": "Next Page",
                             "type": "key",
                             "value": [
                                 39
                             ]
                         },
                         "full_screen": {
-                            "text": "全螢幕",
+                            "text": "Full Screen",
                             "type": "key",
                             "value": [
                                 13
                             ]
                         },
                         "back": {
-                            "text": "回到home",
+                            "text": "Back to Home",
                             "type": "key",
                             "value": [
                                 8
                             ]
                         },
                         "name_sort": {
-                            "text": "按照名稱排序",
+                            "text": "Sort by Name",
                             "type": "key",
                             "value": [
                                 96,
@@ -158,7 +158,7 @@
                             ]
                         },
                         "random_sort": {
-                            "text": "隨機排序",
+                            "text": "Random Sort",
                             "type": "key",
                             "value": [
                                 97,
@@ -166,7 +166,7 @@
                             ]
                         },
                         "chronology": {
-                            "text": "按照時間排序，由新到舊",
+                            "text": "Sort by Date (Newest First)",
                             "type": "key",
                             "value": [
                                 98,
@@ -174,14 +174,14 @@
                             ]
                         },
                         "exit": {
-                            "text": "關閉程式",
+                            "text": "Exit",
                             "type": "key",
                             "value": [
                                 27
                             ]
                         },
                         "prev_book": {
-                            "text": "跳到上一本",
+                            "text": "Previous Book",
                             "type": "key",
                             "value": [
                                 [
@@ -192,7 +192,7 @@
                             ]
                         },
                         "next_book": {
-                            "text": "跳到下一本",
+                            "text": "Next Book",
                             "type": "key",
                             "value": [
                                 [
@@ -205,25 +205,25 @@
                     }
                 },
                 "view": {
-                    "text": "view設定",
+                    "text": "View Settings",
                     "type": "list",
                     "value": {
                         "full_screen": {
-                            "text": "全螢幕",
+                            "text": "Full Screen",
                             "type": "key",
                             "value": [
                                 13
                             ]
                         },
                         "back": {
-                            "text": "回到book",
+                            "text": "Back to Book",
                             "type": "key",
                             "value": [
                                 8
                             ]
                         },
                         "name_sort": {
-                            "text": "按照名稱排序",
+                            "text": "Sort by Name",
                             "type": "key",
                             "value": [
                                 96,
@@ -231,7 +231,7 @@
                             ]
                         },
                         "random_sort": {
-                            "text": "隨機排序",
+                            "text": "Random Sort",
                             "type": "key",
                             "value": [
                                 97,
@@ -239,7 +239,7 @@
                             ]
                         },
                         "chronology": {
-                            "text": "按照時間排序，由新到舊",
+                            "text": "Sort by Date (Newest First)",
                             "type": "key",
                             "value": [
                                 98,
@@ -247,14 +247,14 @@
                             ]
                         },
                         "exit": {
-                            "text": "關閉程式",
+                            "text": "Exit",
                             "type": "key",
                             "value": [
                                 27
                             ]
                         },
                         "prev_book": {
-                            "text": "跳到上一本",
+                            "text": "Previous Book",
                             "value": [
                                 [
                                     17,
@@ -264,7 +264,7 @@
                             ]
                         },
                         "next_book": {
-                            "text": "跳到下一本",
+                            "text": "Next Book",
                             "type": "key",
                             "value": [
                                 [
@@ -275,7 +275,7 @@
                             ]
                         },
                         "prev": {
-                            "text": "上一頁（除了veiw頁面外無法使用）",
+                            "text": "Previous Page (View only)",
                             "type": "key",
                             "value": [
                                 37,
@@ -283,7 +283,7 @@
                             ]
                         },
                         "next": {
-                            "text": "下一頁（除了veiw頁面外無法使用）",
+                            "text": "Next Page (View only)",
                             "type": "key",
                             "value": [
                                 39,
@@ -291,49 +291,49 @@
                             ]
                         },
                         "home": {
-                            "text": "跳到第一頁（除了veiw頁面外無法使用）",
+                            "text": "First Page (View only)",
                             "type": "key",
                             "value": [
                                 36
                             ]
                         },
                         "end": {
-                            "text": "跳到最尾頁（除了veiw頁面外無法使用）",
+                            "text": "Last Page (View only)",
                             "type": "key",
                             "value": [
                                 35
                             ]
                         },
                         "move_up": {
-                            "text": "放大之後往上移動",
+                            "text": "Move Up (when zoomed)",
                             "type": "key",
                             "value": [
                                 38
                             ]
                         },
                         "move_down": {
-                            "text": "放大之後往下移動",
+                            "text": "Move Down (when zoomed)",
                             "type": "key",
                             "value": [
                                 40
                             ]
                         },
                         "move_left": {
-                            "text": "放大之後往左移動",
+                            "text": "Move Left (when zoomed)",
                             "type": "key",
                             "value": [
                                 37
                             ]
                         },
                         "move_right": {
-                            "text": "放大之後往右移動",
+                            "text": "Move Right (when zoomed)",
                             "type": "key",
                             "value": [
                                 39
                             ]
                         },
                         "zoom_in": {
-                            "text": "放大",
+                            "text": "Zoom In",
                             "type": "key",
                             "value": [
                                 107,
@@ -341,7 +341,7 @@
                             ]
                         },
                         "zoom_out": {
-                            "text": "縮小",
+                            "text": "Zoom Out",
                             "type": "key",
                             "value": [
                                 109,
@@ -349,7 +349,7 @@
                             ]
                         },
                         "zoom": {
-                            "text": "恢復為預設大小",
+                            "text": "Reset Zoom",
                             "type": "key",
                             "value": [
                                 111,
@@ -361,22 +361,32 @@
             }
         },
         "debug": {
-            "text": "是否開啟「開發人員工具」",
+            "text": "Enable Developer Tools",
             "type": "bool",
-            "value": true
+            "value": false
         },
         "tag_translate": {
-            "text": "是否開啟標籤翻譯",
+            "text": "Enable Tag Translation",
             "type": "bool",
             "value": true
         },
         "full_page": {
-            "text": "是否開啟整頁瀏覽",
+            "text": "Enable Full Page View",
             "type": "bool",
             "value": false
         },
+        "ui_language": {
+            "text": "UI Language",
+            "type": "enum",
+            "options": [
+                "臺灣正體",
+                "簡体中文",
+                "English"
+            ],
+            "value": "臺灣正體"
+        },
         "zoom": {
-            "text": "頁面放大倍率",
+            "text": "Page Zoom Level",
             "type": "enum",
             "options": [
                 10,
@@ -403,7 +413,7 @@
             "value": 100
         },
         "home_max": {
-            "text": "首頁最多顯示圖片數量",
+            "text": "Max Items on Home Page",
             "type": "enum",
             "options": [
                 10,
@@ -430,7 +440,7 @@
             "value": 50
         },
         "page_max": {
-            "text": "本子頁最多顯示圖片數量",
+            "text": "Max Items on Book Page",
             "type": "enum",
             "options": [
                 10,
@@ -457,7 +467,7 @@
             "value": 50
         },
         "cache": {
-            "text": "快取圖片數量",
+            "text": "Cache Size",
             "type": "enum",
             "options": [
                 10,
@@ -484,7 +494,7 @@
             "value": 20
         },
         "image_width": {
-            "text": "圖片寬度佔螢幕比例(1-100%)",
+            "text": "Image Width (% of Screen)",
             "type": "enum",
             "options": [
                 10,

@@ -1,4 +1,4 @@
-const { ipcRenderer} = require("electron");
+﻿const { ipcRenderer} = require("electron");
 const { webFrame } = require('electron');
 
 let setting;
@@ -93,13 +93,17 @@ const keyNames = {
     222: "Quote (')"
 };
 
+function getTranslation(name) {
+    return uiLanguage[name] ? uiLanguage[name] : name;
+}
+
 function parse(jsonInput, currentLevel = 1) {
     switch (jsonInput.type) {
         case "list": {
             let div = document.createElement("div");
             settingDiv.appendChild(div)
             div.style.marginLeft = `${(currentLevel - 1) * 20}px`; // Add an indentation based on currentLevel
-            div.innerHTML = `<h${currentLevel}>${jsonInput.text}</h${currentLevel}>`
+            div.innerHTML = `<h${currentLevel}>${getTranslation(jsonInput.text)}</h${currentLevel}>`
             settingDiv.appendChild(div)
             if (currentLevel > 4) {
                 currentLevel = 4;
@@ -134,7 +138,7 @@ function parse(jsonInput, currentLevel = 1) {
             toggleSwitch.appendChild(track);
 
             toggleLabel.appendChild(toggleSwitch);
-            toggleLabel.appendChild(document.createTextNode(jsonInput.text));
+            toggleLabel.appendChild(document.createTextNode(getTranslation(jsonInput.text)));
             div.appendChild(toggleLabel);
             settingDiv.appendChild(document.createElement("br"));
             break;
@@ -154,7 +158,7 @@ function parse(jsonInput, currentLevel = 1) {
                 }
             });
 
-            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(getTranslation(jsonInput.text)));
             div.appendChild(document.createElement("br"));
             div.appendChild(inputbox);
             settingDiv.appendChild(document.createElement("br"));
@@ -179,10 +183,11 @@ function parse(jsonInput, currentLevel = 1) {
             });
 
             select.addEventListener("change", function () {
-                jsonInput.value = parseInt(this.value, 10);
+                const n = Number(this.value);
+                jsonInput.value = Number.isFinite(n) ? n : this.value;
             });
 
-            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(getTranslation(jsonInput.text)));
             div.appendChild(document.createElement("br"));
             div.appendChild(select);
             settingDiv.appendChild(document.createElement("br"));
@@ -197,7 +202,7 @@ function parse(jsonInput, currentLevel = 1) {
 
             // 標題
             let label = document.createElement("label");
-            label.textContent = jsonInput.text;
+            label.textContent = getTranslation(jsonInput.text);
             div.appendChild(label);
             div.appendChild(document.createElement("br"));
 
@@ -206,16 +211,16 @@ function parse(jsonInput, currentLevel = 1) {
             inputContainer.classList.add("key-input-container");
 
             let inputBox = document.createElement("input");
-            inputBox.placeholder = "按下快捷鍵...";
+            inputBox.placeholder = getTranslation("Press shortcut key...");
             inputBox.classList.add("key-input");
 
             // 清除按鈕
             let clearBtn = document.createElement("button");
-            clearBtn.textContent = "清除";
+            clearBtn.textContent = getTranslation("Clear Key");
             clearBtn.classList.add("clear-button");
 
             let addBtn = document.createElement("button");
-            addBtn.textContent = "新增";
+            addBtn.textContent = getTranslation("Add Key");
             addBtn.classList.add("add-button");
 
             // 改用列表顯示已設定的快捷鍵
@@ -367,4 +372,8 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
 
     webFrame.setZoomFactor(setting.value.zoom.value/100);
     parse(setting);
+
+    document.getElementById("GoBackBtn").textContent = getTranslation("Cancel");
+    document.getElementById("saveBtn").textContent = getTranslation("Save");
+    document.getElementById("RematchBtn").textContent = getTranslation("Rematch");
 });

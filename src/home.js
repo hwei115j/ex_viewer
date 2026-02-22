@@ -1,4 +1,4 @@
-/*jshint esversion: 8 */
+﻿/*jshint esversion: 8 */
 const dialogs = require("dialogs")();
 const { webFrame } = require('electron');
 const { ipcRenderer, clipboard } = require("electron");
@@ -63,7 +63,7 @@ function goto_page(str) {
     };
 }
 
-function replace(name) {
+function getTranslation(name) {
     return uiLanguage[name] ? uiLanguage[name] : name;
 }
 
@@ -151,17 +151,17 @@ function createPage() {
     }
 
     let cat = {
-        Doujinshi: ["cs ct2", replace("Doujinshi")],
-        Manga: ["cs ct3", replace("Manga")],
-        "Artist CG": ["cs ct4", replace("Artist CG")],
-        "Game CG": ["cs ct5", replace("Game CG")],
-        Western: ["cs cta", replace("Western")],
-        "Non-H": ["cs ct9", replace("Non-H")],
-        "Image Set": ["cs ct6", replace("Image Set")],
-        Cosplay: ["cs ct7", replace("Cosplay")],
-        "Asian Porn": ["cs ct8", replace("Asian Porn")],
-        Misc: ["cs ct1", replace("Misc")],
-        null: ["cs ct1", replace("null")]
+        Doujinshi: ["cs ct2", getTranslation("Doujinshi")],
+        Manga: ["cs ct3", getTranslation("Manga")],
+        "Artist CG": ["cs ct4", getTranslation("Artist CG")],
+        "Game CG": ["cs ct5", getTranslation("Game CG")],
+        Western: ["cs cta", getTranslation("Western")],
+        "Non-H": ["cs ct9", getTranslation("Non-H")],
+        "Image Set": ["cs ct6", getTranslation("Image Set")],
+        Cosplay: ["cs ct7", getTranslation("Cosplay")],
+        "Asian Porn": ["cs ct8", getTranslation("Asian Porn")],
+        Misc: ["cs ct1", getTranslation("Misc")],
+        null: ["cs ct1", getTranslation("null")]
     };
     for (
         let i = page * page_max;
@@ -345,25 +345,25 @@ function createSearch() {
         console.log(category);
     }
 
-    document.getElementById("cat_1").innerText = replace("Misc");
+    document.getElementById("cat_1").innerText = getTranslation("Misc");
     document.getElementById("cat_1").addEventListener("click", categoryEvent);
-    document.getElementById("cat_2").innerText = replace("Doujinshi");
+    document.getElementById("cat_2").innerText = getTranslation("Doujinshi");
     document.getElementById("cat_2").addEventListener("click", categoryEvent);
-    document.getElementById("cat_4").innerText = replace("Manga");
+    document.getElementById("cat_4").innerText = getTranslation("Manga");
     document.getElementById("cat_4").addEventListener("click", categoryEvent);
-    document.getElementById("cat_8").innerText = replace("Artist CG");
+    document.getElementById("cat_8").innerText = getTranslation("Artist CG");
     document.getElementById("cat_8").addEventListener("click", categoryEvent);
-    document.getElementById("cat_16").innerText = replace("Game CG");
+    document.getElementById("cat_16").innerText = getTranslation("Game CG");
     document.getElementById("cat_16").addEventListener("click", categoryEvent);
-    document.getElementById("cat_32").innerText = replace("Image Set");
+    document.getElementById("cat_32").innerText = getTranslation("Image Set");
     document.getElementById("cat_32").addEventListener("click", categoryEvent);
-    document.getElementById("cat_64").innerText = replace("Cosplay");
+    document.getElementById("cat_64").innerText = getTranslation("Cosplay");
     document.getElementById("cat_64").addEventListener("click", categoryEvent);
-    document.getElementById("cat_128").innerText = replace("Asian Porn");
+    document.getElementById("cat_128").innerText = getTranslation("Asian Porn");
     document.getElementById("cat_128").addEventListener("click", categoryEvent);
-    document.getElementById("cat_256").innerText = replace("Non-H");
+    document.getElementById("cat_256").innerText = getTranslation("Non-H");
     document.getElementById("cat_256").addEventListener("click", categoryEvent);
-    document.getElementById("cat_512").innerText = replace("Western");
+    document.getElementById("cat_512").innerText = getTranslation("Western");
     document.getElementById("cat_512").addEventListener("click", categoryEvent);
 
     // 根據 category 狀態還原按鈕的 disabled 樣式
@@ -390,7 +390,7 @@ function createSearch() {
     let from_onsubmit = document.getElementById("from_onsubmit");
 
     f_search.onkeydown = (e) => { e.stopPropagation(); }
-    f_search.placeholder = replace("search text");
+    f_search.placeholder = getTranslation("search text");
     f_search.addEventListener('contextmenu', (event) => {
         event.preventDefault(); // 阻止默认的上下文菜单
         event.stopPropagation(); // 阻止事件冒泡
@@ -410,8 +410,8 @@ function createSearch() {
             });
         }
     });
-    document.getElementById("searchSubmit").value = replace("search");
-    searchClear.value = replace("clear");
+    document.getElementById("searchSubmit").value = getTranslation("Search");
+    searchClear.value = getTranslation("Clear");
 
     from_onsubmit.onsubmit = () => {
         if (!historyList.some(item => item.text === f_search.value) && f_search.value !== "") {
@@ -531,10 +531,10 @@ function createSidebar() {
         menuButton.style.display = 'block';
     }
 
-    sideMenu.getElementsByTagName('button')[1].textContent = replace("Settings");
-    sideMenu.getElementsByTagName('button')[2].textContent = replace("search");
-    sideMenu.getElementsByTagName('button')[3].textContent = replace("Clear list");
-    sideMenu.getElementsByTagName('h3')[0].textContent = replace("Search history");
+    sideMenu.getElementsByTagName('button')[1].textContent = getTranslation("Settings");
+    sideMenu.getElementsByTagName('button')[2].textContent = getTranslation("Search");
+    sideMenu.getElementsByTagName('button')[3].textContent = getTranslation("Clear list");
+    sideMenu.getElementsByTagName('h3')[0].textContent = getTranslation("Search history");
 
     updateHistoryList();
 

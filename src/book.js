@@ -266,8 +266,7 @@ function createInformation() {
 
         strHtml += `</tbody></table></div><div id="tagmenu_act" style="display:none"><a id="tagmenu_act_a" href="#" style="font-size:medium">
         ${getTranslation(
-            "search",
-            "search"
+            "Search"
         )}</a></div></div>`
 
         gmid.innerHTML = strHtml;
