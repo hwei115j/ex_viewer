@@ -93,13 +93,17 @@ const keyNames = {
     222: "Quote (')"
 };
 
+function replace(name) {
+    return uiLanguage[name] ? uiLanguage[name] : name;
+}
+
 function parse(jsonInput, currentLevel = 1) {
     switch (jsonInput.type) {
         case "list": {
             let div = document.createElement("div");
             settingDiv.appendChild(div)
             div.style.marginLeft = `${(currentLevel - 1) * 20}px`; // Add an indentation based on currentLevel
-            div.innerHTML = `<h${currentLevel}>${jsonInput.text}</h${currentLevel}>`
+            div.innerHTML = `<h${currentLevel}>${replace(jsonInput.text)}</h${currentLevel}>`
             settingDiv.appendChild(div)
             if (currentLevel > 4) {
                 currentLevel = 4;
@@ -134,7 +138,7 @@ function parse(jsonInput, currentLevel = 1) {
             toggleSwitch.appendChild(track);
 
             toggleLabel.appendChild(toggleSwitch);
-            toggleLabel.appendChild(document.createTextNode(jsonInput.text));
+            toggleLabel.appendChild(document.createTextNode(replace(jsonInput.text)));
             div.appendChild(toggleLabel);
             settingDiv.appendChild(document.createElement("br"));
             break;
@@ -154,7 +158,7 @@ function parse(jsonInput, currentLevel = 1) {
                 }
             });
 
-            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(replace(jsonInput.text)));
             div.appendChild(document.createElement("br"));
             div.appendChild(inputbox);
             settingDiv.appendChild(document.createElement("br"));
@@ -183,7 +187,7 @@ function parse(jsonInput, currentLevel = 1) {
                 jsonInput.value = Number.isFinite(n) ? n : this.value;
             });
 
-            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));
+            div.appendChild(document.createElement("label")).appendChild(document.createTextNode(replace(jsonInput.text)));
             div.appendChild(document.createElement("br"));
             div.appendChild(select);
             settingDiv.appendChild(document.createElement("br"));
@@ -198,7 +202,7 @@ function parse(jsonInput, currentLevel = 1) {
 
             // 標題
             let label = document.createElement("label");
-            label.textContent = jsonInput.text;
+            label.textContent = replace(jsonInput.text);
             div.appendChild(label);
             div.appendChild(document.createElement("br"));
 
@@ -207,16 +211,16 @@ function parse(jsonInput, currentLevel = 1) {
             inputContainer.classList.add("key-input-container");
 
             let inputBox = document.createElement("input");
-            inputBox.placeholder = "按下快捷鍵...";
+            inputBox.placeholder = replace("Press shortcut key...");
             inputBox.classList.add("key-input");
 
             // 清除按鈕
             let clearBtn = document.createElement("button");
-            clearBtn.textContent = "清除";
+            clearBtn.textContent = replace("Clear Key");
             clearBtn.classList.add("clear-button");
 
             let addBtn = document.createElement("button");
-            addBtn.textContent = "新增";
+            addBtn.textContent = replace("Add Key");
             addBtn.classList.add("add-button");
 
             // 改用列表顯示已設定的快捷鍵
