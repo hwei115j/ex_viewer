@@ -179,7 +179,8 @@ function parse(jsonInput, currentLevel = 1) {
             });
 
             select.addEventListener("change", function () {
-                jsonInput.value = parseInt(this.value, 10);
+                const n = Number(this.value);
+                jsonInput.value = Number.isFinite(n) ? n : this.value;
             });
 
             div.appendChild(document.createElement("label")).appendChild(document.createTextNode(jsonInput.text));

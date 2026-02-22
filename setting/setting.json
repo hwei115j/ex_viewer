@@ -375,6 +375,16 @@
             "type": "bool",
             "value": false
         },
+        "ui_language": {
+            "text": "介面語言",
+            "type": "enum",
+            "options": [
+                "臺灣正體",
+                "簡体中文",
+                "English"
+            ],
+            "value": "English"
+        },
         "zoom": {
             "text": "頁面放大倍率",
             "type": "enum",
