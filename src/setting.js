@@ -372,4 +372,8 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
 
     webFrame.setZoomFactor(setting.value.zoom.value/100);
     parse(setting);
+
+    document.getElementById("GoBackBtn").textContent = getTranslation("Cancel");
+    document.getElementById("saveBtn").textContent = getTranslation("Save");
+    document.getElementById("RematchBtn").textContent = getTranslation("Rematch");
 });

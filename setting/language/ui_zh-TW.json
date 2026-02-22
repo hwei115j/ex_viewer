@@ -74,5 +74,8 @@
 	"Image Width (% of Screen)": "圖片寬度佔螢幕比例(1-100%)",
 	"Press shortcut key...": "按下快捷鍵...",
 	"Clear Key": "清除",
-	"Add Key": "新增"
+	"Add Key": "新增",
+	"Cancel": "取消",
+	"Save": "儲存",
+	"Rematch": "重新匹配"
 }

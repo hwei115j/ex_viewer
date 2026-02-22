@@ -363,7 +363,7 @@
         "debug": {
             "text": "Enable Developer Tools",
             "type": "bool",
-            "value": true
+            "value": false
         },
         "tag_translate": {
             "text": "Enable Tag Translation",
