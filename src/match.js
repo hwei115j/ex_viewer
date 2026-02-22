@@ -4,10 +4,7 @@ let uiLanguage;
 let path_list = [];
 let dir;
 
-function replace(name, text) {
-    if (text) {
-        return uiLanguage[name] ? uiLanguage[name] : text;
-    }
+function replace(name) {
     return uiLanguage[name] ? uiLanguage[name] : name;
 }
 
@@ -19,7 +16,7 @@ function renderDirectoryList() {
             <div class="layers">
             <h1>${path_list[i]}</h1>
             <select>
-            <option value="1">${replace("init_text2", "1")}</option>
+            <option value="1">${replace("Select search depth. Default is 1.")}</option>
             <option value="2">2</option>
             <option value="3">3</option>
             </select>
@@ -61,11 +58,13 @@ function create_init_html() {
 
     function template() {
         document.getElementById("body").innerHTML = `
+        <h1>${replace("Please click 'Select Directory' to select the folder containing your books. The selected folders will be listed below.")}</h1>
+        <h1>${replace("When the selection is complete, click 'Start' to begin archiving.")}</h1>
         <button id="select-directory" style="display:none">
-        ${replace("select_directory")}</button></select>
+        ${replace("Select Directory")}</button>
         <div id='count'></div>
         <p></p>
-        <button id="start" style="display:none">${replace("start")}</button>
+        <button id="start" style="display:none">${replace("Start")}</button>
         <p></p>
         <div id='path'></div>
         <p></p>
@@ -131,8 +130,6 @@ function create_init_html() {
 
     template();
 
-    let body = document.getElementById("body");
-    body.innerHTML = replace("init_text1") + body.innerHTML;
     path_list = [...new Set(dir.dir)];
     insert();
 }
