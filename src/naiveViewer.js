@@ -126,7 +126,7 @@ async function image_view() {
         element = await getElement(currentImgId);
         
         // 更新標題，使用書本名稱和文件名
-        const fileName = bookInfo && bookInfo.names ? bookInfo.names[img_id] : `頁面 ${img_id + 1}`;
+        const fileName = bookInfo && bookInfo.names ? bookInfo.names[img_id] : `${img_id + 1}`;
         document.title = "ex_viewer - " + group[book_id].local_name + "【" + fileName + "】";
 
         if (img_id == 0) {
@@ -384,7 +384,7 @@ async function hotkeyHandle(event) {
             let ttt = document.getElementById("ttt");
             ttt.style =
                 "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-            ttt.value = "Name";
+            ttt.value = getTranslation("Name");
             setTimeout(() => {
                 ttt.style =
                     "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
@@ -479,7 +479,7 @@ function load_viewer() {
     body[0].innerHTML =
         `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
         `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
-        <input  type="button" id="ttt" style="display:none" value="第一頁" ></div>`;
+        <input  type="button" id="ttt" style="display:none" value=${getTranslation("First Page")} ></div>`;
     html = document.getElementById("im");
 
     loadBookInfo().then(() => {

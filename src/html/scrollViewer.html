@@ -2,7 +2,7 @@
 
 <head>
     <meta charset="utf-8">
-    <title>ex_viewer - 直頁瀏覽</title>
+    <title>ex_viewer</title>
     <link rel="stylesheet" type="text/css" href="exhentai.css">
     <script type="text/javascript" src="../scrollViewer.js"></script>
     <style type="text/css">
@@ -57,7 +57,7 @@
         }
 
         .image-wrapper.loading::after {
-            content: "載入中...";
+            content: "Loading...";
             position: absolute;
             top: 50%;
             left: 50%;
@@ -72,7 +72,7 @@
         }
 
         .image-wrapper.error::after {
-            content: "載入失敗";
+            content: "Load failed";
             position: absolute;
             top: 50%;
             left: 50%;
@@ -150,7 +150,7 @@
     
     <!-- 頂部提示 -->
     <div id="toast-container">
-        <input type="button" id="ttt" style="display:none" value="提示">
+        <input type="button" id="ttt" style="display:none" value="">
     </div>
     
     <!-- 導航按鈕 -->
