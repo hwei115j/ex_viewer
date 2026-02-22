@@ -1,10 +1,10 @@
-/*jshint esversion: 6 */
+﻿/*jshint esversion: 6 */
 const { ipcRenderer } = require("electron");
 let uiLanguage;
 let path_list = [];
 let dir;
 
-function replace(name) {
+function getTranslation(name) {
     return uiLanguage[name] ? uiLanguage[name] : name;
 }
 
@@ -16,7 +16,7 @@ function renderDirectoryList() {
             <div class="layers">
             <h1>${path_list[i]}</h1>
             <select>
-            <option value="1">${replace("Select search depth. Default is 1.")}</option>
+            <option value="1">${getTranslation("Select search depth. Default is 1.")}</option>
             <option value="2">2</option>
             <option value="3">3</option>
             </select>
@@ -58,13 +58,13 @@ function create_init_html() {
 
     function template() {
         document.getElementById("body").innerHTML = `
-        <h1>${replace("Please click 'Select Directory' to select the folder containing your books. The selected folders will be listed below.")}</h1>
-        <h1>${replace("When the selection is complete, click 'Start' to begin archiving.")}</h1>
+        <h1>${getTranslation("Please click 'Select Directory' to select the folder containing your books. The selected folders will be listed below.")}</h1>
+        <h1>${getTranslation("When the selection is complete, click 'Start' to begin archiving.")}</h1>
         <button id="select-directory" style="display:none">
-        ${replace("Select Directory")}</button>
+        ${getTranslation("Select Directory")}</button>
         <div id='count'></div>
         <p></p>
-        <button id="start" style="display:none">${replace("Start")}</button>
+        <button id="start" style="display:none">${getTranslation("Start")}</button>
         <p></p>
         <div id='path'></div>
         <p></p>
