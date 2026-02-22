@@ -1,7 +1,5 @@
-**/setting/*
-!**/setting/language
-!**/setting/setting.json
-!**/setting/local
+setting/local/*
+!setting/local/.gitkeep
 node_modules
 dist
 *.7z

@@ -28,12 +28,13 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 
-const ex_db_path = join(".", "setting", "ex.db");
+const ex_db_path = join(".", "setting", "local", "ex.db");
 const dir_path = join(".", "setting", "local", "dir.json");
 const local_db_path = join(".", "setting", "local", "local.db");
-const setting_path = join(".", "setting", "setting.json");
-const historyList_json = join(".", "setting", "historyList.json");
+const setting_path = join(".", "setting", "local", "setting.json");
+const historyList_json = join(".", "setting", "local", "historyList.json");
 const language_dir = join(".", "setting", "language");
+const default_setting_path = join(".", "setting", "default_setting.json");
 let db;
 let imageManagerInstance = new imageManager();
 
@@ -108,6 +109,12 @@ function createWindow() {
             mainWindow.loadURL("file://" + join(__dirname, "html", "home.html"));
         }
     });
+}
+
+// 確保 local 目錄存在，並在首次啟動時從預設設定複製 setting.json
+fs.mkdirSync(join(".", "setting", "local"), { recursive: true });
+if (!fs.existsSync(setting_path)) {
+    fs.copyFileSync(default_setting_path, setting_path);
 }
 
 let pageStatus = {
