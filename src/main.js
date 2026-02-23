@@ -35,6 +35,7 @@ const setting_path = join(".", "setting", "local", "setting.json");
 const historyList_json = join(".", "setting", "local", "historyList.json");
 const language_dir = join(".", "setting", "language");
 const default_setting_path = join(".", "setting", "default_setting.json");
+const appVersion = require(join("..", "package.json")).version;
 let db;
 let imageManagerInstance = new imageManager();
 
@@ -351,6 +352,7 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         historyList: pageStatus.historyList.sort((a, b) => a.order - b.order),
         setting: pageStatus.setting,
         category: pageStatus.category,
+        appVersion: appVersion,
     });
 });
 

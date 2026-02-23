@@ -150,5 +150,8 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     homeHotkeys = data.homeHotkeys;
     historyList = data.historyList;
     dir = data.dir;
+    appVersion = data.appVersion;
+
+    document.title = `ex_viewer v${appVersion}`;
     create_init_html();
 });

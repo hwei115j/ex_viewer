@@ -353,6 +353,9 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     uiLanguage = data.uiLanguage;
     keyboardEventHome = data.keyboardEventHome;
     setting = data.setting;
+    appVersion = data.appVersion;
+
+    document.title = `ex_viewer v${appVersion}`;
 
     webFrame.setZoomFactor(setting.value.zoom.value/100);
     parse(setting);

@@ -15,6 +15,7 @@ let globalHotkeys;
 let homeHotkeys;
 let historyList;
 let definition;
+let appVersion;
 
 const defineCategory = [
     "Doujinshi",
@@ -703,6 +704,9 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     setting = data.setting;
     definition = data.definition;
     category = data.category;
+    appVersion = data.appVersion;
+
+    document.title = `ex_viewer v${appVersion}`;
 
     webFrame.setZoomFactor(setting.value.zoom.value / 100);
     document.addEventListener('keydown', hotkeyHandle);
