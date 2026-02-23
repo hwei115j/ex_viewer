@@ -1,6 +1,6 @@
 {
 	"name": "ex_viewer",
-	"version": "0.10.1",
+	"version": "1.0.0",
 	"main": "src/main.js",
 	"dependencies": {
 		"bootstrap-icons": "^1.11.3",
