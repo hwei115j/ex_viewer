@@ -487,6 +487,18 @@ function load_viewer() {
     });
 }
 
+function calcCacheConfig(rawValue) {
+    if (rawValue < 10) {
+        rawValue = 10;
+    }
+    let r = (rawValue - 10)/2;
+
+    return {
+        sameGroupPreloadCount: 3 + Math.trunc(r/10 * 7),
+        otherGroupPreloadCount: 1 + Math.trunc(r/10 * 3),
+    };
+}
+
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     book_id = data.book_id;
@@ -496,7 +508,10 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     uiLanguage = data.uiLanguage;
     globalHotkeys = data.globalHotkeys;
     viewHotkeys = data.viewHotkeys;
+    cacheValue = data.setting.value.cache.value;
 
+    
+    imageCache.updateConfig(calcCacheConfig(cacheValue));
     // 初始化快取，僅設置資料夾數量
     imageCache.initialize(group.length);
     
