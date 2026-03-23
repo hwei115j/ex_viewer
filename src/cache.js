@@ -157,16 +157,25 @@ class ImageCache {
         const totalGroups = this.groupsCount; // 使用存儲的數量，而非陣列長度
         const totalImages = this.currentBookInfo.length;
         
+        // 圖片數量為 0 時直接返回，避免模數運算產生 NaN
+        if (totalImages === 0) {
+            return result;
+        }
+        
         // 是否在第一頁
         const isFirstPage = imageId === 0;
         
         // 同一資料夾內的快取範圍
-        const sameGroupRange = isFirstPage 
+        let sameGroupRange = isFirstPage 
             ? this.config.firstPageWindowSize 
             : this.config.sameGroupPreloadCount;
         
         // 其他資料夾的快取範圍
-        const otherGroupRange = this.config.otherGroupPreloadCount;
+        let otherGroupRange = this.config.otherGroupPreloadCount;
+        
+        // 限制範圍不超過可用數量的一半，避免環繞時產生重複
+        sameGroupRange = Math.min(sameGroupRange, Math.floor((totalImages - 1) / 2));
+        otherGroupRange = Math.min(otherGroupRange, Math.floor((totalGroups - 1) / 2));
         
         // 1. 快取當前圖片
         result.push({ bookId, imageId });
@@ -200,12 +209,23 @@ class ImageCache {
             }
         }
         
-        return result;
+        // 使用 Set 去重，處理偶數 totalImages/totalGroups 時中點重複的情況
+        const seen = new Set();
+        const uniqueResult = [];
+        for (const item of result) {
+            const key = this.getCacheKey(item.bookId, item.imageId);
+            if (!seen.has(key)) {
+                seen.add(key);
+                uniqueResult.push(item);
+            }
+        }
+        
+        return uniqueResult;
     }
     
     // 清理不再需要的快取項目
     pruneCache() {
-        if (!this.currentbookId && !this.currentImageId) {
+        if (this.currentbookId === null || this.currentImageId === null) {
             return;
         }
         
