@@ -23,6 +23,7 @@ class ImageCache {
         // 當前狀態
         this.currentbookId = null;
         this.currentImageId = null;
+        this.lastVisitedBookId = null;
         this.groupsCount = 0; // 改為僅存儲數量，而非整個陣列
         this.currentBookInfo = null;
     }
@@ -82,7 +83,7 @@ class ImageCache {
             // 使用 Promise 監聽載入事件
             const loadPromise = new Promise((resolve, reject) => {
                 img.onload = () => {
-                    console.log(`Image loaded: ${key}`);
+                    // console.log(`Image loaded: ${key}`);
                     resolve(img);
                 };
                 
@@ -123,14 +124,16 @@ class ImageCache {
 
     // 根據當前位置更新快取窗口
     async updateCacheWindow(bookId, imageId) {
+        const isFirstEntryIntoBook = this.lastVisitedBookId !== bookId;
+
         this.currentbookId = bookId;
         this.currentImageId = imageId;
         
         // 清除可能不再需要的快取項目
-        this.pruneCache();
+        this.pruneCache(isFirstEntryIntoBook);
         
         // 計算需要快取的圖片清單
-        const imagesToCache = this.calculateCacheList(bookId, imageId);
+        const imagesToCache = this.calculateCacheList(bookId, imageId, isFirstEntryIntoBook);
         
         // 非同步載入所有需要的圖片
         const cachePromises = [];
@@ -144,10 +147,12 @@ class ImageCache {
         if (cachePromises.length > 0) {
             await Promise.allSettled(cachePromises);
         }
+
+        this.lastVisitedBookId = bookId;
     }
     
     // 計算需要快取的圖片列表
-    calculateCacheList(bookId, imageId) {
+    calculateCacheList(bookId, imageId, isFirstEntryIntoBook = false) {
         const result = [];
         
         if (this.groupsCount <= 0 || !this.currentBookInfo) {
@@ -162,11 +167,10 @@ class ImageCache {
             return result;
         }
         
-        // 是否在第一頁
-        const isFirstPage = imageId === 0;
+        const useFirstPageWindow = isFirstEntryIntoBook;
         
         // 同一資料夾內的快取範圍
-        let sameGroupRange = isFirstPage 
+        let sameGroupRange = useFirstPageWindow 
             ? this.config.firstPageWindowSize 
             : this.config.sameGroupPreloadCount;
         
@@ -224,12 +228,12 @@ class ImageCache {
     }
     
     // 清理不再需要的快取項目
-    pruneCache() {
+    pruneCache(isFirstEntryIntoBook = false) {
         if (this.currentbookId === null || this.currentImageId === null) {
             return;
         }
         
-        const neededItems = this.calculateCacheList(this.currentbookId, this.currentImageId);
+        const neededItems = this.calculateCacheList(this.currentbookId, this.currentImageId, isFirstEntryIntoBook);
         const neededKeys = new Set();
         
         for (const item of neededItems) {
