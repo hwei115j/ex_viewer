@@ -495,7 +495,7 @@ function calcCacheConfig(rawValue) {
 
     return {
         sameGroupPreloadCount: 3 + Math.trunc(r/10 * 7),
-        otherGroupPreloadCount: 1 + Math.trunc(r/10 * 3),
+        otherGroupPreloadCount: 2 + Math.trunc(r/10 * 3),
     };
 }
 
