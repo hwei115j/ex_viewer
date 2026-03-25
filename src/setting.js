@@ -334,22 +334,6 @@ saveBtn.addEventListener("click", () => {
     let cache = newJson.value.cache.value;
 
     console.log(zoom, home_max, page_max, cache);
-    if (!Number.isInteger(zoom) || zoom < 50 || zoom > 200) {
-        console.log("zoom = " + zoom);
-        newJson.value.zoom.value = 110;
-    }
-    if (!Number.isInteger(home_max) || home_max < 20 || home_max > 200) {
-        console.log("home_max = " + home_max);
-        newJson.value.home_max.value = 50;
-    }
-    if (!Number.isInteger(page_max) || page_max < 10 || page_max > 200) {
-        console.log("page_max = " + page_max);
-        newJson.value.home_max.value = 20;
-    }
-    if (!Number.isInteger(cache) || cache < 1 || cache > 200) {
-        console.log("cache = "+ cache);
-        newJson.value.home_max.value = 20;
-    }
     ipcRenderer.send('put-settingStatus', { setting: newJson });
     ipcRenderer.on('put-settingStatus-reply', (event) => {
         ipcRenderer.send('put-search', { str: "", category: null});
