@@ -12,7 +12,7 @@ let mainWindow;
 /*jshint esversion: 8 */
 const { DatabaseSync } = require("node:sqlite");
 const fs = require("fs");
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, shell } = require('electron');
 
 // 註冊自訂協議（必須在 app ready 之前）
 protocol.registerSchemesAsPrivileged([
@@ -684,8 +684,8 @@ ipcMain.on('show-context-menu', (event, arg) => {
 
     if (arg.filePath) {
         template.push({
-            label: getTranslation('Copy Path'),
-            click: () => { event.sender.send('context-menu-command', 'copy', arg.filePath); }
+            label: getTranslation('open'),
+            click: () => { shell.showItemInFolder(arg.filePath); }
         });
     }
 
