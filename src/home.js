@@ -534,8 +534,7 @@ function createSidebar() {
     }
 
     sideMenu.getElementsByTagName('button')[1].textContent = getTranslation("Settings");
-    sideMenu.getElementsByTagName('button')[2].textContent = getTranslation("Search");
-    sideMenu.getElementsByTagName('button')[3].textContent = getTranslation("Clear list");
+    sideMenu.getElementsByTagName('button')[2].textContent = getTranslation("Clear list");
     sideMenu.getElementsByTagName('h3')[0].textContent = getTranslation("Search history");
 
     updateHistoryList();
