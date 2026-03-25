@@ -194,6 +194,8 @@ function createPage() {
 
     pageDiv.innerHTML = `<div class="itg gld">${strHtml}</div>`;
     for (let i = 0; i < thisPageMax; i++) {
+        const itemIndex = page * page_max + i;
+
         const click = (event) => {
             const selectedText = window.getSelection().toString().trim();
 
@@ -201,8 +203,8 @@ function createPage() {
                 return;
             }
 
-            console.log(page * page_max + i, group[page * page_max + i].local_name);
-            ipcRenderer.send('put-homeStatus', { book_id: page * page_max + i });
+            console.log(itemIndex, group[itemIndex].local_name);
+            ipcRenderer.send('put-homeStatus', { book_id: itemIndex });
 
             // 確保只添加一次事件監聽器
             ipcRenderer.once('put-homeStatus-reply', (event, data) => {
@@ -215,8 +217,8 @@ function createPage() {
             e.stopPropagation();
             const selectedText = window.getSelection().toString();
             ipcRenderer.send('show-context-menu', {
-                filePath: group[i].local_path,
-                fileName: group[i].local_name,
+                filePath: group[itemIndex].local_path,
+                fileName: group[itemIndex].local_name,
                 selectedText: selectedText
             });
         }
@@ -233,16 +235,16 @@ function createPage() {
         // image.getheadAsync(group[page * page_max + i].local_path).then(url => {
         //     pageDiv.getElementsByTagName("img")[i].src = url;
         // });
-        ipcRenderer.invoke('image:getFirstImagePath', { index: page * page_max + i }).then(imageData => {
+        ipcRenderer.invoke('image:getFirstImagePath', { index: itemIndex }).then(imageData => {
             if (imageData && imageData.type === 'file') {
                 pageDiv.getElementsByTagName("img")[i].src = imageData.path;
             } else {
                 // 處理錯誤情況 - 例如設定一個預設圖片或顯示錯誤訊息
-                console.error(`無法載入索引 ${page * page_max + i} 的封面圖片`);
+                console.error(`無法載入索引 ${itemIndex} 的封面圖片`);
                 pageDiv.getElementsByTagName("img")[i].src = ''; // 或設定一個預設的錯誤圖片
             }
         }).catch(error => {
-            console.error(`獲取索引 ${page * page_max + i} 的封面時出錯:`, error);
+            console.error(`獲取索引 ${itemIndex} 的封面時出錯:`, error);
             pageDiv.getElementsByTagName("img")[i].src = ''; // 或設定一個預設的錯誤圖片
         });
     }
