@@ -682,17 +682,17 @@ ipcMain.on('show-context-menu', (event, arg) => {
         });
     }
 
-    if (arg.filePath) {
-        template.push({
-            label: getTranslation('open'),
-            click: () => { shell.showItemInFolder(arg.filePath); }
-        });
-    }
-
     if (arg.previousPage) {
         template.push({
             label: getTranslation('Previous page'),
             click: () => { event.sender.send('context-menu-command', 'previousPage'); }
+        });
+    }
+
+    if (arg.filePath && !arg.selectedText) {
+        template.push({
+            label: getTranslation('open'),
+            click: () => { shell.showItemInFolder(arg.filePath); }
         });
     }
 

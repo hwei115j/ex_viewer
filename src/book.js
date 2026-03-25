@@ -331,6 +331,7 @@ function createInformation() {
                 //console.log(gt[i].title);
                 ipcRenderer.send('show-context-menu', {
                     selectedText: gt[i].title,
+                    filePath: group[book_id].local_path,
                 });
             });
         }
@@ -356,7 +357,8 @@ function updataBook() {
         const selectedText = window.getSelection().toString();
         ipcRenderer.send('show-context-menu', {
             selectedText: selectedText,
-            previousPage: !!!selectedText
+            previousPage: !!!selectedText,
+            filePath: group[book_id].local_path,
         });
     })
 
