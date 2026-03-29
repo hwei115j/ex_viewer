@@ -95,8 +95,12 @@ function create_init_html() {
         start.addEventListener("click", event => {
             let layers = document.getElementsByClassName("layers");
             layers_list = [];
-            start.style = selectDirBtn.style = "display:none";
 
+            if(layers.length == 0) {
+                return;
+            }
+            
+            start.style = selectDirBtn.style = "display:none";
             for (let i = 0; i < layers.length; i++) {
                 layers_list.push(
                     parseInt(layers[i].getElementsByTagName("select")[0].value)
@@ -150,5 +154,8 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     homeHotkeys = data.homeHotkeys;
     historyList = data.historyList;
     dir = data.dir;
+    appVersion = data.appVersion;
+
+    document.title = `ex_viewer v${appVersion}`;
     create_init_html();
 });

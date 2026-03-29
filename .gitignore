@@ -3,3 +3,4 @@ setting/local/*
 node_modules
 dist
 *.7z
+ex.db

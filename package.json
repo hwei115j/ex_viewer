@@ -1,13 +1,13 @@
 {
 	"name": "ex_viewer",
-	"version": "0.9.1",
+	"version": "0.10.0",
 	"main": "src/main.js",
 	"dependencies": {
 		"bootstrap-icons": "^1.11.3",
 		"dialogs": "^2.0.1",
 		"fast-levenshtein": "^2.0.6",
 		"jquery": "^3.7.0",
-		"jshint": "^2.13.4",
+		"jshint": "^0.5.9",
 		"jszip-sync": "^3.2.1-sync",
 		"node-stream-zip": "^1.15.0",
 		"viewerjs": "^1.10.3"

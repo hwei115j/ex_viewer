@@ -77,5 +77,8 @@
 	"Add Key": "新增",
 	"Cancel": "取消",
 	"Save": "保存",
-	"Rematch": "重新匹配"
+	"Rematch": "重新匹配",
+	"Warning": "警告",
+	"OK": "确定",
+	"Cannot find ex.db database file. Please place ex.db in the setting folder and restart.": "找不到 ex.db 数据库文件，请将 ex.db 放置于 setting 文件夹后重新启动。"
 }

@@ -28,13 +28,14 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 
-const ex_db_path = join(".", "setting", "local", "ex.db");
+const ex_db_path = join(".", "setting", "ex.db");
 const dir_path = join(".", "setting", "local", "dir.json");
 const local_db_path = join(".", "setting", "local", "local.db");
 const setting_path = join(".", "setting", "local", "setting.json");
 const historyList_json = join(".", "setting", "local", "historyList.json");
 const language_dir = join(".", "setting", "language");
 const default_setting_path = join(".", "setting", "default_setting.json");
+const appVersion = require(join("..", "package.json")).version;
 let db;
 let imageManagerInstance = new imageManager();
 
@@ -90,6 +91,20 @@ function createWindow() {
     });
     //隱藏工具列
     electron.Menu.setApplicationMenu(null);
+
+    // 檢查 ex.db 是否存在
+    if (!fs.existsSync(ex_db_path)) {
+        dialog.showMessageBoxSync(mainWindow, {
+            type: 'warning',
+            buttons: [getTranslation('OK')],
+            defaultId: 0,
+            noLink: true,
+            title: getTranslation('Warning'),
+            message: getTranslation('Cannot find ex.db database file. Please place ex.db in the setting folder and restart.')
+        });
+        app.quit();
+        return;
+    }
 
     //appInit();
 
@@ -351,6 +366,7 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         historyList: pageStatus.historyList.sort((a, b) => a.order - b.order),
         setting: pageStatus.setting,
         category: pageStatus.category,
+        appVersion: appVersion,
     });
 });
 
