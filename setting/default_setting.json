@@ -65,16 +65,14 @@
                             "text": "Previous Page",
                             "type": "key",
                             "value": [
-                                37,
-                                33
+                                37
                             ]
                         },
                         "next": {
                             "text": "Next Page",
                             "type": "key",
                             "value": [
-                                39,
-                                34
+                                39
                             ]
                         },
                         "full_screen": {
