@@ -401,7 +401,7 @@ async function hotkeyHandle(event) {
             let ttt = document.getElementById("ttt");
             ttt.style =
                 "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-            ttt.value = "Random";
+            ttt.value = getTranslation("Random");
             setTimeout(() => {
                 ttt.style =
                     "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
@@ -418,7 +418,7 @@ async function hotkeyHandle(event) {
             let ttt = document.getElementById("ttt");
             ttt.style =
                 "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-            ttt.value = "Chronology";
+            ttt.value = getTranslation("Chronology");
             setTimeout(() => {
                 ttt.style =
                     "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
