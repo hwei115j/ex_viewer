@@ -28,7 +28,7 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 
-const ex_db_path = join(".", "setting", "local", "ex.db");
+const ex_db_path = join(".", "setting", "ex.db");
 const dir_path = join(".", "setting", "local", "dir.json");
 const local_db_path = join(".", "setting", "local", "local.db");
 const setting_path = join(".", "setting", "local", "setting.json");
