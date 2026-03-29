@@ -92,6 +92,20 @@ function createWindow() {
     //隱藏工具列
     electron.Menu.setApplicationMenu(null);
 
+    // 檢查 ex.db 是否存在
+    if (!fs.existsSync(ex_db_path)) {
+        dialog.showMessageBoxSync(mainWindow, {
+            type: 'warning',
+            buttons: [getTranslation('OK')],
+            defaultId: 0,
+            noLink: true,
+            title: getTranslation('Warning'),
+            message: getTranslation('Cannot find ex.db database file. Please place ex.db in the setting folder and restart.')
+        });
+        app.quit();
+        return;
+    }
+
     //appInit();
 
     if (pageStatus.setting.value.debug.value) {
