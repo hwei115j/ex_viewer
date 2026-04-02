@@ -22,6 +22,18 @@ let page = 0;
 //let img;
 //let document;
 
+function enableContextMenu() {
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const selectedText = window.getSelection().toString();
+        ipcRenderer.send('show-context-menu', {
+            selectedText: selectedText,
+            previousPage: !!!selectedText,
+            filePath: group[book_id].local_path,
+        });
+    });
+}
+
 function goto_page(str) {
     let p = parseInt(str);
     let len = Math.floor(bookInfo.length / page_max) + 1;
@@ -350,18 +362,6 @@ function updataBook() {
     createPtt();
     createInformation();
     createFrom();
-
-
-    window.addEventListener('contextmenu', (e) => {
-        e.preventDefault()
-        const selectedText = window.getSelection().toString();
-        ipcRenderer.send('show-context-menu', {
-            selectedText: selectedText,
-            previousPage: !!!selectedText,
-            filePath: group[book_id].local_path,
-        });
-    })
-
 }
 
 function hotkeyHandle(event) {
@@ -509,6 +509,7 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     search_str = [];
 
     document.addEventListener('keydown', hotkeyHandle);
+    enableContextMenu();
     ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
         bookInfo = data;
         updataBook();
