@@ -91,6 +91,7 @@ async function getElement(pageId) {
 
 let viewerUpdateInProgress = false;
 let pendingImgId = null;
+let bookNavigationInProgress = false;
 
 async function image_view() {
     // 如果有更新正在進行中，記錄最新的請求並退出
@@ -181,6 +182,46 @@ async function image_view() {
             img_id = nextImgId; // 更新全域 img_id
             setTimeout(() => image_view(), 0); // 使用 setTimeout 避免遞迴調用堆疊過深
         }
+    }
+}
+
+function bindBookNavigationButtons() {
+    const prevBookBtn = document.getElementById("prev-book-btn");
+    const nextBookBtn = document.getElementById("next-book-btn");
+
+    if (prevBookBtn) {
+        prevBookBtn.addEventListener("click", () => navigateBook(-1));
+    }
+    if (nextBookBtn) {
+        nextBookBtn.addEventListener("click", () => navigateBook(1));
+    }
+}
+
+async function navigateBook(direction) {
+    if (bookNavigationInProgress || !group || group.length === 0) {
+        return;
+    }
+
+    bookNavigationInProgress = true;
+
+    try {
+        if (direction > 0) {
+            console.log("next_book");
+            book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
+        } else {
+            console.log("prev_book");
+            book_id = (book_id - 1 < 0) ? (group.length - 1) : (book_id - 1);
+        }
+
+        img_id = 0;
+        book_scrollTop = 0;
+
+        const nextBookInfo = await loadBookInfo();
+        if (nextBookInfo) {
+            await image_view();
+        }
+    } finally {
+        bookNavigationInProgress = false;
     }
 }
 
@@ -303,29 +344,11 @@ async function hotkeyHandle(event) {
         return;
     }
     if (isKey("next_book")) {
-        //路徑清單的下一個路徑
-        console.log("next_book");
-        book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
-        img_id = 0;
-        book_scrollTop = 0;
-
-        // 使用 IPC 獲取新的書本資訊
-        await loadBookInfo().then(() => {
-            image_view();
-        });
+        await navigateBook(1);
         return;
     }
     if (isKey("prev_book")) {
-        //路徑清單的上一個路徑
-        console.log("prev_book");
-        book_id = (book_id - 1 < 0) ? (group.length - 1) : (book_id - 1);
-        img_id = 0;
-        book_scrollTop = 0;
-
-        // 使用 IPC 獲取新的書本資訊
-        await loadBookInfo().then(() => {
-            image_view();
-        });
+        await navigateBook(-1);
         return;
     }
     if (isKey("prev")) {
@@ -479,8 +502,12 @@ function load_viewer() {
     body[0].innerHTML =
         `<div id="imup" style="overflow:hidden"></div><div id="im"><div id="div" style="position: relative;margin:0px auto"><img id="pic"></div></div>` +
         `<div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
-        <input  type="button" id="ttt" style="display:none" value=${getTranslation("First Page")} ></div>`;
+        <input  type="button" id="ttt" style="display:none" value=${getTranslation("First Page")} ></div>` +
+        `<button id="prev-book-btn" class="nav-btn">◀</button>` +
+        `<button id="next-book-btn" class="nav-btn">▶</button>`;
     html = document.getElementById("im");
+
+    bindBookNavigationButtons();
 
     loadBookInfo().then(() => {
         image_view();
