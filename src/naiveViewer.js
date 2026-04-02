@@ -569,7 +569,7 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
             console.log("sort:", text);
             let ttt = document.getElementById("ttt");
             ttt.style = "position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
-            ttt.value = text.charAt(0).toUpperCase() + text.slice(1);
+            ttt.value = getTranslation(text.charAt(0).toUpperCase() + text.slice(1));
             setTimeout(() => {
                 ttt.style = "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             }, 2000);
