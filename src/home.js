@@ -2,7 +2,6 @@
 const dialogs = require("dialogs")();
 const { webFrame } = require('electron');
 const { ipcRenderer, clipboard } = require("electron");
-//window.$ = window.jQuery = require('jquery');
 
 let page = 0;
 let uiLanguage;
@@ -478,10 +477,10 @@ function createSearch() {
 function updateHistoryList() {
     let historyHtml = "";
     for (const i in historyList) {
-        let star_class = (historyList[i].pinned) ? "bi-star-fill" : "bi-star";
+        let pinIcon = historyList[i].pinned ? "&#9733;" : "&#9734;";
         let button_class = (historyList[i].pinned) ? "pinButton active" : "pinButton";
         let displayText = translateHistoryText(historyList[i].text);
-        historyHtml += `<li><a class="history-link" title='${historyList[i].text}'>${displayText}</a><button class="${button_class}"><i class='${star_class}'></i></button></li>`;
+        historyHtml += `<li><a class="history-link" title='${historyList[i].text}'>${displayText}</a><button class="${button_class}"><span class="pinIcon">${pinIcon}</span></button></li>`;
     }
 
     document.getElementById('historyList').innerHTML = historyHtml;
@@ -496,10 +495,9 @@ function updateHistoryList() {
     document.querySelectorAll('.pinButton').forEach((button, index) => {
         button.addEventListener('click', () => {
             button.classList.toggle('active');
-            const icon = button.querySelector('i');
+            const icon = button.querySelector('.pinIcon');
             if (button.classList.contains('active')) {
-                icon.classList.remove('far');
-                icon.classList.add('fas');
+                icon.innerHTML = '&#9733;';
                 historyList[index].pinned = true;
 
                 let maxOrder = 0;
@@ -510,8 +508,7 @@ function updateHistoryList() {
                 });
                 historyList[index].order = maxOrder + 1;
             } else {
-                icon.classList.remove('fas');
-                icon.classList.add('far');
+                icon.innerHTML = '&#9734;';
                 historyList[index].pinned = false;
                 historyList[index].order = 2434;
             }
