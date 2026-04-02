@@ -109,6 +109,41 @@
             margin-left: 5px;
         }
 
+        .nav-btn {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 60px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 28px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s ease, background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            opacity: 1;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-btn:active {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        #prev-book-btn {
+            left: 0;
+        }
+
+        #next-book-btn {
+            right: 12px;
+        }
+
         .dialog-widget.background {
             position: fixed;
             left: 0;
