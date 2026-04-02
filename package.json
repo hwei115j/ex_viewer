@@ -25,6 +25,18 @@
 			".git/*",
 			".vscode/*"
 		],
+		"extraFiles": [
+			{
+				"from": "setting",
+				"to": "setting",
+				"filter": [
+					"**/*",
+					"!local",
+					"!local/**/*",
+					"!ex.db"
+				]
+			}
+		],
 		"asar": true
 	}
 }
