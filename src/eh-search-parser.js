@@ -644,8 +644,7 @@ class SQLGenerator {
         
         if (qualifier === 'title') {
             const pattern = `%${value}%`;
-            const p = this.addParam(pattern);
-            return `(title LIKE ${p} OR title_jpn LIKE ${p})`;
+            return `(title LIKE ${this.addParam(pattern)} OR title_jpn LIKE ${this.addParam(pattern)})`;
         } else if (qualifier === 'comment') {
             const pattern = `%${value}%`;
             return `comment LIKE ${this.addParam(pattern)}`;
@@ -654,8 +653,12 @@ class SQLGenerator {
             return `favnote LIKE ${this.addParam(pattern)}`;
         } else {
             const pattern = `%${value}%`;
-            const p = this.addParam(pattern);
-            return `(title LIKE ${p} OR title_jpn LIKE ${p} OR tags LIKE ${p})`;
+            return `(
+                title LIKE ${this.addParam(pattern)} OR
+                title_jpn LIKE ${this.addParam(pattern)} OR
+                tags LIKE ${this.addParam(pattern)} OR
+                local_name LIKE ${this.addParam(pattern)}
+            )`;
         }
     }
 
@@ -784,7 +787,7 @@ class InlineSQLGenerator {
         } else if (qualifier === 'favnote') {
             return `favnote LIKE '${pattern}'`;
         } else {
-            return `(title LIKE '${pattern}' OR title_jpn LIKE '${pattern}' OR tags LIKE '${pattern}')`;
+            return `(title LIKE '${pattern}' OR title_jpn LIKE '${pattern}' OR tags LIKE '${pattern}' OR local_name LIKE '${pattern}')`;
         }
     }
 
