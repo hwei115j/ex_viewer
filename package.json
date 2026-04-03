@@ -1,12 +1,10 @@
 {
 	"name": "ex_viewer",
-	"version": "0.10.1",
+	"version": "1.0.0",
 	"main": "src/main.js",
 	"dependencies": {
-		"bootstrap-icons": "^1.11.3",
 		"dialogs": "^2.0.1",
 		"fast-levenshtein": "^2.0.6",
-		"jquery": "^3.7.0",
 		"jshint": "^0.5.9",
 		"jszip-sync": "^3.2.1-sync",
 		"node-stream-zip": "^1.15.0",
@@ -26,6 +24,18 @@
 			"!dist",
 			".git/*",
 			".vscode/*"
+		],
+		"extraFiles": [
+			{
+				"from": "setting",
+				"to": "setting",
+				"filter": [
+					"**/*",
+					"!local",
+					"!local/**/*",
+					"!ex.db"
+				]
+			}
 		],
 		"asar": true
 	}
