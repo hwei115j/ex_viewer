@@ -342,7 +342,7 @@ function createInformation() {
                 e.stopPropagation();
                 //console.log(gt[i].title);
                 ipcRenderer.send('show-context-menu', {
-                    selectedText: gt[i].title,
+                    selectedText: `${dataNamespace}:"${dataTag}$"`,
                     filePath: group[book_id].local_path,
                 });
             });
