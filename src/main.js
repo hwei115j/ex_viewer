@@ -156,7 +156,11 @@ let pageStatus = {
     group: [],
     setting: (() => {
         try {
-            return JSON.parse(fs.readFileSync(setting_path).toString());
+            const setting = JSON.parse(fs.readFileSync(setting_path).toString());
+            if (!setting.value.web_search_site) {
+                setting.value.web_search_site = JSON.parse(fs.readFileSync(default_setting_path).toString()).value.web_search_site;
+            }
+            return setting;
         } catch (err) {
             throw err;
         }
@@ -336,6 +340,25 @@ ipcMain.on('put-search', (event, arg) => {
         });
     });
 })
+
+ipcMain.handle('search:openWeb', async (event, query) => {
+    if (typeof query !== 'string' || !query.trim()) {
+        return { error: 'Please select at least one tag.' };
+    }
+    if (query.length > 200) {
+        return { error: 'Web searches support up to 5 tags and 200 characters.' };
+    }
+
+    const site = pageStatus.setting.value.web_search_site.value === 'exhentai.org' ? 'exhentai.org' : 'e-hentai.org';
+    const url = new URL(`https://${site}/`);
+    url.searchParams.set('f_search', query);
+    try {
+        await shell.openExternal(url.toString());
+        return {};
+    } catch (err) {
+        return { error: 'Could not open the system browser. Please try again.' };
+    }
+});
 
 ipcMain.on('get-pageStatus', (event, arg) => {
     if (arg != undefined) {

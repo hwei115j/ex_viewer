@@ -383,6 +383,15 @@
             ],
             "value": "臺灣正體"
         },
+        "web_search_site": {
+            "text": "Web Search Site",
+            "type": "enum",
+            "options": [
+                "e-hentai.org",
+                "exhentai.org"
+            ],
+            "value": "e-hentai.org"
+        },
         "zoom": {
             "text": "Page Zoom Level",
             "type": "enum",
