@@ -392,6 +392,21 @@
             ],
             "value": "e-hentai.org"
         },
+        "default_sort": {
+            "text": "Default Sort on Startup",
+            "type": "enum",
+            "options": [
+                "name",
+                "random",
+                "chronology"
+            ],
+            "labels": {
+                "name": "Name",
+                "random": "Random",
+                "chronology": "Sort by Date (Newest First)"
+            },
+            "value": "name"
+        },
         "zoom": {
             "text": "Page Zoom Level",
             "type": "enum",
