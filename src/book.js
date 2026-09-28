@@ -474,6 +474,7 @@ function hotkeyHandle(event) {
         book_id = (book_id - 1 < 0) ? (group.length - 1) : (book_id - 1);
         img_id = 0;
         search_str = [];
+        document.getElementById("gright").innerHTML = "";
         ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
             bookInfo = data;
             updataBook();
@@ -485,6 +486,7 @@ function hotkeyHandle(event) {
         book_id = (book_id + 1 == group.length) ? 0 : (book_id + 1);
         img_id = 0;
         search_str = [];
+        document.getElementById("gright").innerHTML = "";
         
         ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
             bookInfo = data;
