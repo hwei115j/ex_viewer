@@ -175,7 +175,7 @@ function parse(jsonInput, currentLevel = 1) {
             jsonInput.options.forEach(optVal => {
                 let option = document.createElement("option");
                 option.value = optVal;
-                option.textContent = optVal;
+                option.textContent = jsonInput.labels ? getTranslation(jsonInput.labels[optVal] || optVal) : optVal;
                 if (optVal === jsonInput.value) {
                     option.selected = true;
                 }

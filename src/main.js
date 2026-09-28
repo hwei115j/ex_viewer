@@ -160,6 +160,11 @@ let pageStatus = {
             if (!setting.value.web_search_site) {
                 setting.value.web_search_site = JSON.parse(fs.readFileSync(default_setting_path).toString()).value.web_search_site;
             }
+            if (!setting.value.default_sort) {
+                setting.value.default_sort = JSON.parse(fs.readFileSync(default_setting_path).toString()).value.default_sort;
+            } else if (!["name", "random", "chronology"].includes(setting.value.default_sort.value)) {
+                setting.value.default_sort.value = "name";
+            }
             return setting;
         } catch (err) {
             throw err;
@@ -222,10 +227,28 @@ const defineCategory = [
 
 function appInit() {
     db = new DatabaseSync(local_db_path, { enableDoubleQuotedStringLiterals: true });
-    search(pageStatus.search_str, pageStatus.category, () => { });
+    search(pageStatus.search_str, pageStatus.category, () => { }, pageStatus.setting.value.default_sort.value);
 }
 
-function search(searchStr, category, func_cb) {
+function sortGroup(mode) {
+    if (mode == "name") {
+        pageStatus.group.sort((a, b) =>
+            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
+        );
+    }
+    if (mode == "random") {
+        pageStatus.group.sort(() => Math.random() - 0.5);
+    }
+    if (mode == "chronology") {
+        pageStatus.group.sort((a, b) => {
+            return b.posted - a.posted;
+        });
+    }
+    pageStatus.currentSort = mode;
+    imageManagerInstance.setGroup(pageStatus.group);
+}
+
+function search(searchStr, category, func_cb, sortMode = "name") {
     pageStatus.book_id = 0;
 
     try {
@@ -271,11 +294,7 @@ function search(searchStr, category, func_cb) {
             console.log(e);
             pageStatus.group = [];
         }
-        pageStatus.group.sort((a, b) =>
-            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
-        );
-        pageStatus.currentSort = "name";
-        imageManagerInstance.setGroup(pageStatus.group);
+        sortGroup(sortMode);
         func_cb();
     } catch (err) {
         console.log(err);
@@ -681,24 +700,9 @@ ipcMain.on('put-match', async (event, arg) => {
 });
 
 ipcMain.on("sort", (event, arg) => {
-    if (arg == "name") {
-        pageStatus.group.sort((a, b) =>
-            a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
-        );
-    }
-    if (arg == "random") {
-        pageStatus.group.sort(() => Math.random() - 0.5);
-    }
-    if (arg == "chronology") {
-        pageStatus.group.sort((a, b) => {
-            return b.posted - a.posted;
-        });
-    }
-    // 更新當前排序模式
-    pageStatus.currentSort = arg; 
+    sortGroup(arg);
     //pageStatus.book_id = pageStatus.group.findIndex(element => element.local_id === id);
 
-    imageManagerInstance.setGroup(pageStatus.group);
     event.reply("sort-reply", {
         group: pageStatus.group,
         book_id: pageStatus.book_id
