@@ -279,7 +279,8 @@ function createInformation() {
         strHtml += `</tbody></table></div><div id="tagmenu_act" style="display:none"><a id="tagmenu_act_a" href="#" style="font-size:medium">
         ${getTranslation(
             "Search Locally"
-        )}</a> <a id="tagmenu_web_a" href="#" style="font-size:medium; margin-left:12px">${getTranslation("Search Web")}</a></div></div>`
+        )}</a> <a id="tagmenu_web_a" href="#" style="font-size:medium; margin-left:12px">${getTranslation("Search Web")}</a>
+        <a id="tagmenu_copy_a" href="#" style="font-size:medium; margin-left:12px">${getTranslation("Copy Tags")}</a></div></div>`
 
         gmid.innerHTML = strHtml;
 
@@ -332,6 +333,11 @@ function createInformation() {
                     document.addEventListener('keydown', hotkeyHandle);
                 }
             }
+        };
+        gmid.querySelector("#tagmenu_copy_a").onclick = (event) => {
+            event.preventDefault();
+            if (!search_str.length) return;
+            clipboard.writeText(search_str.join(" "));
         };
         let gt = gmid.getElementsByClassName("gt")
 
