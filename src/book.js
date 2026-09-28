@@ -360,7 +360,6 @@ function updataBook() {
             ? ((page + 1) * page_max)
             : bookInfo.length} of ${bookInfo.length} images`;
     createPtt();
-    createInformation();
     createFrom();
 }
 
@@ -477,6 +476,7 @@ function hotkeyHandle(event) {
         document.getElementById("gright").innerHTML = "";
         ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
             bookInfo = data;
+            createInformation();
             updataBook();
         })
         return;
@@ -490,6 +490,7 @@ function hotkeyHandle(event) {
         
         ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
             bookInfo = data;
+            createInformation();
             updataBook();
         })
         return;
@@ -514,6 +515,7 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     enableContextMenu();
     ipcRenderer.invoke("image:getBookInfo", {index:book_id}).then(data => {
         bookInfo = data;
+        createInformation();
         updataBook();
     })
 });
