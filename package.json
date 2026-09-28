@@ -1,6 +1,6 @@
 {
 	"name": "ex_viewer",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"main": "src/main.js",
 	"dependencies": {
 		"dialogs": "^2.0.1",
