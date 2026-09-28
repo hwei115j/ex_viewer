@@ -15,6 +15,7 @@ let homeHotkeys;
 let historyList;
 let definition;
 let appVersion;
+let currentSort;
 
 const defineCategory = [
     "Doujinshi",
@@ -32,7 +33,7 @@ let category;
 
 function goto_page(str) {
     let p = parseInt(str);
-    let len = Math.floor(groupLength / page_max) + 1;
+    let len = Math.max(1, Math.ceil(groupLength / page_max));
 
     return () => {
         if (isNaN(p)) {
@@ -129,197 +130,107 @@ function translateHistoryText(text) {
     });
 }
 
+function escapeHomeText(value) {
+    return String(value == null ? "" : value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[char]);
+}
+
 function createPage() {
-    let pageDiv = document.getElementById("page");
-    let strHtml = "";
-    let thisPageMax = ((page + 1) * page_max < group.length) ? page_max : (group.length - page * page_max);
-
-    console.log(page, thisPageMax, (page + 1) * page_max, group.length);
-    function fa(gid) {
-        let date = "null";
-        if (group[gid]["posted"] != null) {
-            let dd = new Date(parseInt(group[gid]["posted"]) * 1000);
-            date =
-                dd.toISOString().split("T")[0] +
-                " " +
-                dd
-                    .toISOString()
-                    .split("T")[1]
-                    .substr(0, 5);
-        }
-        return date;
-    }
-
-    let cat = {
-        Doujinshi: ["cs ct2", getTranslation("Doujinshi")],
-        Manga: ["cs ct3", getTranslation("Manga")],
-        "Artist CG": ["cs ct4", getTranslation("Artist CG")],
-        "Game CG": ["cs ct5", getTranslation("Game CG")],
-        Western: ["cs cta", getTranslation("Western")],
-        "Non-H": ["cs ct9", getTranslation("Non-H")],
-        "Image Set": ["cs ct6", getTranslation("Image Set")],
-        Cosplay: ["cs ct7", getTranslation("Cosplay")],
-        "Asian Porn": ["cs ct8", getTranslation("Asian Porn")],
-        Misc: ["cs ct1", getTranslation("Misc")],
-        null: ["cs ct1", getTranslation("null")]
+    const pageDiv = document.getElementById("page");
+    const first = page * page_max;
+    const last = Math.min(first + page_max, group.length);
+    const categoryStyle = {
+        Doujinshi: "ct2", Manga: "ct3", "Artist CG": "ct4", "Game CG": "ct5",
+        Western: "cta", "Non-H": "ct9", "Image Set": "ct6", Cosplay: "ct7",
+        "Asian Porn": "ct8", Misc: "ct1"
     };
-    for (
-        let i = page * page_max;
-        i < group.length && i < page * page_max + page_max;
-        i++
-    ) {
-        let local_title = group[i].local_name;
-        let db_title = (group[i].title_jpn) ? group[i].title_jpn : (group[i].title) ? group[i].title : local_title;
-        let date = fa(i);
-        let category = cat[group[i]["category"]];
-        strHtml += `<div class="gl1t">
-            <a>
-                <div class="gl4t glname glink">${local_title}</div>
-            </a>
-            <div class="gl3t" style="height: auto; width: 250px;"><a><img loading="auto"
-                        title="${db_title}" alt="${local_title}"
-                        style="height: auto; width: auto; max-width: 100%; max-height: 100%;"></a></div>
-            <div class="gl5t">
-                <div>
-                    <div class="${category[0]}">${category[1]}</div>
-                    <div class="glnew">${date}</div>
-                </div>
-                <div>
-                    <div></div>
-                    <div>${group[i]["filecount"]} pages</div>
-                </div>
-            </div>
-        </div>`
+    let html = "";
+
+    for (let i = first; i < last; i++) {
+        const book = group[i];
+        const title = escapeHomeText(book.local_name);
+        const imageTitle = escapeHomeText(book.title_jpn || book.title || book.local_name);
+        const date = book.posted ? new Date(parseInt(book.posted, 10) * 1000).toISOString().slice(0, 10) : "—";
+        const categoryName = book.category || "Unmatched";
+        const categoryClass = categoryStyle[book.category] || "ct1";
+        html += '<article class="home-card">' +
+            '<button type="button" class="home-cover-button home-open" aria-label="' + escapeHomeText(getTranslation("Open")) + ' ' + title + '">' +
+                '<img class="home-cover" alt="" title="' + imageTitle + '">' +
+            '</button>' +
+            '<div class="home-card-info">' +
+                '<button type="button" class="home-card-title home-open" title="' + title + '">' + title + '</button>' +
+                '<span class="home-card-category ' + categoryClass + '">' + escapeHomeText(getTranslation(categoryName)) + '</span>' +
+                '<div class="home-card-bottom">' + date + ' · ' + escapeHomeText(book.filecount) + ' ' + escapeHomeText(getTranslation("pages")) + '</div>' +
+            '</div>' +
+        '</article>';
     }
 
-    pageDiv.innerHTML = `<div class="itg gld">${strHtml}</div>`;
-    for (let i = 0; i < thisPageMax; i++) {
-        const itemIndex = page * page_max + i;
+    pageDiv.innerHTML = '<div class="home-grid">' +
+        (html || '<div class="home-empty">' + escapeHomeText(getTranslation("No results")) + '</div>') +
+        '</div>';
 
-        const click = (event) => {
-            const selectedText = window.getSelection().toString().trim();
-
-            if (selectedText.length) {
-                return;
-            }
-
-            console.log(itemIndex, group[itemIndex].local_name);
-            ipcRenderer.send('put-homeStatus', { book_id: itemIndex });
-
-            // 確保只添加一次事件監聽器
-            ipcRenderer.once('put-homeStatus-reply', (event, data) => {
+    for (let i = first; i < last; i++) {
+        const card = pageDiv.getElementsByClassName("home-card")[i - first];
+        const image = card.querySelector("img");
+        const open = () => {
+            if (window.getSelection().toString().trim()) return;
+            ipcRenderer.send("put-homeStatus", { book_id: i });
+            ipcRenderer.once("put-homeStatus-reply", () => {
                 window.location.href = "book.html";
             });
         };
-
-        const contextmenu = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const selectedText = window.getSelection().toString();
-            ipcRenderer.send('show-context-menu', {
-                filePath: group[itemIndex].local_path,
-                fileName: group[itemIndex].local_name,
-                selectedText: selectedText
+        card.querySelectorAll(".home-open").forEach(button => button.addEventListener("click", open));
+        card.addEventListener("contextmenu", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            ipcRenderer.send("show-context-menu", {
+                filePath: group[i].local_path,
+                fileName: group[i].local_name,
+                selectedText: window.getSelection().toString()
             });
-        }
-
-        const gl1tLink = pageDiv.getElementsByClassName("gl1t")[i].querySelector("a");
-        const gl3tLink = pageDiv.getElementsByClassName("gl3t")[i].querySelector("a");
-
-        gl1tLink.addEventListener("click", click);
-        gl3tLink.addEventListener("click", click);
-
-        gl1tLink.addEventListener('contextmenu', contextmenu);
-        gl3tLink.addEventListener('contextmenu', contextmenu);
-
-        // image.getheadAsync(group[page * page_max + i].local_path).then(url => {
-        //     pageDiv.getElementsByTagName("img")[i].src = url;
-        // });
-        ipcRenderer.invoke('image:getFirstImagePath', { index: itemIndex }).then(imageData => {
-            if (imageData && imageData.type === 'file') {
-                pageDiv.getElementsByTagName("img")[i].src = imageData.path;
-            } else {
-                // 處理錯誤情況 - 例如設定一個預設圖片或顯示錯誤訊息
-                console.error(`無法載入索引 ${itemIndex} 的封面圖片`);
-                pageDiv.getElementsByTagName("img")[i].src = ''; // 或設定一個預設的錯誤圖片
-            }
-        }).catch(error => {
-            console.error(`獲取索引 ${itemIndex} 的封面時出錯:`, error);
-            pageDiv.getElementsByTagName("img")[i].src = ''; // 或設定一個預設的錯誤圖片
         });
+        ipcRenderer.invoke("image:getFirstImagePath", { index: i }).then(imageData => {
+            if (image.isConnected && imageData && imageData.type === "file") image.src = imageData.path;
+        }).catch(error => console.error("Failed to load cover:", error));
     }
 }
 
 function createPtt() {
-    function handleClick(event) {
-        let value = event.target.innerText;
-        if (value == "<") {
-            goto_page("-1")();
-        }
-        else if (value == ">") {
-            goto_page("-2")();
-        }
-        else if (value == "1") {
-            goto_page(1)();
-        }
-        else if (value == "...") {
-            goto_page(null)();
-        }
-        else {
-            goto_page(value)();
-        }
-    }
-
-    let ptt = document.getElementsByClassName("ptt");
-    let len = Math.floor(groupLength / page_max) + 1;
-    let strHtml = "";
-
-    if (len <= 7) {
-        //7
-        for (let i = 0; i < len; i++) {
-            strHtml += `<td><a>${i + 1}</a></td>`
-        }
+    const totalPages = Math.max(1, Math.ceil(groupLength / page_max));
+    const pages = [];
+    if (totalPages <= 7) {
+        for (let i = 0; i < totalPages; i++) pages.push(i + 1);
     } else if (page + 1 < 7) {
-        //7, ..., len
-        for (let i = 0; i < 7; i++) {
-            strHtml += `<td><a>${i + 1}</a></td>`;
-        }
-        strHtml += `<td><a>...</a></td>`;
-        strHtml += `<td><a>${len}</a></td>`;
-    } else if (page > len - 7) {
-        //1, ..., 7
-        strHtml += `<td><a>1</a></td>`;
-        strHtml += `<td><a>...</a></td>`;
-        for (let i = len - 7; i < len; i++) {
-            strHtml += `<td><a>${i + 1}</a></td>`;
-        }
+        for (let i = 0; i < 7; i++) pages.push(i + 1);
+        pages.push("jump", totalPages);
+    } else if (page > totalPages - 7) {
+        pages.push(1, "jump");
+        for (let i = totalPages - 7; i < totalPages; i++) pages.push(i + 1);
     } else {
-        //1, ..., 5, ..., len
-        strHtml += `<td><a>1</a></td>`;
-        strHtml += `<td><a>...</a></td>`;
-        for (let i = page - 3; i <= page + 3; i++) {
-            strHtml += `<td><a>${i + 1}</a></td>`;
-        }
-        strHtml += `<td><a>...</a></td>`;
-        strHtml += `<td><a>${len}</a></td>`;
+        pages.push(1, "jump");
+        for (let i = page - 3; i <= page + 3; i++) pages.push(i + 1);
+        pages.push("jump", totalPages);
     }
-
-    strHtml = `<tbody><tr></tr><td><a>&lt;</a></td>${strHtml}<td><a>&gt;</a></td></tbody></table>`
-    ptt[0].innerHTML = strHtml;
-    ptt[1].innerHTML = strHtml;
-
-    //event
-    let tdTags0 = ptt[0].getElementsByTagName("td");
-    let tdTags1 = ptt[1].getElementsByTagName("td");
-    for (let i = 0; i < tdTags0.length; i++) {
-        if (tdTags0[i].getElementsByTagName("a")[0].innerText == (page + 1)) {
-            tdTags0[i].classList.add("ptds");
-            tdTags1[i].classList.add("ptds");
+    let html = '<button type="button" data-page="prev"' + (page === 0 ? " disabled" : "") + '>‹</button>';
+    for (const n of pages) {
+        if (n === "jump") {
+            html += '<button type="button" data-page="jump" aria-label="' + escapeHomeText(getTranslation("Jump to page")) + '">…</button>';
         } else {
-            tdTags0[i].addEventListener("click", handleClick);
-            tdTags1[i].addEventListener("click", handleClick);
+            html += '<button type="button" data-page="' + n + '"' + (n === page + 1 ? ' class="current" aria-current="page"' : "") + '>' + n + '</button>';
         }
     }
+    html += '<button type="button" data-page="next"' + (page === totalPages - 1 ? " disabled" : "") + '>›</button>';
+    document.querySelectorAll(".home-pager").forEach(pager => {
+        pager.innerHTML = html;
+        pager.onclick = event => {
+            const button = event.target.closest("button[data-page]");
+            if (!button || button.disabled) return;
+            const target = button.dataset.page;
+            if (target === String(page + 1)) return;
+            goto_page(target === "prev" ? "-1" : target === "next" ? "-2" : target === "jump" ? null : target)();
+        };
+    });
 }
 
 function createSearch() {
@@ -344,6 +255,7 @@ function createSearch() {
             event.target.setAttribute("data-disabled", 1);
             category.splice(category.indexOf(c[id]), 1);
         }
+        event.target.setAttribute("aria-pressed", !event.target.hasAttribute("data-disabled"));
         console.log(category);
     }
 
@@ -385,6 +297,7 @@ function createSearch() {
         if (!category.includes(catIdMap[id])) {
             document.getElementById(id).setAttribute("data-disabled", 1);
         }
+        document.getElementById(id).setAttribute("aria-pressed", category.includes(catIdMap[id]));
     }
 
     let f_search = document.getElementById("f_search");
@@ -430,11 +343,12 @@ function createSearch() {
             });
         }
         ipcRenderer.send("put-search", { str: f_search.value, category: category });
-        ipcRenderer.on("put-search-reply", (event, data) => {
+        ipcRenderer.once("put-search-reply", (event, data) => {
             book_id = data.book_id;
             group = data.group;
             search_str = data.search_str;
             groupLength = group.length;
+            currentSort = "name";
             console.log(data.search_str);
             updateHome();
         });
@@ -443,7 +357,6 @@ function createSearch() {
         return false;
     }
 
-    document.getElementById("notMatched").innerText = "not matched"
     document.getElementById("notMatched").onclick = () => {
         f_search.value = ".null";
         from_onsubmit.onsubmit();
@@ -467,6 +380,7 @@ function createSearch() {
         };
         for (let id in catIdMap) {
             document.getElementById(id).removeAttribute("data-disabled");
+            document.getElementById(id).setAttribute("aria-pressed", "true");
         }
         
         f_search.value = null;
@@ -522,67 +436,94 @@ function updateHistoryList() {
     });
 }
 function createSidebar() {
-    const sideMenu = document.getElementById('sideMenu');
-    const menuButton = document.getElementById('menuButton');
+    const sidebar = document.getElementById("sideMenu");
+    const shell = document.getElementById("homeShell");
+    const menuButton = document.getElementById("menuButton");
 
-    function closeSidebar() {
-        sideMenu.classList.add('hidden');
-        sideMenu.style.display = 'none';
-        menuButton.style.display = 'block';
+    document.getElementById("libraryHeading").textContent = getTranslation("Library");
+    document.getElementById("allBooksLabel").textContent = getTranslation("All books");
+    document.getElementById("notMatchedLabel").textContent = getTranslation("Unmatched");
+    for (const [id, key] of [["allBooks", "All books"], ["notMatched", "Unmatched"], ["settingButton", "Settings"]]) {
+        document.getElementById(id).setAttribute("aria-label", getTranslation(key));
+        document.getElementById(id).title = getTranslation(key);
     }
-
-    sideMenu.getElementsByTagName('button')[1].textContent = getTranslation("Settings");
-    sideMenu.getElementsByTagName('button')[2].textContent = getTranslation("Clear list");
-    sideMenu.getElementsByTagName('h3')[0].textContent = getTranslation("Search history");
+    document.getElementById("historyHeading").textContent = getTranslation("Search history");
+    document.getElementById("sideClearButton").textContent = getTranslation("Clear list");
+    document.getElementById("settingsLabel").textContent = getTranslation("Settings");
+    document.getElementById("categoryLabel").textContent = getTranslation("Categories");
+    document.getElementById("sortLabel").textContent = getTranslation("Sort");
+    document.querySelector('#sortSelect option[value="name"]').textContent = getTranslation("Name");
+    document.querySelector('#sortSelect option[value="random"]').textContent = getTranslation("Random");
+    document.querySelector('#sortSelect option[value="chronology"]').textContent = getTranslation("Chronology");
 
     updateHistoryList();
 
-    menuButton.addEventListener('click', function () {
-        sideMenu.classList.remove('hidden');
-        sideMenu.style.display = 'block';
-        menuButton.style.display = 'none';
+    menuButton.addEventListener("click", () => {
+        if (window.innerWidth <= 900) {
+            sidebar.classList.toggle("expanded");
+        } else {
+            shell.classList.toggle("sidebar-collapsed");
+        }
     });
 
-    document.getElementById('closeButton').addEventListener('click', function () {
-        closeSidebar();
+    document.getElementById("allBooks").addEventListener("click", () => {
+        document.getElementById("searchClear").click();
+        sidebar.classList.remove("expanded");
     });
 
-    document.getElementById('settingButton').addEventListener('click', function () {
-        console.log("setting");
-        ipcRenderer.send('put-homeStatus', { book_id: page * page_max });
-        ipcRenderer.once('put-homeStatus-reply', (event, data) => {
+    document.getElementById("settingButton").addEventListener("click", () => {
+        ipcRenderer.send("put-homeStatus", { book_id: page * page_max });
+        ipcRenderer.once("put-homeStatus-reply", () => {
             window.location.href = "setting.html";
         });
     });
 
-    document.getElementById('sideClearButton').addEventListener('click', () => {
+    document.getElementById("sideClearButton").addEventListener("click", () => {
         historyList = historyList.filter(item => item.pinned !== false);
         ipcRenderer.send("put-historyList", historyList);
-        ipcRenderer.once("put-historyList-reply", () => {
-            updateHistoryList();
-        });
+        ipcRenderer.once("put-historyList-reply", updateHistoryList);
     });
 
-    document.addEventListener('click', function (event) {
-        if (!sideMenu.contains(event.target) && !menuButton.contains(event.target)) {
-            closeSidebar();
+    document.getElementById("sortSelect").addEventListener("change", event => {
+        applySort(event.target.value);
+    });
+
+    document.addEventListener("click", event => {
+        if (window.innerWidth <= 900 && sidebar.classList.contains("expanded") &&
+            !sidebar.contains(event.target)) {
+            sidebar.classList.remove("expanded");
         }
     });
+}
 
+function applySort(mode) {
+    ipcRenderer.send("sort", mode);
+    ipcRenderer.once("sort-reply", (event, data) => {
+        currentSort = mode;
+        book_id = 0;
+        group = data.group;
+        groupLength = group.length;
+        updateHome();
+    });
 }
 
 function updateHome() {
     page = Math.floor(book_id / page_max);
     document.getElementById("f_search").value = search_str;
-    document.getElementById("pageSelectorText").textContent = `Showing ${page * page_max + 1} - 
-        ${(page + 1) * page_max < groupLength
-            ? (page + 1) * page_max
-            : groupLength
-        } of ${groupLength} results`;
+    const label = search_str === ".null" ? getTranslation("Unmatched") :
+        search_str ? getTranslation("Search") + ": " + search_str : getTranslation("All books");
+    document.getElementById("viewTitle").textContent = label;
+    document.getElementById("allBooks").classList.toggle("active", !search_str);
+    document.getElementById("notMatched").classList.toggle("active", search_str === ".null");
+    document.getElementById("sortSelect").value = currentSort;
+    const first = groupLength ? page * page_max + 1 : 0;
+    const last = Math.min((page + 1) * page_max, groupLength);
+    document.getElementById("pageSelectorText").textContent =
+        getTranslation("Showing") + " " + first + " - " + last + " " +
+        getTranslation("of") + " " + groupLength + " " + getTranslation("results");
 
     createPtt();
     createPage();
-    createSidebar();
 }
 
 function hotkeyHandle(event) {
@@ -650,33 +591,15 @@ function hotkeyHandle(event) {
         return;
     }
     if (isKey("name_sort")) {
-        ipcRenderer.send("sort", "name");
-        ipcRenderer.once("sort-reply", (e, data) => {
-            console.log("name_sort");
-            book_id = 0;
-            group = data.group;
-            updateHome();
-        });
+        applySort("name");
         return;
     }
     if (isKey("random_sort")) {
-        ipcRenderer.send("sort", "random");
-        ipcRenderer.once("sort-reply", (e, data) => {
-            console.log("random_sort");
-            book_id = 0;
-            group = data.group;
-            updateHome();
-        });
+        applySort("random");
         return;
     }
     if (isKey("chronology")) {
-        ipcRenderer.send("sort", "chronology");
-        ipcRenderer.once("sort-reply", (e, data) => {
-            console.log("chronology");
-            book_id = 0;
-            group = data.group;
-            updateHome();
-        });
+        applySort("chronology");
         return;
     }
 
@@ -702,6 +625,7 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     definition = data.definition;
     category = data.category;
     appVersion = data.appVersion;
+    currentSort = data.currentSort || "name";
 
     document.title = `ex_viewer v${appVersion}`;
 
@@ -715,6 +639,7 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     });
     
     createSearch();
+    createSidebar();
     //console.log(search_str);
     document.getElementById("f_search").value = search_str;
     if (!Array.isArray(group) || group.length === 0) {
@@ -750,12 +675,6 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
         inputElement.focus();
     }
     if (command === 'sort') {
-        ipcRenderer.send("sort", text);
-        ipcRenderer.once("sort-reply", (e, data) => {
-            console.log("sort:", text);
-            book_id = 0;
-            group = data.group;
-            updateHome();
-        });
+        applySort(text);
     }
 });

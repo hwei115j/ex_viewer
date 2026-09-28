@@ -1,356 +1,92 @@
-<!DOCTYPE html>
-<html style="height: 100%;">
-
+<!doctype html>
+<html lang="zh-Hant">
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ex_viewer</title>
-    <link rel="stylesheet" type="text/css" href="exhentai.css" />
-    <script type="text/javascript" src="../home.js"></script>
-    <style type="text/css">
-        @supports (display: grid) {
-            .gld {
-                display: grid;
-                grid-template-columns: repeat(5, 1fr);
-            }
-
-            .gl1t {
-                min-width: 250px;
-                max-width: 400px;
-            }
-
-            @media screen and (max-width: 1360px) {
-                .gld {
-                    grid-template-columns: repeat(4, 1fr);
-                }
-
-                .gl1t:nth-child(8n + 1),
-                .gl1t:nth-child(8n + 3),
-                .gl1t:nth-child(8n + 6),
-                .gl1t:nth-child(8n + 8) {
-                    background: #363940;
-                }
-
-                .gl1t:nth-child(8n + 2),
-                .gl1t:nth-child(8n + 4),
-                .gl1t:nth-child(8n + 5),
-                .gl1t:nth-child(8n + 7) {
-                    background: #3c414b;
-                }
-            }
-
-            @media screen and (max-width: 1090px) {
-                .gld {
-                    grid-template-columns: repeat(3, 1fr);
-                }
-
-                .gl1t:nth-child(2n + 1) {
-                    background: #363940;
-                }
-
-                .gl1t:nth-child(2n + 2) {
-                    background: #3c414b;
-                }
-            }
-
-            @media screen and (max-width: 820px) {
-                .gld {
-                    grid-template-columns: repeat(2, 1fr);
-                }
-
-                .gl1t:nth-child(4n + 1),
-                .gl1t:nth-child(4n + 4) {
-                    background: #363940;
-                }
-
-                .gl1t:nth-child(4n + 2),
-                .gl1t:nth-child(4n + 3) {
-                    background: #3c414b;
-                }
-            }
-        }
-
-        #menuButton {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            z-index: 1000;
-            background-color: #333;
-            color: white;
-            border: 2px solid #7c7979;
-            padding: 10px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-        .menuButton {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            border: none;
-            cursor: pointer;
-            text-align: left;
-            transition: background-color 0.3s;
-        }
-
-
-
-        #sideMenu {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 20%;
-            height: 100%;
-            background-color: rgba(17, 17, 17, 0.7);
-            /* 半透明背景 */
-            color: white;
-            padding: 20px;
-            padding-top: 50px;
-            display: none;
-            z-index: 999;
-            box-sizing: border-box;
-            backdrop-filter: blur(10px);
-            /* 磨砂效果 */
-            overflow-y: auto
-        }
-
-        /* WebKit browsers (Chrome, Safari) */
-        #sideMenu::-webkit-scrollbar {
-            width: 5px;
-            /* 滾輪條的寬度 */
-        }
-
-        #sideMenu::-webkit-scrollbar-track {
-            background: transparent;
-            /* 滾輪條的背景色 */
-        }
-
-        #sideMenu::-webkit-scrollbar-thumb {
-            background: #888;
-            /* 滾輪條的顏色 */
-            border-radius: 10px;
-            /* 圓角 */
-        }
-
-        #sideMenu::-webkit-scrollbar-thumb:hover {
-            background: #555;
-            /* 滾輪條懸停時的顏色 */
-        }
-
-
-        #closeButton {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background-color: transparent;
-            /* 去掉背景顏色 */
-            color: #bbb;
-            /* 更淡的字體顏色 */
-            border: none;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            text-align: center;
-            line-height: 30px;
-            font-size: 16px;
-            transition: color 0.3s;
-            /* 平滑過渡效果 */
-        }
-
-
-        .menuButton:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .historySection {
-            margin-top: 20px;
-        }
-
-        .historySection h3 {
-            margin-bottom: 10px;
-            font-size: 24px;
-            text-align: center;
-        }
-
-        .historySection ul {
-            list-style-type: none;
-            padding: 0;
-            text-align: left;
-        }
-
-        .historySection li {
-            padding: 13px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .pinButton {
-            background-color: transparent;
-            color: #bbb;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            transition: color 0.3s;
-        }
-
-        .pinButton .pinIcon {
-            display: inline-block;
-            font-size: 22px;
-            line-height: 1;
-        }
-
-        .pinButton {
-            background-color: transparent;
-            color: #bbb;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            transition: color 0.3s;
-        }
-
-        .pinButton.active .pinIcon {
-            color: yellow;
-        }
-
-        .pinButton:hover {
-            color: #fff;
-        }
-
-        .historySection a {
-            color: white;
-            text-decoration: none;
-            font-size: 13px;
-            transition: color 0.3s;
-        }
-
-        .historySection a:hover {
-            color: #ccc;
-        }
-
-        .clearButton {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
-            background-color: rgba(255, 0, 0, 0.1);
-            color: white;
-            border: none;
-            cursor: pointer;
-            text-align: center;
-            transition: background-color 0.3s;
-        }
-
-        .clearButton:hover {
-            background-color: rgba(255, 0, 0, 0.2);
-        }
-    </style>
+    <link rel="stylesheet" href="exhentai.css">
+    <link rel="stylesheet" href="home.css">
+    <script src="../home.js"></script>
 </head>
-
-<body>
-    <button id="menuButton">☰</button>
-    <div id="sideMenu">
-        <button id="closeButton">X</button>
-        <button id="settingButton" class="menuButton">Settings</button>
-        <div class="historySection">
-            <h3>Search history</h3>
-            <ul id="historyList">
-            </ul>
-        </div>
-        <button id="sideClearButton" class="clearButton">Clear list</button>
-    </div>
-
-    <div style="position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999">
-        <input type="button" id="ttt" style="display:none" value="">
-    </div>
-    <div class="ido" style="max-width:1370px">
-        <h1 class="ih"><a></a>
-            <a"> </a>
-        </h1>
-        <div style="position:relative; z-index:2">
-            <div id="searchbox" class="idi">
-                <form id="from_onsubmit" style="margin: 0px; padding: 0px;">
-                    <input type="hidden" id="f_cats" name="f_cats" value="0" disabled="disabled">
-                    <table class="itc">
-                        <tbody>
-                            <tr>
-                                <td>
-                                    <div id="cat_2" class="cs ct2">
-                                        Doujinshi
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="cat_4" class="cs ct3">
-                                        Manga
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="cat_8" class="cs ct4">
-                                        Artist CG
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="cat_16" class="cs ct5">
-                                        Game CG
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="cat_512" class="cs cta">
-                                        Western
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div id="cat_256" class="cs ct9">
-                                        Non-H
-                                    </div>
-                                </td>
-                                <td>
-                                    <d iv="" id="cat_32" class="cs ct6">
-                                        Image Set
-                                    </d>
-                                </td>
-                                <td>
-                                    <div id="cat_64" class="cs ct7">
-                                        Cosplay
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="cat_128" class="cs ct8">
-                                        Asian Porn
-                                    </div>
-                                </td>
-                                <td>
-                                    <div id="cat_1" class="cs ct1">
-                                        Misc
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div>
-                        <input type="text" id="f_search" name="f_search" placeholder="search" text="" size="50"
-                            maxlength="200" autocomplete="off">
-                        <input type="submit" id="searchSubmit" value="Search">
-                        <input type="button" id="searchClear" value="Clear">
-                    </div>
-                    <div>&nbsp;[<a id="notMatched"></a>]</div>
-                    <div id="advdiv" style="display: none;"></div>
-                </form>
+<body class="home-page">
+    <div class="home-shell" id="homeShell">
+        <aside class="home-sidebar" id="sideMenu" aria-label="Library">
+            <div class="home-brand">
+                <button type="button" id="menuButton" class="home-icon-button" aria-label="Toggle sidebar" title="Toggle sidebar">☰</button>
+                <strong class="home-brand-name">ex_viewer</strong>
             </div>
-            <p id="pageSelectorText" style="text-align:center"></p>
-            <table id="ptt1" class="ptt" style="margin:2px auto 0px">
-            </table>
-            <div>
-                <div id="page">
+
+            <nav class="home-navigation" aria-label="Library">
+                <div class="home-nav-heading" id="libraryHeading">Library</div>
+                <button type="button" id="allBooks" class="home-nav-item" aria-label="All books" title="All books">
+                    <span class="home-nav-icon" aria-hidden="true">▦</span>
+                    <span class="home-nav-label" id="allBooksLabel">All books</span>
+                </button>
+                <button type="button" id="notMatched" class="home-nav-item" aria-label="Unmatched" title="Unmatched">
+                    <span class="home-nav-icon" aria-hidden="true">◇</span>
+                    <span class="home-nav-label" id="notMatchedLabel">Unmatched</span>
+                </button>
+            </nav>
+
+            <section class="home-history" aria-labelledby="historyHeading">
+                <h2 class="home-nav-heading" id="historyHeading">Search history</h2>
+                <ul id="historyList"></ul>
+                <button type="button" id="sideClearButton" class="home-history-clear">Clear list</button>
+            </section>
+
+            <div class="home-sidebar-bottom">
+                <button type="button" id="settingButton" class="home-nav-item" aria-label="Settings" title="Settings">
+                    <span class="home-nav-icon" aria-hidden="true">⚙</span>
+                    <span class="home-nav-label" id="settingsLabel">Settings</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="home-main">
+            <div class="home-content">
+                <div class="home-view-heading">
+                    <h1 id="viewTitle">All books</h1>
                 </div>
+
+                <section class="home-search-panel" aria-label="Search and categories">
+                    <form id="from_onsubmit">
+                        <div class="home-search-row">
+                            <input type="text" id="f_search" name="f_search" maxlength="200" autocomplete="off" placeholder="Search" aria-label="Search">
+                            <input type="submit" id="searchSubmit" value="Search">
+                            <input type="button" id="searchClear" value="Clear">
+                        </div>
+                        <div class="home-category-row" aria-label="Categories">
+                            <span class="home-filter-label" id="categoryLabel">Categories</span>
+                            <button type="button" id="cat_2" class="home-category ct2">Doujinshi</button>
+                            <button type="button" id="cat_4" class="home-category ct3">Manga</button>
+                            <button type="button" id="cat_8" class="home-category ct4">Artist CG</button>
+                            <button type="button" id="cat_16" class="home-category ct5">Game CG</button>
+                            <button type="button" id="cat_512" class="home-category cta">Western</button>
+                            <button type="button" id="cat_256" class="home-category ct9">Non-H</button>
+                            <button type="button" id="cat_32" class="home-category ct6">Image Set</button>
+                            <button type="button" id="cat_64" class="home-category ct7">Cosplay</button>
+                            <button type="button" id="cat_128" class="home-category ct8">Asian Porn</button>
+                            <button type="button" id="cat_1" class="home-category ct1">Misc</button>
+                        </div>
+                    </form>
+                </section>
+
+                <div class="home-results-bar">
+                    <span id="pageSelectorText"></span>
+                    <label class="home-sort">
+                        <span id="sortLabel">Sort</span>
+                        <select id="sortSelect">
+                            <option value="name">Name</option>
+                            <option value="random">Random</option>
+                            <option value="chronology">Chronology</option>
+                        </select>
+                    </label>
+                </div>
+                <nav id="pagerTop" class="home-pager home-pager-top" aria-label="Pages"></nav>
+                <div id="page"></div>
+                <nav id="pager" class="home-pager" aria-label="Pages"></nav>
             </div>
-            <table id="ptt2" class="ptt" style="margin:2px auto 0px">
-            </table>
-        </div>
+        </main>
     </div>
 </body>
-
 </html>

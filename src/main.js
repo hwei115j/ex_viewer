@@ -270,6 +270,7 @@ function search(searchStr, category, func_cb) {
         pageStatus.group.sort((a, b) =>
             a.local_name.localeCompare(b.local_name, "zh-Hant-TW", { numeric: true })
         );
+        pageStatus.currentSort = "name";
         imageManagerInstance.setGroup(pageStatus.group);
         func_cb();
     } catch (err) {
@@ -357,6 +358,7 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         dir: pageStatus.dir,
         search_str: pageStatus.search_str,
         group: pageStatus.group,
+        currentSort: pageStatus.currentSort,
         uiLanguage: pageStatus.uiLanguage,
         definition: pageStatus.definition_db,
         globalHotkeys: pageStatus.setting.value.keyboard_setting.value.global.value,
