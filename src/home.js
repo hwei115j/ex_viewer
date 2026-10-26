@@ -348,7 +348,7 @@ function createSearch() {
             group = data.group;
             search_str = data.search_str;
             groupLength = group.length;
-            currentSort = "name";
+            currentSort = data.currentSort;
             console.log(data.search_str);
             updateHome();
         });
