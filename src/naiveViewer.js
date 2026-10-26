@@ -24,6 +24,17 @@ let imageCache = new ImageCache({
     retryDelay: 1000            // 重試間隔
 });
 
+function updateSortedGroup(sortedGroup) {
+    const currentId = group[book_id].local_id;
+
+    group = sortedGroup;
+    book_id = group.findIndex(book => book.local_id === currentId);
+
+    imageCache = new ImageCache(imageCache.config);
+    imageCache.initialize(group.length);
+    imageCache.setCurrentBookInfo(bookInfo, book_id);
+}
+
 function eventEnable() {
     window.onkeydown = hotkeyHandle;
     window.onwheel = mouse;
@@ -412,8 +423,7 @@ async function hotkeyHandle(event) {
                 ttt.style =
                     "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             }, 2000);
-            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
-            group = data.group;
+            updateSortedGroup(data.group);
         });
         return;
     }
@@ -429,8 +439,7 @@ async function hotkeyHandle(event) {
                 ttt.style =
                     "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             }, 2000);
-            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
-            group = data.group;
+            updateSortedGroup(data.group);
         });
         return;
     }
@@ -446,8 +455,7 @@ async function hotkeyHandle(event) {
                 ttt.style =
                     "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             }, 2000);
-            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
-            group = data.group;
+            updateSortedGroup(data.group);
         });
         return;
     }
@@ -573,8 +581,7 @@ ipcRenderer.on('context-menu-command', (e, command, text) => {
             setTimeout(() => {
                 ttt.style = "display:none;position:fixed;top:0;left:0;padding:5px;margin:10px 10px 10px 10px;z-index:9999999999";
             }, 2000);
-            book_id = data.group.findIndex(element => element.local_id === group[book_id].local_id);
-            group = data.group;
+            updateSortedGroup(data.group);
         });
     }
 });

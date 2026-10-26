@@ -248,7 +248,7 @@ function sortGroup(mode) {
     imageManagerInstance.setGroup(pageStatus.group);
 }
 
-function search(searchStr, category, func_cb, sortMode = "name") {
+function search(searchStr, category, func_cb, sortMode = pageStatus.setting.value.default_sort.value) {
     pageStatus.book_id = 0;
 
     try {
@@ -356,6 +356,7 @@ ipcMain.on('put-search', (event, arg) => {
             book_id: pageStatus.book_id,
             group: pageStatus.group,
             search_str: pageStatus.search_str,
+            currentSort: pageStatus.currentSort,
         });
     });
 })
