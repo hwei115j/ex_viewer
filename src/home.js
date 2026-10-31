@@ -160,10 +160,11 @@ function createPage() {
             '</button>' +
             '<div class="home-card-info">' +
                 '<button type="button" class="home-card-title home-open" title="' + title + '">' + title + '</button>' +
-                '<span class="home-card-category ' + categoryClass + '">' + escapeHomeText(getTranslation(categoryName)) + '</span>' +
-                '<div class="home-card-bottom">' + date + ' · ' + escapeHomeText(book.filecount) + ' ' + escapeHomeText(getTranslation("pages")) + '</div>' +
-            '</div>' +
-        '</article>';
+                '<span class="home-card-category ' + categoryClass + '">' + escapeHomeText(getTranslation(categoryName)) + '</span>';
+        if (book.gid != null) {
+            html += '<div class="home-card-bottom">' + date + ' · ' + escapeHomeText(book.filecount) + ' ' + escapeHomeText(getTranslation("pages")) + '</div>';
+        }
+        html += '</div></article>';
     }
 
     pageDiv.innerHTML = '<div class="home-grid">' +
