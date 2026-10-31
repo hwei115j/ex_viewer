@@ -14,7 +14,6 @@ let img_id = 0;
 let search_str = [];
 let globalHotkeys;
 let bookHotkeys;
-let historyList;
 let bookInfo = []
 let setting; // 設定資料，用於判斷瀏覽模式
 
@@ -288,26 +287,10 @@ function createInformation() {
         //console.log(gmid.getElementsByClassName("gt"));
         //console.log(gmid.getElementById("tagmenu_act-a"));
         gmid.querySelector("#tagmenu_act_a").onclick = () => {
-            console.log("1");
-            ipcRenderer.send("put-search", { str: search_str.join(" "), category: null });
-            ipcRenderer.on("put-search-reply", (event, data) => {
-                if (!historyList.some(item => item.text === search_str.join(" "))) {
-                    const newItem = {
-                        text: search_str.join(" "),
-                        pinned: false,
-                        order: 2434
-                    }
-                    historyList.push(newItem);
-                    ipcRenderer.send("put-historyList", historyList);
-                    ipcRenderer.once("put-historyList-reply", () => {
-                        console.log("update");
-                        window.location.href = "home.html";
-                    });
-                } else {
-                    window.location.href = "home.html";
-                }
+            ipcRenderer.once("put-search-reply", () => {
+                window.location.href = "home.html";
             });
-
+            ipcRenderer.send("put-search", { str: search_str.join(" "), category: null, recordHistory: true });
         };
         gmid.querySelector("#tagmenu_web_a").onclick = async (event) => {
             event.preventDefault();
@@ -538,7 +521,6 @@ ipcRenderer.once('get-pageStatus-reply', (event, data) => {
     definition = data.definition;
     globalHotkeys = data.globalHotkeys;
     bookHotkeys = data.bookHotkeys;
-    historyList = data.historyList;
     setting = data.setting; // 讀取設定以判斷瀏覽模式
     search_str = [];
 
