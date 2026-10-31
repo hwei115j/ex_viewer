@@ -6,6 +6,7 @@ const { protocol } = require("electron");
 const imageManager = require("./imageManager.js");
 const levenshtein = require("fast-levenshtein");
 const {convertQuery} = require('./eh-search-parser.js');
+const { recordSearch, sortHistoryList } = require('./searchHistory.js');
 
 // 聲明一個BrowserWindow對象實例
 let mainWindow;
@@ -200,8 +201,9 @@ let pageStatus = {
         }
     })(),
     historyList: (() => {
+        let list;
         try {
-            return JSON.parse(fs.readFileSync(historyList_json).toString());
+            list = JSON.parse(fs.readFileSync(historyList_json).toString());
         } catch (err) {
             fs.writeFileSync(
                 historyList_json,
@@ -209,8 +211,18 @@ let pageStatus = {
             );
             return JSON.parse('[]');
         }
+        return sortHistoryList(list);
     })(),
 };
+
+function saveHistoryList() {
+    // 同步寫入，避免連續搜尋時較舊的非同步寫入覆蓋新統計。
+    try {
+        fs.writeFileSync(historyList_json, JSON.stringify(pageStatus.historyList, null, 4), 'utf8');
+    } catch (err) {
+        console.error('寫入文件時發生錯誤:', err);
+    }
+}
 
 const defineCategory = [
     "Doujinshi",
@@ -345,6 +357,10 @@ ipcMain.on("open-file-dialog", event => {
 
 
 ipcMain.on('put-search', (event, arg) => {
+    if (arg.recordHistory && arg.str.trim()) {
+        pageStatus.historyList = recordSearch(pageStatus.historyList, arg.str);
+        saveHistoryList();
+    }
     pageStatus.search_str = arg.str;
     if (arg.category) {
         pageStatus.category = arg.category;
@@ -357,6 +373,7 @@ ipcMain.on('put-search', (event, arg) => {
             group: pageStatus.group,
             search_str: pageStatus.search_str,
             currentSort: pageStatus.currentSort,
+            historyList: sortHistoryList(pageStatus.historyList),
         });
     });
 })
@@ -408,7 +425,7 @@ ipcMain.on('get-pageStatus', (event, arg) => {
         homeHotkeys: pageStatus.setting.value.keyboard_setting.value.home.value,
         bookHotkeys: pageStatus.setting.value.keyboard_setting.value.book.value,
         viewHotkeys: pageStatus.setting.value.keyboard_setting.value.view.value,
-        historyList: pageStatus.historyList.sort((a, b) => a.order - b.order),
+        historyList: sortHistoryList(pageStatus.historyList),
         setting: pageStatus.setting,
         category: pageStatus.category,
         appVersion: appVersion,
@@ -472,17 +489,16 @@ ipcMain.on('put-img_id', (event, arg) => {
     event.reply('put-img_id-reply');
 });
 
-ipcMain.on('put-historyList', (event, list) => {
-    pageStatus.historyList = list;
-    const updatedData = JSON.stringify(pageStatus.historyList, null, 4);
-    fs.writeFile(historyList_json, updatedData, 'utf8', (err) => {
-        event.reply('put-historyList-reply');
-        if (err) {
-            console.error('寫入文件時發生錯誤:', err);
-            return;
-        }
-        console.log('文件已成功更新');
-    });
+ipcMain.on('put-historyList', (event, arg) => {
+    if (arg.clear) {
+        pageStatus.historyList = pageStatus.historyList.filter(item => item.pinned !== false);
+    } else {
+        pageStatus.historyList = pageStatus.historyList.map(item =>
+            item.text === arg.text ? { ...item, pinned: arg.pinned } : item
+        );
+    }
+    saveHistoryList();
+    event.reply('put-historyList-reply', sortHistoryList(pageStatus.historyList));
 })
 
 ipcMain.on('get-book', (event, arg) => {

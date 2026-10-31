@@ -328,30 +328,19 @@ function createSearch() {
     document.getElementById("searchSubmit").value = getTranslation("Search");
     searchClear.value = getTranslation("Clear");
 
-    from_onsubmit.onsubmit = () => {
-        if (!historyList.some(item => item.text === f_search.value) && f_search.value !== "") {
-            const newItem = {
-                text: f_search.value,
-                pinned: false,
-                order: 2434
-            }
-            historyList.push(newItem);
-            ipcRenderer.send("put-historyList", historyList);
-            ipcRenderer.once("put-historyList-reply", () => {
-                console.log("update");
-                updateHistoryList();
-            });
-        }
-        ipcRenderer.send("put-search", { str: f_search.value, category: category });
+    from_onsubmit.onsubmit = (event, recordHistory = true) => {
         ipcRenderer.once("put-search-reply", (event, data) => {
             book_id = data.book_id;
             group = data.group;
             search_str = data.search_str;
+            historyList = data.historyList;
             groupLength = group.length;
             currentSort = data.currentSort;
             console.log(data.search_str);
+            updateHistoryList();
             updateHome();
         });
+        ipcRenderer.send("put-search", { str: f_search.value, category: category, recordHistory });
 
 
         return false;
@@ -408,29 +397,10 @@ function updateHistoryList() {
     });
     document.querySelectorAll('.pinButton').forEach((button, index) => {
         button.addEventListener('click', () => {
-            button.classList.toggle('active');
-            const icon = button.querySelector('.pinIcon');
-            if (button.classList.contains('active')) {
-                icon.innerHTML = '&#9733;';
-                historyList[index].pinned = true;
-
-                let maxOrder = 0;
-                historyList.forEach(item => {
-                    if (item.order !== 2434) {
-                        maxOrder = Math.max(maxOrder, item.order);
-                    }
-                });
-                historyList[index].order = maxOrder + 1;
-            } else {
-                icon.innerHTML = '&#9734;';
-                historyList[index].pinned = false;
-                historyList[index].order = 2434;
-            }
-            historyList.sort((a, b) => a.order - b.order);
-            ipcRenderer.send("put-historyList", historyList);
-            ipcRenderer.once("put-historyList-reply", () => {
-                console.log("update");
-                updateHistoryList();
+            historyList[index].pinned = !historyList[index].pinned;
+            ipcRenderer.send("put-historyList", {
+                text: historyList[index].text,
+                pinned: historyList[index].pinned
             });
         });
     });
@@ -479,9 +449,7 @@ function createSidebar() {
     });
 
     document.getElementById("sideClearButton").addEventListener("click", () => {
-        historyList = historyList.filter(item => item.pinned !== false);
-        ipcRenderer.send("put-historyList", historyList);
-        ipcRenderer.once("put-historyList-reply", updateHistoryList);
+        ipcRenderer.send("put-historyList", { clear: true });
     });
 
     document.getElementById("sortSelect").addEventListener("change", event => {
@@ -608,6 +576,11 @@ function hotkeyHandle(event) {
 
 }
 
+ipcRenderer.on('put-historyList-reply', (event, list) => {
+    historyList = list;
+    updateHistoryList();
+});
+
 ipcRenderer.send('get-pageStatus');
 ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     console.log("home.js");
@@ -643,7 +616,7 @@ ipcRenderer.on('get-pageStatus-reply', (event, data) => {
     //console.log(search_str);
     document.getElementById("f_search").value = search_str;
     if (!Array.isArray(group) || group.length === 0) {
-        document.getElementById("from_onsubmit").onsubmit();
+        document.getElementById("from_onsubmit").onsubmit(null, false);
     } else {
         updateHome();
     }
