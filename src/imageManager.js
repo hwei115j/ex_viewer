@@ -49,6 +49,18 @@ function filterAndSortZipImageEntries(entries) {
         });
 }
 
+/**
+ * 只保留最淺一層的圖片，對齊資料夾模式「圖片就放在這一層」的行為
+ * @param {string[]} names ZIP 內部的圖片路徑
+ * @returns {string[]}
+ */
+function keepShallowestLevel(names) {
+    if (names.length === 0) return names;
+    const depthOf = name => name.split('/').length;
+    const minDepth = names.reduce((min, name) => Math.min(min, depthOf(name)), Infinity);
+    return names.filter(name => depthOf(name) === minDepth);
+}
+
 class ImageManager {
     // 儲存傳入的書本列表 (group)
     group = [];
@@ -58,6 +70,7 @@ class ImageManager {
     firstImagePathCache = new Map();
     // 快取 'isBook' 的結果 (key: 路徑, value: boolean) - 可選優化
     isBookCache = new Map();
+    hideSameStemImages = false;
 
     constructor() {
         console.log("ImageManager init...");
@@ -263,6 +276,24 @@ class ImageManager {
         }
     }
 
+    setHideSameStemImages(enabled) {
+        if (this.hideSameStemImages === enabled) return;
+        this.hideSameStemImages = enabled;
+        this.clearCache();
+    }
+
+    // 清單已排序，保留同主檔名的第一張；顯示名稱即主檔名，跨目錄一併去重。
+    _filterSameStemImages(imageNames) {
+        if (!this.hideSameStemImages) return imageNames;
+        const seen = new Set();
+        return imageNames.filter(name => {
+            const key = path.posix.parse(name).name.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }
+
     /**
      * 從資料夾載入書本資訊
      */
@@ -274,8 +305,8 @@ class ImageManager {
             .map(dirent => dirent.name)
             .sort((a, b) => a.localeCompare(b, 'zh-Hant-TW', { numeric: true }));
 
-        const names = imageFiles;
-        const filePaths = imageFiles.map(name =>
+        const names = this._filterSameStemImages(imageFiles);
+        const filePaths = names.map(name =>
             url.pathToFileURL(path.join(bookPath, name)).href
         );
         const length = names.length;
@@ -293,7 +324,8 @@ class ImageManager {
         try {
             zip = new StreamZipAsync({ file: bookPath });
             const entries = await zip.entries();
-            const imageEntries = filterAndSortZipImageEntries(entries);
+            const shallowest = keepShallowestLevel(filterAndSortZipImageEntries(entries));
+            const imageEntries = this._filterSameStemImages(shallowest);
 
             const names = imageEntries.map(name => path.basename(name));
             const filePaths = imageEntries.map(name => buildZipImageUrl(bookPath, name));

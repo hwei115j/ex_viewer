@@ -161,6 +161,9 @@ let pageStatus = {
             if (!setting.value.web_search_site) {
                 setting.value.web_search_site = JSON.parse(fs.readFileSync(default_setting_path).toString()).value.web_search_site;
             }
+            if (!setting.value.hide_same_stem_images) {
+                setting.value.hide_same_stem_images = JSON.parse(fs.readFileSync(default_setting_path).toString()).value.hide_same_stem_images;
+            }
             if (!setting.value.default_sort) {
                 setting.value.default_sort = JSON.parse(fs.readFileSync(default_setting_path).toString()).value.default_sort;
             } else if (!["name", "random", "chronology"].includes(setting.value.default_sort.value)) {
@@ -214,6 +217,8 @@ let pageStatus = {
         return sortHistoryList(list);
     })(),
 };
+
+imageManagerInstance.setHideSameStemImages(pageStatus.setting.value.hide_same_stem_images.value);
 
 function saveHistoryList() {
     // 同步寫入，避免連續搜尋時較舊的非同步寫入覆蓋新統計。
@@ -462,7 +467,12 @@ ipcMain.on('rematch', (event) => {
 });
 
 ipcMain.on('put-settingStatus', (event, arg) => {
+    if (pageStatus.setting.value.hide_same_stem_images.value !== arg.setting.value.hide_same_stem_images.value) {
+        // 切換後從第一張開始，避免沿用過濾前的頁碼。
+        pageStatus.img_id = 0;
+    }
     pageStatus.setting = arg.setting;
+    imageManagerInstance.setHideSameStemImages(pageStatus.setting.value.hide_same_stem_images.value);
     //console.log(arg.setting);
     fs.writeFileSync(setting_path, JSON.stringify(pageStatus.setting, null, 4));
     // 即時更新語言設定
