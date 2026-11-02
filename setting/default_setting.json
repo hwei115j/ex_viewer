@@ -368,6 +368,11 @@
             "type": "bool",
             "value": true
         },
+        "hide_same_stem_images": {
+            "text": "Hide Same-Name Images (Ignore Extension)",
+            "type": "bool",
+            "value": false
+        },
         "full_page": {
             "text": "Enable Full Page View",
             "type": "bool",

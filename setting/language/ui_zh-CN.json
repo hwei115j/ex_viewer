@@ -84,6 +84,7 @@
 	"Reset Zoom": "恢复默认大小",
 	"Enable Developer Tools": "是否开启开发者工具",
 	"Enable Tag Translation": "是否开启标签翻译",
+	"Hide Same-Name Images (Ignore Extension)": "隐藏同名图片（忽略扩展名）",
 	"Enable Full Page View": "是否开启整页浏览",
 	"UI Language": "界面语言",
 	"Page Zoom Level": "页面缩放倍率",
